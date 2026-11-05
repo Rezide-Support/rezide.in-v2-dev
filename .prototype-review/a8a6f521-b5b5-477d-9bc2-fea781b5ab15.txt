@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style id="rez-mobile">@media (max-width:980px){[data-m="trial"],[data-m="plans"],[data-m="extras"]{grid-template-columns:1fr!important}}@media (max-width:900px){[data-m="air"]{grid-template-columns:1fr!important}[data-m="air"]>div:last-child{position:static!important;order:-1}
+html,body{overflow-x:hidden}
+header>div[style]{flex-wrap:wrap!important;height:auto!important;padding:10px 16px 0!important;gap:4px 12px!important;justify-content:space-between!important}
+header nav[style]{order:3;flex:1 1 100%!important;justify-content:flex-start!important;overflow-x:auto!important;scrollbar-width:none;margin:0 -16px!important;padding:0 8px!important}
+header nav::-webkit-scrollbar{display:none}
+[style*="padding: 88px 32px"],[style*="padding: 80px 32px"],[style*="padding: 72px 32px"]{padding:48px 16px!important}
+[style*="padding: 88px 32px 0px"]{padding-bottom:0!important}
+[style*="padding: 32px 32px 8px"],[style*="padding: 20px 32px 96px"],[style*="padding: 24px 32px 96px"],[style*="padding: 40px 32px"],[style*="padding: 28px 32px"]{padding-left:16px!important;padding-right:16px!important}
+:not(header>*)[style*="max-width: 1280px"][style*="padding: 0px 32px"]{padding-left:0!important;padding-right:0!important}
+footer[style]{padding:40px 16px 24px!important}
+[style*="min-height: 560px"]{min-height:0!important}
+[data-m="heroinner"]{gap:20px!important}
+h1[style*="clamp(48px"],h1[style*="clamp(44px"],h1[style*="clamp(40px"]{font-size:36px!important;line-height:1.06!important}
+h1[style*="white-space: nowrap"]{white-space:normal!important;font-size:26px!important}
+h2[style*="font: 600 44px"],h2[style*="font: 600 40px"],h3[style*="font: 600 40px"]{font-size:28px!important}
+[data-m="railcard"]{flex-basis:80%!important}
+[role="tablist"]{max-width:100%;overflow-x:auto;flex-wrap:nowrap!important;scrollbar-width:none}
+[style*="height: 44px; padding: 0px 24px"]{height:38px!important;padding:0 14px!important}
+[data-m="stack"]{grid-template-columns:1fr!important}
+[data-m="stack"]>:first-child{min-height:240px}
+[data-m="phone"]{order:0!important}
+[data-m="sep"]{display:none!important}
+input,select,textarea{font-size:16px!important}
+}</style>
+<style>@keyframes rezKenBurns{0%{scale:1.02;translate:0 0}50%{scale:1.1;translate:-1.5% -1%}100%{scale:1.06;translate:1.5% .5%}}
+image-slot[data-motion="on"]::part(image){animation:rezKenBurns 24s ease-in-out infinite alternate}
+@keyframes rcSwipe{0%{transform:translateX(0) rotate(0);opacity:1;z-index:3}22%{transform:translateX(0) rotate(0);opacity:1}32%{transform:translateX(140%) rotate(18deg);opacity:0}33%{transform:translateY(16px) scale(.94);opacity:0}40%{transform:translateY(16px) scale(.94);opacity:1}66%{transform:translateY(8px) scale(.97);opacity:1}100%{transform:translateX(0) rotate(0);opacity:1}}
+@keyframes rcStamp{0%,14%{opacity:0;transform:rotate(12deg) scale(1.4)}20%,30%{opacity:1;transform:rotate(12deg) scale(1)}33%,100%{opacity:0}}
+@keyframes rcToast{0%,30%{opacity:0;transform:translateY(8px)}38%,80%{opacity:1;transform:translateY(0)}90%,100%{opacity:0}}
+@keyframes rcPulse{0%,15%,40%,100%{transform:scale(1)}25%{transform:scale(1.15)}}
+@keyframes rcFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes rcGlow{0%,100%{opacity:.6}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+@media (prefers-reduced-motion:reduce){image-slot::part(image){animation:none}}</style>
+<style>body{margin:0;background:#fff;font-family:Montserrat,sans-serif;color:#000}a{color:#000}a:hover{color:#A3835F}input,textarea{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="position:relative;z-index:20;background:#fff;border-bottom:1px solid var(--rez-smoke)">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,2.5vw,32px);height:76px;display:flex;align-items:center;gap:clamp(12px,2vw,28px)">
+    <a href="#home" style="display:flex;color:#000"><x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="26" hint-size="150px,26px"></x-import></a>
+    <nav style="flex:1;min-width:0;display:flex;justify-content:safe center;align-items:center;gap:0;white-space:nowrap;overflow-x:auto;scrollbar-width:none">
+      <a href="#home" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">PROPERTIES</a>
+      <a href="#home" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">PROJECTS</a>
+      <a href="#list" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">LIST PROPERTY</a>
+      <a href="#realtor" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">FIND REALTOR</a>
+      <span style="width:1px;height:18px;margin:0 6px;background:var(--rez-smoke)"></span>
+      <a href="#corner" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:700 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:#000;text-decoration:none" style-hover="color:#000">REALTOR CORNER<span style="position:absolute;left:clamp(6px,1vw,18px);right:clamp(6px,1vw,18px);bottom:0;height:3px;border-radius:3px;background:var(--rez-mocaccino)"></span></a>
+    </nav>
+    <a href="#login-realtor" aria-label="Realtor login" style="display:flex;color:#000"><x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="user" label="Realtor login" tone="outline" size="md" hint-size="40px,40px"></x-import></a>
+  </div>
+</header>
+<section style="position:relative;overflow:hidden;background:#02110C;color:var(--rez-full-white);padding:80px 32px">
+  <div style="position:absolute;inset:0;opacity:.45"><image-slot data-motion="on" id="rc-hero-bg" shape="rect" placeholder="Drop realtor office photo" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?fm=jpg&amp;q=70&amp;w=2400&amp;auto=format&amp;fit=crop" credit="Photo by LinkedIn Sales Solutions on Unsplash" credit-href="https://unsplash.com/@linkedinsalesnavigator"></image-slot></div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(2,17,12,.92) 0%,rgba(2,17,12,.7) 55%,rgba(2,17,12,.35) 100%)"></div>
+  <div style="position:relative;max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:48px">
+    <div style="flex:1 1 480px;max-width:620px;display:flex;flex-direction:column;gap:24px">
+      <h1 style="margin:0;font:600 clamp(40px,5vw,68px)/1.04 var(--font-primary);letter-spacing:-0.025em">The AI driven platform you need to run your real-estate business.</h1>
+      
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="inverse" size="lg" onClick="{{ openTrial }}" hint-size="170px,52px">Request Access</x-import>
+        <button style="height:52px;padding:0 26px;border:1px solid rgba(224,224,224,.5);border-radius:999px;background:transparent;color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer" style-hover="background:rgba(224,224,224,.08)">Schedule Demo</button>
+      </div>
+    <div style="width:min(440px,100%);background:#fff;color:#000;border-radius:20px;box-shadow:var(--shadow-lg);padding:22px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font:600 24px/1.15 var(--font-primary)">{{ lgTitle }}</h2><span style="font:400 14px/1.4 var(--font-primary);color:var(--rez-graphite)">{{ lgSub }}</span></div>
+      <sc-if value="{{ lgPhone }}" hint-placeholder-val="{{ true }}">
+        <label style="display:flex;align-items:center;gap:10px;height:52px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px"><span style="font:600 15px/1 var(--font-primary)">+91</span><span style="width:1px;height:22px;background:var(--rez-smoke)"></span><input value="{{ phone }}" onInput="{{ onPhone }}" inputmode="numeric" placeholder="Registered mobile number" style="flex:1;min-width:0;border:0;outline:none;font:500 15px/1 var(--font-primary);background:transparent"></label>
+      </sc-if>
+      <sc-if value="{{ lgOtp }}" hint-placeholder-val="{{ false }}">
+        <input value="{{ otp }}" onInput="{{ onOtp }}" inputmode="numeric" maxlength="4" placeholder="• • • • • •" style="height:58px;border:1px solid #000;border-radius:16px;text-align:center;outline:none;font:600 24px/1 var(--font-primary);letter-spacing:.5em">
+      </sc-if>
+      <sc-if value="{{ lgDone }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;background:#15302B;color:var(--rez-full-white);font:500 14px/1.4 var(--font-primary)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check-circle" size="20px" hint-size="20px,20px"></x-import><span>Signed in. Opening your dashboard.</span></div>
+      </sc-if>
+      <button onClick="{{ lgAction }}" style="height:52px;border:0;border-radius:999px;background:{{ lgBtnBg }};color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer;display:{{ lgBtnShow }}">{{ lgBtn }}</button>
+    </div>
+    </div>
+    <div data-m="phone" style="flex:0 0 auto;width:290px;margin:0 auto;position:relative;order:-1">
+      <div style="position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,rgba(163,131,95,.35) 0%,rgba(163,131,95,0) 70%);animation:rcGlow 6s ease-in-out infinite"></div>
+      <div style="position:relative;width:290px;height:590px;border-radius:44px;background:#0b0b0b;padding:12px;box-sizing:border-box;box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 0 0 2px #2a2a2a;animation:rcFloat 6s ease-in-out infinite">
+        <div style="position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:#F4F5F8;display:flex;flex-direction:column">
+          <div style="position:absolute;top:8px;left:50%;width:90px;height:24px;margin-left:-45px;border-radius:999px;background:#0b0b0b;z-index:5"></div>
+          <div style="padding:42px 16px 10px;display:flex;flex-direction:column;gap:8px;background:#fff">
+            <span style="display:flex;align-items:center;justify-content:space-between"><b style="font:700 13px/1 Montserrat;letter-spacing:.14em;color:#000">REZIDE</b><span style="font:600 10px/1 Montserrat;color:#A3835F">CO-BROKING</span></span>
+            <span style="padding:8px 10px;border-radius:12px;background:#EEF0F5;font:500 11px/1.35 Montserrat;color:#000"><b>Your listing</b> · 3 BHK, Worli · ₹5.4 Cr</span>
+          </div>
+          <div style="position:relative;flex:1;margin:12px 14px 0">
+        <div style="position:absolute;inset:0;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(2,17,12,.25);animation:rcSwipe 9s cubic-bezier(.2,.8,.2,1) infinite;animation-delay:6s">
+          <div style="position:relative;height:58%;background:var(--rez-cloud)"><img src="https://images.unsplash.com/photo-1758448755856-01d3add0177b?fm=jpg&amp;q=70&amp;w=600&amp;auto=format&amp;fit=crop" alt="" style="display:block;width:100%;height:100%;object-fit:cover"><span style="position:absolute;top:10px;left:10px;padding:5px 9px;border-radius:999px;background:#000;color:#E0E0E0;font:700 10px/1 Montserrat">92% match</span>
+          <span style="position:absolute;top:18px;right:14px;padding:6px 10px;border:3px solid #1F7A4D;border-radius:8px;color:#1F7A4D;font:800 16px/1 Montserrat;letter-spacing:.08em;transform:rotate(12deg);opacity:0;animation:rcStamp 9s ease infinite;animation-delay:6s">MATCH</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px;padding:12px 14px">
+            <b style="font:600 14px/1.2 Montserrat;color:#000">Buyer for 3 BHK · Worli</b>
+            <span style="font:500 11px/1.3 Montserrat;color:#6B7280">Neha Kapoor · Networth Realty</span>
+            <span style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px"><span style="padding:4px 8px;border-radius:999px;background:#EEF0F5;font:600 10px/1 Montserrat;color:#000">Buyer ready</span><span style="padding:4px 8px;border-radius:999px;background:#EEF0F5;font:600 10px/1 Montserrat;color:#000">50:50 split</span></span>
+          </div>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(2,17,12,.25);animation:rcSwipe 9s cubic-bezier(.2,.8,.2,1) infinite;animation-delay:3s">
+          <div style="position:relative;height:58%;background:var(--rez-cloud)"><img src="https://images.unsplash.com/photo-1759845565036-cbecbcfcb8e2?fm=jpg&amp;q=70&amp;w=600&amp;auto=format&amp;fit=crop" alt="" style="display:block;width:100%;height:100%;object-fit:cover"><span style="position:absolute;top:10px;left:10px;padding:5px 9px;border-radius:999px;background:#000;color:#E0E0E0;font:700 10px/1 Montserrat">88% match</span>
+          <span style="position:absolute;top:18px;right:14px;padding:6px 10px;border:3px solid #1F7A4D;border-radius:8px;color:#1F7A4D;font:800 16px/1 Montserrat;letter-spacing:.08em;transform:rotate(12deg);opacity:0;animation:rcStamp 9s ease infinite;animation-delay:3s">MATCH</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px;padding:12px 14px">
+            <b style="font:600 14px/1.2 Montserrat;color:#000">Buyer for 3 BHK · Prabhadevi</b>
+            <span style="font:500 11px/1.3 Montserrat;color:#6B7280">Arjun Mehta · Skyline Realty</span>
+            <span style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px"><span style="padding:4px 8px;border-radius:999px;background:#EEF0F5;font:600 10px/1 Montserrat;color:#000">Buyer ready</span><span style="padding:4px 8px;border-radius:999px;background:#EEF0F5;font:600 10px/1 Montserrat;color:#000">50:50 split</span></span>
+          </div>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(2,17,12,.25);animation:rcSwipe 9s cubic-bezier(.2,.8,.2,1) infinite;animation-delay:0s">
+          <div style="position:relative;height:58%;background:var(--rez-cloud)"><img src="https://images.unsplash.com/photo-1786618315979-2dbbfd3b38a7?fm=jpg&amp;q=70&amp;w=600&amp;auto=format&amp;fit=crop" alt="" style="display:block;width:100%;height:100%;object-fit:cover"><span style="position:absolute;top:10px;left:10px;padding:5px 9px;border-radius:999px;background:#000;color:#E0E0E0;font:700 10px/1 Montserrat">95% match</span>
+          <span style="position:absolute;top:18px;right:14px;padding:6px 10px;border:3px solid #1F7A4D;border-radius:8px;color:#1F7A4D;font:800 16px/1 Montserrat;letter-spacing:.08em;transform:rotate(12deg);opacity:0;animation:rcStamp 9s ease infinite;animation-delay:0s">MATCH</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px;padding:12px 14px">
+            <b style="font:600 14px/1.2 Montserrat;color:#000">Buyer for 3–4 BHK · Worli</b>
+            <span style="font:500 11px/1.3 Montserrat;color:#6B7280">Rukmani Iyer · AssetPro Realty</span>
+            <span style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px"><span style="padding:4px 8px;border-radius:999px;background:#EEF0F5;font:600 10px/1 Montserrat;color:#000">Buyer ready</span><span style="padding:4px 8px;border-radius:999px;background:#EEF0F5;font:600 10px/1 Montserrat;color:#000">50:50 split</span></span>
+          </div>
+        </div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:22px;padding:14px 0 18px">
+            <span style="width:48px;height:48px;border-radius:999px;background:#fff;box-shadow:0 4px 12px rgba(2,17,12,.15);display:flex;align-items:center;justify-content:center;color:#380516"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="x" size="20px" hint-size="20px,20px"></x-import></span>
+            <span style="width:56px;height:56px;border-radius:999px;background:#1F7A4D;box-shadow:0 6px 16px rgba(31,122,77,.4);display:flex;align-items:center;justify-content:center;color:#fff;animation:rcPulse 3s ease infinite"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="24px" hint-size="24px,24px"></x-import></span>
+          </div>
+          <div style="position:absolute;left:14px;right:14px;bottom:86px;padding:10px 12px;border-radius:14px;background:#000;color:#E0E0E0;display:flex;align-items:center;gap:8px;font:600 11px/1.3 Montserrat;opacity:0;animation:rcToast 3s ease infinite"><span style="width:8px;height:8px;border-radius:999px;background:#A3835F"></span>It's a match. Start co-broking chat.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section style="padding:88px 32px">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">AI-R</span>
+      <h2 style="margin:0;font:600 clamp(28px,3.4vw,40px)/1.1 var(--font-primary);letter-spacing:-0.02em">Artificial Intelligence for Realtors.</h2>
+    </div>
+    <div data-m="air" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:24px;align-items:stretch">
+      <div style="display:flex;flex-direction:column;justify-content:space-between;gap:6px;padding:10px;border-radius:20px;background:#ECEEF5">
+        <sc-for list="{{ agentChips }}" as="a" hint-placeholder-count="10">
+          <button onClick="{{ a.pick }}" style="display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid {{ a.rowBorder }};border-radius:14px;background:{{ a.rowBg }};cursor:pointer;text-align:left;transition:background 140ms" style-hover="background:#fff">
+            <span style="flex:none;width:38px;height:38px;border-radius:999px;background:{{ a.iconBg }};color:{{ a.iconFg }};display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ a.icon }}" size="18px" hint-size="18px,18px"></x-import></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <span style="font:600 15px/1.15 var(--font-primary);color:#000">{{ a.name }}</span>
+              <span style="font:400 12.5px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ a.role }}</span>
+            </span>
+            <sc-if value="{{ a.soon }}" hint-placeholder-val="{{ false }}"><span style="flex:none;padding:4px 8px;border-radius:999px;background:#380516;color:var(--rez-full-white);font:400 9px/1 var(--font-eyebrow);letter-spacing:.14em">SOON</span></sc-if>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;border-radius:20px;overflow:hidden;background:#000;color:var(--rez-full-white)">
+        <div style="position:relative;aspect-ratio:16/9;background:#15302B;display:flex;align-items:center;justify-content:center">
+          <image-slot id="{{ sel.slot }}" shape="rect" placeholder="Drop the 30-sec clip poster"></image-slot>
+          <button onClick="{{ selPlay }}" aria-label="Play or pause" style="position:absolute;width:76px;height:76px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:var(--rez-mocaccino);color:#000;cursor:pointer" style-active="transform:scale(.98)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ selIcon }}" size="30px" hint-size="30px,30px"></x-import></button>
+          <div style="position:absolute;left:18px;right:18px;bottom:14px;display:flex;align-items:center;gap:12px;font:600 12px/1 var(--font-primary)">
+            <span>{{ selTime }}</span>
+            <span style="flex:1;height:4px;border-radius:4px;background:rgba(224,224,224,.25);overflow:hidden"><span style="display:block;height:100%;width:{{ selPct }};background:var(--rez-mocaccino)"></span></span>
+            <span>0:30</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:26px 28px 30px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;opacity:.72">{{ sel.roleUp }}</span>
+            <span style="padding:4px 8px;border-radius:999px;background:{{ sel.badgeBg }};color:{{ sel.badgeFg }};font:400 9px/1 var(--font-eyebrow);letter-spacing:.14em">{{ sel.badge }}</span>
+          </div>
+          <span style="font:700 28px/1.15 var(--font-primary);letter-spacing:-0.01em">{{ sel.name }}</span>
+          <span style="font:400 16px/1.5 var(--font-primary);opacity:.85;text-wrap:pretty">{{ sel.desc }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="pricing" style="padding:88px 32px;background:#F4F2EF">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:620px">
+        <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">PLANS AND PRICING</span>
+        <h2 style="margin:0;font:600 40px/1.1 var(--font-primary);letter-spacing:-0.02em">Pay for the AI you use.</h2>
+        <p style="margin:0;font:400 16px/1.45 var(--font-primary);color:var(--rez-graphite);text-wrap:pretty">Forms, lists and search stay free. Plans unlock Ai-R agents and monthly credits, priced per user.</p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+        <div style="display:flex;gap:2px;padding:4px;border-radius:999px;background:#fff;border:1px solid var(--rez-smoke)">
+          <sc-for list="{{ billOpts }}" as="b" hint-placeholder-count="2">
+            <button onClick="{{ b.tap }}" style="height:40px;padding:0 20px;border:0;border-radius:999px;background:{{ b.bg }};color:{{ b.fg }};font:700 14px/1 var(--font-primary);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 220ms cubic-bezier(.2,.8,.2,1)"><span>{{ b.label }}</span><sc-if value="{{ b.save }}" hint-placeholder-val="{{ false }}"><span style="padding:4px 8px;border-radius:999px;background:var(--rez-mocaccino);color:#000;font:700 11px/1 var(--font-primary)">Save 20%</span></sc-if></button>
+          </sc-for>
+        </div>
+        <button onClick="{{ toggleMember }}" style="display:flex;align-items:center;gap:10px;height:48px;padding:0 18px 0 14px;border:1px solid {{ memBorder }};border-radius:999px;background:#fff;cursor:pointer;font:600 14px/1 var(--font-primary);color:#000">
+          <span style="width:20px;height:20px;border-radius:4px;border:1px solid #000;background:{{ memBox }};color:#fff;display:flex;align-items:center;justify-content:center"><sc-if value="{{ member }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="14px" hint-size="14px,14px"></x-import></sc-if></span>
+          <span>I am a NAR-India member</span>
+        </button>
+      </div>
+    </div>
+    <sc-if value="{{ trOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ trClose }}" style="position:fixed;inset:0;z-index:210;background:rgba(2,17,12,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px">
+        <div onClick="{{ stop }}" style="width:min(100%,560px);max-height:calc(100vh - 40px);overflow:auto;display:flex;flex-direction:column;gap:20px;padding:32px;border-radius:20px;background:#fff;box-shadow:var(--shadow-lg);box-sizing:border-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <sc-if value="{{ trCanBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ trBack }}" aria-label="Back" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;color:#000;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="16px" hint-size="16px,16px"></x-import></button></sc-if>
+            <span style="flex:1"></span>
+            <button onClick="{{ trClose }}" aria-label="Close" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:var(--rez-cloud);color:#000;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="x" size="16px" hint-size="16px,16px"></x-import></button>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-20px"><img src="assets/rezide-wordmark.svg" alt="REZIDE" style="height:34px;display:block"><span style="font:400 10px/1 var(--font-eyebrow);letter-spacing:.22em;color:#000">POWERING INDIA'S LEADING REALTORS</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font:700 28px/1.15 var(--font-primary);letter-spacing:-0.02em;color:#000">{{ trHead }}</span>
+            <sc-if value="{{ trHasSub }}" hint-placeholder-val="{{ false }}"><span style="font:700 18px/1.25 var(--font-primary);color:#000">{{ trSub }}</span></sc-if>
+          </div>
+          <sc-if value="{{ trOnMob }}" hint-placeholder-val="{{ true }}">
+            <label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary);color:#000">Mobile Number</span>
+              <span style="display:flex;align-items:center;gap:12px;height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px"><span style="font:700 15px/1 var(--font-primary)">+91</span><span style="width:1px;height:20px;background:var(--rez-smoke)"></span><input value="{{ trMob }}" onInput="{{ trMobSet }}" inputmode="numeric" placeholder="Mobile number" style="flex:1;min-width:0;border:0;outline:none;font:500 15px/1 var(--font-primary);background:transparent"></span>
+            </label>
+          </sc-if>
+          <sc-if value="{{ trOnOtp }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <span style="font:400 14px/1.45 var(--font-primary);color:var(--rez-graphite)">Enter the 4-digit code sent to +91 {{ trMob }}.</span>
+              <input value="{{ trOtp }}" onInput="{{ trOtpSet }}" inputmode="numeric" placeholder="4-digit code" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%;letter-spacing:.4em;font-weight:700;text-align:center">
+            </div>
+          </sc-if>
+          <sc-if value="{{ trOnForm }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <sc-for list="{{ trKinds }}" as="k" hint-placeholder-count="2">
+                  <button onClick="{{ k.tap }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:16px 18px;border:1px solid {{ k.border }};border-radius:16px;background:{{ k.bg }};color:{{ k.fg }};cursor:pointer;text-align:left">
+                    <span style="font:700 16px/1.2 var(--font-primary)">{{ k.t }}</span><span style="font:400 13px/1.2 var(--font-primary);opacity:.8">{{ k.d }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary);color:#000">City</span>
+                <select value="{{ trCity }}" onChange="{{ trCitySet }}" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%;cursor:pointer"><sc-for list="{{ trCities }}" as="c" hint-placeholder-count="8"><option value="{{ c }}">{{ c }}</option></sc-for></select>
+              </label>
+              <sc-if value="{{ trIsNar }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <span style="font:600 13px/1 var(--font-primary);color:#000">NAR-India associations <span style="font-weight:400;color:var(--rez-graphite)">select all that apply</span></span>
+                  <button onClick="{{ trAssocToggle }}" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ trAssocLabel }}</span><span style="display:flex;transform:rotate(-90deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span></button>
+                  <sc-if value="{{ trAssocOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--rez-smoke);border-radius:20px">
+                      <sc-for list="{{ trAssocs }}" as="a" hint-placeholder-count="4">
+                        <button onClick="{{ a.tap }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:0;border-radius:12px;background:transparent;font:500 15px/1.3 var(--font-primary);color:#000;cursor:pointer;text-align:left" style-hover="background:var(--rez-cloud)">
+                          <span>{{ a.name }}</span>
+                          <span style="flex:none;width:22px;height:22px;border-radius:4px;border:1px solid {{ a.border }};background:{{ a.bg }};color:#fff;display:flex;align-items:center;justify-content:center"><sc-if value="{{ a.on }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="14px" hint-size="14px,14px"></x-import></sc-if></span>
+                        </button>
+                      </sc-for>
+                      <button onClick="{{ trAssocToggle }}" style="margin-top:6px;height:44px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:700 14px/1 var(--font-primary);letter-spacing:.06em;cursor:pointer">DONE</button>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary);color:#000">First name</span><input value="{{ trFn }}" onInput="{{ trFnSet }}" placeholder="First name" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%"></label><label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary);color:#000">Last name</span><input value="{{ trLn }}" onInput="{{ trLnSet }}" placeholder="Last name" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%"></label></div>
+              <label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary);color:#000">Firm name</span><input value="{{ trFirm }}" onInput="{{ trFirmSet }}" placeholder="Firm name" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%"></label>
+              <label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary);color:#000">Firm RERA ID</span><input value="{{ trRera }}" onInput="{{ trReraSet }}" placeholder="e.g. A51800031614" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%"><span style="font:500 12px/1.3 var(--font-primary);color:var(--rez-graphite)">Your firm RERA registration number</span></label>
+            </div>
+          </sc-if>
+          <sc-if value="{{ trOnDone }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:16px;background:#E7EFEC">
+              <span style="font:700 16px/1.3 var(--font-primary);color:#15302B">{{ trDoneHead }}</span>
+              <span style="font:400 14px/1.45 var(--font-primary);color:#2F4842">{{ trDoneBody }}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ trOnMob }}" hint-placeholder-val="{{ true }}"><span style="text-align:center;font:400 13px/1.4 var(--font-primary);color:var(--rez-graphite)">By continuing, you agree to our Terms and Privacy Policy</span></sc-if>
+          <button onClick="{{ trNext }}" style="height:56px;border:0;border-radius:999px;background:{{ trBtnBg }};color:var(--rez-full-white);font:700 16px/1 var(--font-primary);cursor:pointer" style-active="transform:scale(.98)">{{ trBtn }}</button>
+          <sc-if value="{{ trOnMob }}" hint-placeholder-val="{{ true }}"><span style="text-align:center;font:400 14px/1.4 var(--font-primary);color:var(--rez-graphite)">Already have access? <a href="#" onClick="{{ trSignIn }}" style="font-weight:700;color:#000;text-decoration:underline;text-underline-offset:3px">Sign In</a></span></sc-if>
+          <sc-if value="{{ trOnForm }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ trSeePlans }}" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 22px;border:0;border-radius:20px;background:#15302B;color:var(--rez-full-white);cursor:pointer;text-align:left">
+              <span style="display:flex;flex-direction:column;gap:6px"><span style="font:700 18px/1.2 var(--font-primary)">See Plans &amp; Pricing</span><span style="font:400 14px/1.35 var(--font-primary);opacity:.85">What each plan includes after your 14-day trial.</span></span>
+              <span style="flex:none;width:44px;height:44px;border-radius:999px;background:#fff;color:#000;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="arrow-right" size="18px" hint-size="18px,18px"></x-import></span>
+            </button>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+    <div data-m="plans" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:stretch">
+      <sc-for list="{{ planCards }}" as="p" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:22px;padding:30px 28px;border-radius:20px;background:{{ p.bg }};color:{{ p.fg }};border:1px solid {{ p.border }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span style="font:700 22px/1 var(--font-primary)">{{ p.name }}</span>
+              <sc-if value="{{ p.tag }}" hint-placeholder-val="{{ false }}"><span style="padding:6px 10px;border-radius:999px;background:var(--rez-mocaccino);color:#000;font:400 10px/1 var(--font-eyebrow);letter-spacing:.14em">POPULAR</span></sc-if>
+            </div>
+            <span style="font:400 14px/1.35 var(--font-primary);opacity:.75">{{ p.who }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+              <span style="font:700 44px/1 var(--font-primary);letter-spacing:-0.02em">{{ p.price }}</span>
+              <sc-if value="{{ p.strike }}" hint-placeholder-val="{{ false }}"><span style="font:500 16px/1 var(--font-primary);opacity:.55;text-decoration:line-through">{{ p.was }}</span></sc-if>
+            </div>
+            <span style="font:500 13px/1.3 var(--font-primary);opacity:.75">per user / month, {{ p.bill }}</span>
+            <sc-if value="{{ member }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;padding:6px 10px;border-radius:999px;border:1px solid var(--rez-mocaccino);color:{{ p.memFg }};font:700 12px/1 var(--font-primary)">NAR-India member, {{ p.off }}% off</span></sc-if>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:14px;background:{{ p.tile }}"><span style="font:700 22px/1 var(--font-primary)">{{ p.n }}</span><span style="font:500 12px/1.2 var(--font-primary);opacity:.75">Ai-R agents</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:14px;background:{{ p.tile }}"><span style="font:700 22px/1 var(--font-primary)">{{ p.cr }}M</span><span style="font:500 12px/1.2 var(--font-primary);opacity:.75">credits / month</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+            <sc-for list="{{ p.agents }}" as="a" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;font:500 14px/1.25 var(--font-primary)">
+                <span style="flex:none;width:22px;height:22px;border-radius:999px;background:var(--rez-mocaccino);color:#000;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="13px" hint-size="13px,13px"></x-import></span>
+                <span style="flex:1">{{ a.name }}</span>
+                <sc-if value="{{ a.soon }}" hint-placeholder-val="{{ false }}"><span style="padding:4px 8px;border-radius:999px;background:#380516;color:var(--rez-full-white);font:400 9px/1 var(--font-eyebrow);letter-spacing:.14em">SOON</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ p.choose }}" style="height:52px;border:1px solid {{ p.btnBorder }};border-radius:999px;background:{{ p.btnBg }};color:{{ p.btnFg }};font:700 15px/1 var(--font-primary);cursor:pointer" style-active="transform:scale(.98)">Choose {{ p.name }}</button>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;justify-content:center">
+      <button onClick="{{ toggleCompare }}" style="height:48px;padding:0 24px;border:1px solid #000;border-radius:999px;background:transparent;font:700 14px/1 var(--font-primary);color:#000;cursor:pointer" style-hover="background:rgba(2,17,12,.06)">{{ compareLabel }}</button>
+    </div>
+    <sc-if value="{{ compareOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="overflow-x:auto;border-radius:20px;border:1px solid var(--rez-smoke);background:#fff">
+        <div style="min-width:720px;display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(3,minmax(0,1fr))">
+          <sc-for list="{{ cmpRows }}" as="r" hint-placeholder-count="8">
+            <div style="padding:14px 22px;border-top:1px solid var(--rez-smoke);background:{{ r.bg }};font:{{ r.kw }} 14px/1.3 var(--font-primary);color:{{ r.kfg }}">{{ r.k }}</div>
+            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="3">
+              <div style="padding:14px 16px;border-top:1px solid var(--rez-smoke);background:{{ c.bg }};display:flex;align-items:center;justify-content:center;text-align:center;font:{{ c.w }} 14px/1.3 var(--font-primary);color:{{ c.fg }}">
+                <sc-if value="{{ c.tick }}" hint-placeholder-val="{{ false }}"><span style="width:24px;height:24px;border-radius:999px;background:#15302B;color:var(--rez-full-white);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="13px" hint-size="13px,13px"></x-import></span></sc-if>
+                <sc-if value="{{ c.text }}" hint-placeholder-val="{{ true }}"><span>{{ c.v }}</span></sc-if>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+        <p style="margin:0;padding:14px 22px;border-top:1px solid var(--rez-smoke);font:400 13px/1.4 var(--font-primary);color:var(--rez-graphite)">Output counts are indicative, per user each month. Actual use depends on how you spend your credits.</p>
+      </div>
+    </sc-if>
+    <div data-m="extras" style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px;align-items:stretch">
+      <div style="display:flex;flex-direction:column;gap:16px;padding:28px;border-radius:20px;background:#fff;border:1px solid var(--rez-smoke)">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">FIRM ADD-ONS</span>
+          <span style="font:600 22px/1.2 var(--font-primary)">Bought once for the whole firm.</span>
+        </div>
+        <sc-for list="{{ addonCards }}" as="a" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:16px;padding-top:16px;border-top:1px solid var(--rez-smoke)">
+            <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+              <span style="font:700 16px/1.2 var(--font-primary)">{{ a.name }}</span>
+              <span style="font:400 13px/1.4 var(--font-primary);color:var(--rez-graphite)">{{ a.does }}</span>
+              <span style="font:700 14px/1.3 var(--font-primary)">{{ a.price }}</span>
+            </div>
+            <button onClick="{{ a.buy }}" style="flex:none;height:40px;padding:0 18px;border:1px solid #000;border-radius:999px;background:transparent;font:700 13px/1 var(--font-primary);color:#000;cursor:pointer" style-hover="background:rgba(2,17,12,.06)">Add</button>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;flex-direction:column;gap:16px;padding:28px;border-radius:20px;background:#fff;border:1px solid var(--rez-smoke)">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">TOP-UP CREDITS</span>
+            <span style="font:600 22px/1.2 var(--font-primary)">Packs that never expire.</span>
+            <span style="font:400 13px/1.4 var(--font-primary);color:var(--rez-graphite)">An AI listing uses 200K credits, a property search 25K.</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px">
+            <sc-for list="{{ packCards }}" as="k" hint-placeholder-count="5">
+              <button onClick="{{ k.tap }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border-radius:14px;border:1px solid {{ k.border }};background:{{ k.bg }};cursor:pointer;text-align:left">
+                <span style="font:700 16px/1 var(--font-primary);color:#000">{{ k.size }}</span>
+                <span style="font:600 14px/1 var(--font-primary);color:var(--rez-graphite)">{{ k.price }}</span>
+                <sc-if value="{{ k.best }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 7px;border-radius:999px;background:var(--rez-mocaccino);color:#000;font:700 10px/1 var(--font-primary)">Best value</span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+          <button onClick="{{ buyPack }}" style="height:48px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:700 14px/1 var(--font-primary);cursor:pointer" style-active="transform:scale(.98)">Buy {{ packSel }}</button>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px;padding:28px;border-radius:20px;background:#000;color:var(--rez-full-white)">
+          <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;opacity:.72">CUSTOM PLAN</span>
+          <span style="font:600 22px/1.2 var(--font-primary)">10 or more users.</span>
+          <span style="font:400 14px/1.45 var(--font-primary);opacity:.8">All Ai-R agents on every seat, one pooled firm credit grant and uncapped training.</span>
+          <div style="margin-top:auto"><x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="inverse" size="md" hint-size="160px,44px">Request a Call</x-import></div>
+        </div>
+      </div>
+    </div>
+    <sc-if value="{{ coOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ coClose }}" style="position:fixed;inset:0;z-index:220;background:rgba(2,17,12,.55);backdrop-filter:blur(6px);display:flex;justify-content:flex-end">
+        <div onClick="{{ stop }}" style="position:relative;width:min(100%,520px);height:100%;overflow:auto;background:#fff;box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+          <div style="position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 28px;background:#fff;border-bottom:1px solid var(--rez-smoke)">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">{{ coEyebrow }}</span>
+              <span style="font:600 22px/1.2 var(--font-primary)">{{ coTitle }}</span>
+            </div>
+            <button onClick="{{ coClose }}" aria-label="Close" style="flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:var(--rez-cloud);color:#000;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="x" size="16px" hint-size="16px,16px"></x-import></button>
+          </div>
+          <sc-if value="{{ coOnAuth }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px;padding:28px">
+              <div style="display:flex;align-items:flex-start;gap:12px;padding:16px;border-radius:16px;background:var(--rez-cloud);font:500 14px/1.45 var(--font-primary)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="lock" size="20px" hint-size="20px,20px"></x-import><span>Only signed-in realtors can buy. Sign in with the mobile on your Rezide account.</span></div>
+              <sc-if value="{{ coAuthPhone }}" hint-placeholder-val="{{ true }}">
+                <label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary)">Mobile number</span>
+                  <span style="display:flex;align-items:center;gap:12px;height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px"><span style="font:700 15px/1 var(--font-primary)">+91</span><span style="width:1px;height:20px;background:var(--rez-smoke)"></span><input value="{{ coPhone }}" onInput="{{ coPhoneSet }}" inputmode="numeric" placeholder="Mobile number" style="flex:1;min-width:0;border:0;outline:none;font:500 15px/1 var(--font-primary);background:transparent"></span>
+                </label>
+              </sc-if>
+              <sc-if value="{{ coAuthOtp }}" hint-placeholder-val="{{ false }}">
+                <span style="font:400 14px/1.45 var(--font-primary);color:var(--rez-graphite)">Enter the 4-digit code sent to +91 {{ coPhone }}.</span>
+                <input value="{{ coOtp }}" onInput="{{ coOtpSet }}" inputmode="numeric" placeholder="4-digit code" style="height:52px;padding:0 20px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);color:#000;outline:none;background:#fff;box-sizing:border-box;width:100%;letter-spacing:.4em;font-weight:700;text-align:center">
+              </sc-if>
+              <button onClick="{{ coAuthNext }}" style="height:52px;border:0;border-radius:999px;background:{{ coAuthBg }};color:var(--rez-full-white);font:700 15px/1 var(--font-primary);cursor:pointer" style-active="transform:scale(.98)">{{ coAuthBtn }}</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ coOnCart }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;gap:24px;padding:24px 28px">
+              <div style="display:flex;align-items:center;gap:10px;font:500 13px/1.3 var(--font-primary);color:var(--rez-graphite)"><span style="width:22px;height:22px;border-radius:999px;background:#15302B;color:var(--rez-full-white);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="13px" hint-size="13px,13px"></x-import></span><span>Signed in as +91 {{ coPhone }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">PLAN</span>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+                  <sc-for list="{{ coPlans }}" as="p" hint-placeholder-count="4">
+                    <button onClick="{{ p.tap }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px;border-radius:14px;border:1px solid {{ p.border }};background:{{ p.bg }};cursor:pointer;text-align:left">
+                      <span style="font:700 14px/1 var(--font-primary);color:#000">{{ p.name }}</span>
+                      <span style="font:500 12px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ p.price }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:2px;padding:4px;border-radius:999px;background:var(--rez-cloud);align-self:flex-start">
+                  <sc-for list="{{ billOpts }}" as="b" hint-placeholder-count="2">
+                    <button onClick="{{ b.tap }}" style="height:36px;padding:0 16px;border:0;border-radius:999px;background:{{ b.bg }};color:{{ b.fg }};font:700 13px/1 var(--font-primary);cursor:pointer">{{ b.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <sc-if value="{{ coHasPlan }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-radius:16px;border:1px solid var(--rez-smoke)">
+                  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:700 15px/1.2 var(--font-primary)">Users</span><span style="font:400 12.5px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ coSeatNote }}</span></div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <button onClick="{{ seatDown }}" aria-label="Remove user" style="width:40px;height:40px;border:1px solid #000;border-radius:999px;background:#fff;font:700 18px/1 var(--font-primary);cursor:pointer">-</button>
+                    <span style="min-width:36px;text-align:center;font:700 18px/1 var(--font-primary)">{{ seats }}</span>
+                    <button onClick="{{ seatUp }}" aria-label="Add user" style="width:40px;height:40px;border:1px solid #000;border-radius:999px;background:#fff;font:700 18px/1 var(--font-primary);cursor:pointer">+</button>
+                  </div>
+                </div>
+              </sc-if>
+              <button onClick="{{ toggleMember }}" style="display:flex;align-items:center;gap:10px;padding:0;border:0;background:none;cursor:pointer;font:600 14px/1.3 var(--font-primary);color:#000;text-align:left"><span style="flex:none;width:20px;height:20px;border-radius:4px;border:1px solid #000;background:{{ memBox }};color:#fff;display:flex;align-items:center;justify-content:center"><sc-if value="{{ member }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="14px" hint-size="14px,14px"></x-import></sc-if></span><span>I am a NAR-India member (verified at payment)</span></button>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">FIRM ADD-ONS</span>
+                <sc-for list="{{ coAddons }}" as="a" hint-placeholder-count="4">
+                  <button onClick="{{ a.tap }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid {{ a.border }};background:{{ a.bg }};cursor:pointer;text-align:left"><span style="flex:none;width:20px;height:20px;border-radius:4px;border:1px solid #000;background:{{ a.box }};color:#fff;display:flex;align-items:center;justify-content:center"><sc-if value="{{ a.on }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="14px" hint-size="14px,14px"></x-import></sc-if></span><span style="flex:1;font:600 14px/1.2 var(--font-primary);color:#000">{{ a.name }}</span><span style="font:600 13px/1.2 var(--font-primary);color:var(--rez-graphite);text-align:right">{{ a.price }}</span></button>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">TOP-UP CREDITS</span>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ coPacks }}" as="k" hint-placeholder-count="6">
+                    <button onClick="{{ k.tap }}" style="height:38px;padding:0 14px;border:1px solid {{ k.border }};border-radius:999px;background:{{ k.bg }};color:{{ k.fg }};font:600 13px/1 var(--font-primary);cursor:pointer">{{ k.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:16px;background:#F4F2EF">
+                <sc-for list="{{ coLines }}" as="l" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:16px;font:{{ l.w }} 14px/1.35 var(--font-primary);color:{{ l.fg }}"><span>{{ l.k }}</span><span style="white-space:nowrap">{{ l.v }}</span></div></sc-for>
+                <div style="height:1px;background:var(--rez-smoke)"></div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px"><span style="font:700 15px/1 var(--font-primary)">Total today</span><span style="font:700 26px/1 var(--font-primary);letter-spacing:-0.01em">{{ coTotal }}</span></div>
+              </div>
+            </div>
+            <div style="position:sticky;bottom:0;padding:16px 28px 24px;background:#fff;border-top:1px solid var(--rez-smoke)">
+              <button onClick="{{ coPay }}" style="width:100%;height:56px;border:0;border-radius:999px;background:{{ coPayBg }};color:var(--rez-full-white);font:700 16px/1 var(--font-primary);cursor:pointer" style-active="transform:scale(.98)">{{ coPayLabel }}</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ coOnPaying }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;text-align:center">
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="clock" size="32px" hint-size="32px,32px"></x-import>
+              <span style="font:600 20px/1.2 var(--font-primary)">Processing payment.</span>
+              <span style="font:400 14px/1.45 var(--font-primary);color:var(--rez-graphite)">Do not close this window.</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ coOnDone }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;gap:18px;padding:28px">
+              <div style="display:flex;align-items:flex-start;gap:12px;padding:18px;border-radius:16px;background:#15302B;color:var(--rez-full-white)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="22px" hint-size="22px,22px"></x-import><span style="display:flex;flex-direction:column;gap:4px"><b style="font:700 15px/1.2 var(--font-primary)">Payment successful</b><span style="font:400 14px/1.4 var(--font-primary);opacity:.85">{{ coDoneNote }}</span></span></div>
+              <sc-for list="{{ coLines }}" as="l" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:16px;font:{{ l.w }} 14px/1.35 var(--font-primary);color:{{ l.fg }}"><span>{{ l.k }}</span><span style="white-space:nowrap">{{ l.v }}</span></div></sc-for>
+              <div style="display:flex;justify-content:space-between;font:700 15px/1 var(--font-primary)"><span>Paid</span><span>{{ coTotal }}</span></div>
+              <button onClick="{{ coClose }}" style="margin-top:auto;height:52px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:700 15px/1 var(--font-primary);cursor:pointer">Done</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</section>
+<section style="padding:88px 32px;background:#fff">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">TESTIMONIALS</span>
+        <h2 style="margin:0;font:600 40px/1.1 var(--font-primary);letter-spacing:-0.02em">Realtors on Rezide.</h2>
+      </div>
+      <div style="display:flex;gap:2px;padding:4px;border-radius:999px;background:#ECEEF5">
+        <sc-for list="{{ tTabs }}" as="t" hint-placeholder-count="3">
+          <button onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 20px;border:0;border-radius:999px;background:{{ t.bg }};box-shadow:{{ t.shadow }};color:{{ t.fg }};font:{{ t.weight }} 14px/1 var(--font-primary);cursor:pointer;transition:background 220ms cubic-bezier(.2,.8,.2,1)">{{ t.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <sc-if value="{{ tWatch }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px">
+        <sc-for list="{{ tPeople }}" as="p" hint-placeholder-count="3">
+          <article style="display:flex;flex-direction:column;border-radius:20px;overflow:hidden;background:#fff;border:1px solid var(--rez-smoke)">
+            <div style="position:relative;aspect-ratio:16/10;background:#02110C">
+              <image-slot id="{{ p.vslot }}" shape="rect" placeholder="Drop video thumbnail" src="{{ p.photo }}" credit="Photo on Unsplash" credit-href="https://unsplash.com"></image-slot>
+              <span style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(2,17,12,0) 40%,rgba(2,17,12,.7) 100%)"></span>
+              <span style="position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:999px;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="play-circle" size="30px" hint-size="26px,26px"></x-import></span>
+              <span style="position:absolute;right:14px;bottom:14px;padding:6px 10px;border-radius:999px;background:rgba(2,17,12,.7);color:var(--rez-full-white);font:600 12px/1 var(--font-primary);pointer-events:none">{{ p.dur }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:18px 20px 20px"><b style="font:600 16px/1.25 var(--font-primary)">“{{ p.short }}”</b><span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ p.name }} · {{ p.role }}</span></div>
+          </article>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tHear }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px">
+        <sc-for list="{{ tHearPeople }}" as="p" hint-placeholder-count="6">
+          <article style="display:flex;align-items:center;gap:16px;padding:18px;border-radius:20px;background:#fff;border:1px solid var(--rez-smoke)">
+            <span style="flex:none;width:64px;height:64px;border-radius:999px;overflow:hidden;background:var(--rez-cloud)"><span role="img" style="display:block;display:block;width:100%;height:100%;;background:var(--rez-cloud) url({{ p.photo }}) center/cover no-repeat"></span></span>
+            <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0">
+              <span style="display:flex;flex-direction:column;gap:3px"><b style="font:600 15px/1.2 var(--font-primary)">{{ p.name }}</b><span style="font:400 12px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ p.role }}</span></span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <button onClick="{{ p.onPlay }}" aria-label="Play" style="flex:none;width:36px;height:36px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);display:flex;align-items:center;justify-content:center;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ p.playIcon }}" size="16px" hint-size="16px,16px"></x-import></button>
+                <div style="flex:1;height:4px;border-radius:999px;background:var(--rez-cloud);overflow:hidden"><div style="height:100%;width:{{ p.prog }};background:var(--rez-mocaccino)"></div></div>
+                <span style="font:600 12px/1 var(--font-primary);color:var(--rez-graphite)">{{ p.dur }}</span>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tRead }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px">
+        <sc-for list="{{ tPeople }}" as="p" hint-placeholder-count="3">
+          <article style="display:flex;flex-direction:column;justify-content:space-between;gap:22px;padding:28px;border-radius:20px;background:#fff;border:1px solid var(--rez-smoke)">
+            <p style="margin:0;font:500 18px/1.5 var(--font-primary);text-wrap:pretty">“{{ p.quote }}”</p>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="flex:none;width:48px;height:48px;border-radius:999px;overflow:hidden;background:var(--rez-cloud)"><span role="img" style="display:block;display:block;width:100%;height:100%;;background:var(--rez-cloud) url({{ p.photo }}) center/cover no-repeat"></span></span>
+              <span style="display:flex;flex-direction:column;gap:3px"><b style="font:600 15px/1.2 var(--font-primary)">{{ p.name }}</b><span style="font:400 12px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ p.role }}</span></span>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+</section>
+<section id="rc-app" style="padding:72px 32px 0">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:28px;padding:28px 32px;border-radius:20px;background:#000;color:var(--rez-full-white)">
+    <div style="display:flex;align-items:center;gap:20px">
+      <div style="width:112px;height:112px;border-radius:14px;overflow:hidden;background:#fff;flex:none"><image-slot id="rc-qr" shape="rect" placeholder="QR code"></image-slot></div>
+      <div style="display:flex;flex-direction:column;gap:12px"><b style="font:600 22px/1.2 var(--font-primary)">Download Rezide.</b><x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="inverse" size="md" hint-size="130px,44px">Register</x-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;max-width:520px">
+      <span style="font:400 15px/1.45 var(--font-primary);opacity:.85">On iOS and Android. Get an edge in the real-estate industry.</span>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <button style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;height:52px;justify-content:center;padding:0 20px;border:1px solid rgba(224,224,224,.4);border-radius:14px;background:transparent;color:var(--rez-full-white);cursor:pointer"><span style="font:500 10px/1 var(--font-primary);opacity:.75">Download on the</span><b style="font:700 16px/1 var(--font-primary)">App Store</b></button>
+        <button style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;height:52px;justify-content:center;padding:0 20px;border:1px solid rgba(224,224,224,.4);border-radius:14px;background:transparent;color:var(--rez-full-white);cursor:pointer"><span style="font:500 10px/1 var(--font-primary);opacity:.75">Get it on</span><b style="font:700 16px/1 var(--font-primary)">Google Play</b></button>
+      </div>
+    </div>
+  </div>
+</section>
+<section style="padding:72px 32px 96px">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:40px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <h2 style="margin:0;font:600 36px/1.1 var(--font-primary);letter-spacing:-0.02em">Frequently asked questions.</h2>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="5">
+          <div style="border-bottom:1px solid var(--rez-smoke)">
+            <button onClick="{{ q.toggle }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0;border:0;background:none;text-align:left;cursor:pointer;font:600 16px/1.35 var(--font-primary);color:#000">
+              <span>{{ q.q }}</span>
+              <span style="display:flex;transform:rotate({{ q.rot }});transition:transform 220ms"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="16px" hint-size="16px,16px"></x-import></span>
+            </button>
+            <sc-if value="{{ q.open }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 20px;font:400 15px/1.5 var(--font-primary);color:var(--rez-graphite)">{{ q.a }}</p></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;padding:32px;border-radius:20px;background:var(--rez-cloud)">
+      <h2 style="margin:0;font:600 26px/1.15 var(--font-primary)">Got questions? Get a callback.</h2>
+      <sc-if value="{{ cbDone }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 16px;border-radius:14px;background:#15302B;color:var(--rez-full-white);font:500 14px/1.4 var(--font-primary)">Thanks. A Rezide expert will call you within one working day.</div></sc-if>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px">
+        <sc-for list="{{ cbFields }}" as="c" hint-placeholder-count="5">
+          <input value="{{ c.value }}" onInput="{{ c.onInput }}" placeholder="{{ c.ph }}" style="grid-column:{{ c.span }};height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;outline:none;font:500 15px/1 var(--font-primary);min-width:0">
+        </sc-for>
+      </div>
+      <textarea rows="4" placeholder="Message (optional)" style="padding:14px 18px;border:1px solid var(--rez-smoke);border-radius:16px;background:#fff;outline:none;resize:vertical;font:400 15px/1.45 var(--font-primary)"></textarea>
+      <button onClick="{{ cbSubmit }}" style="height:52px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer">Request Callback</button>
+    </div>
+  </div>
+</section>
+<footer style="background:#000;color:var(--rez-full-white);padding:56px 32px 32px">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:48px">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px">
+      <div style="display:flex;flex-direction:column;gap:28px;max-width:340px">
+        <div onClick="{{ goHome }}" style="color:var(--rez-full-white);cursor:pointer;display:flex">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="30" hint-size="170px,30px"></x-import>
+        </div>
+        <p style="margin:0;font:400 17px/1.5 var(--font-primary);color:var(--rez-steel);text-wrap:pretty">The only place for you to browse 100% trusted and authentic properties.</p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:40px 96px">
+      <div style="display:flex;flex-direction:column;gap:22px;min-width:150px">
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Explore</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Features</a>
+        <a href="#pricing" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Pricing</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Newsletter</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:22px;min-width:150px">
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">About Us</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Careers</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Blog</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Help Centre</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:22px;min-width:150px">
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Support</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Privacy Policy</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Terms Of Use</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Cookies Policy</a>
+      </div>
+      </div>
+    </div>
+    <div style="text-align:center;font:400 14px/1 var(--font-primary);color:var(--rez-steel)">© 2026 Rezide. All rights reserved.</div>
+  </div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const U=id=>'https://images.unsplash.com/'+id+'?fm=jpg&q=70&w=900&auto=format&fit=crop&crop=faces';
+const PEOPLE=[
+ ['Akhil Bisht','Manager, ABC Realty','photo-1642257859842-c95f9fa8121d','Having all my business in one place makes my job so much easier.','All my listings, leads and site visits now live in one app. My team stopped juggling spreadsheets and WhatsApp groups.','2:14'],
+ ['Rukmani Iyer','Founder, AssetPro Realty','photo-1573497019940-1c28c88b4f3e','Verified leads changed how we close.','We spend time only on serious buyers now. Video tours alone cut our wasted site visits by half.','1:48'],
+ ['Arjun Mehta','Partner, Skyline Realty','photo-1600878459138-e1123b37cb30','Price analysis wins me mandates.','Showing owners real registered transactions makes the pricing conversation easy. They trust the number.','2:31'],
+ ['Sana Qureshi','Director, Urban Nest Advisors','photo-1573496359142-b8d87734a5a2','My rentals move faster than ever.','Tenants find us through Rezide and the paperwork is guided end to end. Our rental turnaround is down to days.','1:22'],
+ ['Vikram Rao','Head, Keystone Commercial','photo-1588178454780-441fa5b99fa5','The dashboard is my digital office.','From inventory to follow-ups to closures, I can run my whole commercial desk from my phone.','2:05'],
+ ['Neha Kapoor','Principal, Networth Realty','photo-1585240975858-7264fd020798','A platform built for Indian realtors.','RERA details, local data and listings in one place. It respects how we actually work.','1:57']];
+const FAQS=[['How do I come on Rezide?','Register with your mobile number and RERA details. Our team verifies your profile within one working day.'],['What is a property listing mandate?','A written authorisation from the owner allowing you to market the property. Rezide stores it with the listing.'],['How do I share listings with prospects?','Share a branded link or brochure on WhatsApp or email straight from the listing page.'],['What is property tagging?','Tag listings by locality, budget or buyer profile so you can match inventory to leads in seconds.'],['Is there a free trial?','Yes. Request a trial and get full access for 14 days, no card needed.']];
+const AGENTS_RAW=[
+        ['List Smart','Listing','file-text','Puts a listing live in 60 seconds from the verified catalogue.'],
+        ['Content Creator','Branded content','play-circle','Makes branded flyers, brochures, videos and social posts.'],
+        ['Lead Sense','Lead capture','headset','Turns any enquiry into a complete, scored requirement.'],
+        ['Price Right','Fair-price analysis','bar-chart','Gives a fair-market range backed by real transactions.'],
+        ['Property Finder','Property matching','search','Finds the right properties for a buyer, across mine, firm and market.'],
+        ['Client Finder','Client matching','message','Finds the right buyers for a listing, including co-broking.'],
+        ['Pitch Perfect','Client proposals','file','Builds premium branded proposals in one tap.'],
+        ['Visit Pro','Site visits','map-pin','Schedules, reminds, routes and reviews every site visit.'],
+        ['Qualifire','Lead qualification','shield-check','Qualifies every new lead on intent, budget and timeline.',1],
+        ['Game Plan','Business coach','compass','Reads your dashboard and coaches you on the next best move.',1]
+];
+const PLANS=[
+  {k:'beginner',name:'Beginner',who:'For the solo realtor',m:2500,a:2000,mm:1250,ma:1000,off:50,n:3,cr:5},
+  {k:'intermediate',name:'Intermediate',who:'For the active realtor or small desk',m:5000,a:4000,mm:3750,ma:3000,off:25,n:6,cr:10,tag:1},
+  {k:'pro',name:'Pro',who:'For the power user or team lead',m:10000,a:8000,mm:9000,ma:7200,off:10,n:10,cr:20}
+];
+const PLAN_AG={beginner:[0,1,3],intermediate:[0,1,2,3,4,5],pro:[0,1,2,3,4,5,6,7,8,9]};
+const SKUS=[['AI-assisted listings',{beginner:20,intermediate:40,pro:80}],['Listing videos',{beginner:20,intermediate:40,pro:80}],['Listing brochures',{beginner:20,intermediate:40,pro:80}],['Property matches',{beginner:50,intermediate:100,pro:200}],['Potential client matches',{intermediate:50,pro:100}],['Leads qualified from enquiries',{intermediate:100,pro:200}],['Fair-price reports',{intermediate:50,pro:50}],['AI property proposals',{pro:100}],['Site visits managed',{pro:100}]];
+const ADDONS=[['Lead Router','One lead inbox for the firm, with routing rules and a manager dashboard',10000,0],['Website','Firm website from ready templates, linked to Rezide listings',0,15000],['Service WhatsApp','WhatsApp Business account for client service messages',0,5000],['Marketing WhatsApp','WhatsApp Business account for marketing broadcasts',0,5000]];
+const PACKS=[[1,250],[2,475],[5,1125],[10,2125],[20,3750]];
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const AGENTS=AGENTS_RAW.map(([name,role,icon,desc])=>({name,role:role.toUpperCase(),desc}));
+class Component extends DCLogic {
+  _vid(i){clearInterval(this._vi);this.setState({vid:i,vt:0,vPlay:false});setTimeout(()=>this._vToggle(),50);}
+  _vToggle(){if(this.state.vPlay){clearInterval(this._vi);this.setState({vPlay:false});return;}
+    if((this.state.vt||0)>=30)this.setState({vt:0});
+    this.setState({vPlay:true});this._vi=setInterval(()=>{const t=(this.state.vt||0)+0.25;if(t>=30){clearInterval(this._vi);this.setState({vt:30,vPlay:false});}else this.setState({vt:t});},250);}
+  componentWillUnmount(){clearInterval(this._vi);}
+  state={tab:'watch',phone:'',otp:'',lg:'phone',faq:0,cb:{},cbDone:false,playing:null};
+  renderVals(){
+    const s=this.state,set=o=>this.setState(o);
+    const okP=s.phone.length===10, okO=s.otp.length===4;
+    return {
+      goHome:()=>{window.location.hash='#home';},
+      lgPhone:s.lg==='phone', lgOtp:s.lg==='otp', lgDone:s.lg==='done',
+      lgRoles:[['customer','Customer'],['realtor','Realtor']].map(([id,label])=>{const on='realtor'===id;return {label,bg:on?'#fff':'transparent',shadow:on?'var(--shadow-sm)':'none',weight:on?700:500,onClick:()=>this.setState({lgRole:id,lg:'phone',otp:''})};}),
+      lgTitle:s.lg==='otp'?'Enter the OTP.':('realtor'==='customer'?'Welcome back.':'Realtor login.'), lgSub:s.lg==='otp'?'Sent to +91 '+s.phone+'.':('realtor'==='customer'?'Log in to see your homes, visits and offers.':'Sign in to your Rezide dashboard.'),
+      phone:s.phone, otp:s.otp, onPhone:e=>set({phone:e.target.value.replace(/\D/g,'').slice(0,10)}), onOtp:e=>set({otp:e.target.value.replace(/\D/g,'').slice(0,4)}),
+      lgBtn:s.lg==='otp'?'Sign In':'Send OTP', lgBtnBg:(s.lg==='otp'?okO:okP)?'#000':'var(--rez-steel)', lgBtnShow:s.lg==='done'?'none':'block',
+      lgAction:()=>{if(s.lg==='phone'&&okP)set({lg:'otp'});else if(s.lg==='otp'&&okO){if('realtor'==='customer'){window.location.href='#account';return;}window.location.href='#dashboard';}},
+      benefits:[{icon:'settings',t:'AI agents, one team.',d:'Ready to use. No training, no setup, no data to hand over. One click and they get to work.'},{icon:'file-text',t:'List in under a minute.',d:'Type it, say it, or let smart forms fill it in, on desktop or the app. Your listing agent does the rest.'},{icon:'play-circle',t:'Branded content, one tap.',d:'A brand clients recognise, everywhere. Videos, brochures, flyers and posts, sized for every platform.'},{icon:'user',t:'Leads on autopilot.',d:'Every enquiry captured, routed to the right person and tracked. See which leads need you today.'},{icon:'message',t:'Efficient co-broking.',d:'Match leads to properties and listings to clients, within your firm and across the market. Close faster.'},{icon:'pie-chart',t:'Your business, at a glance.',d:'Revenue, closures, leads, visits, tasks and team performance on one dashboard.'}], openTrial:()=>set({tr:'mob',trOtp:'',trAssocOpen:false}), trOpen:!!s.tr, trClose:()=>set({tr:null}),
+      trCanBack:s.tr==='otp'||s.tr==='form', trBack:()=>set({tr:s.tr==='form'?'otp':'mob'}),
+      trOnMob:s.tr==='mob', trOnOtp:s.tr==='otp', trOnForm:s.tr==='form', trOnDone:s.tr==='done',
+      trHead:s.tr==='mob'?'Authenticate for a 14-day free trial.':s.tr==='otp'?'Enter your code.':s.tr==='form'?'Authenticated.':'Request received.',
+      trHasSub:s.tr==='form', trSub:'Register for 14-day free access.',
+      trMob:s.trMob||'', trOtp:s.trOtp||'', trMobSet:e=>set({trMob:e.target.value.replace(/\D/g,'').slice(0,10)}), trOtpSet:e=>set({trOtp:e.target.value.replace(/\D/g,'').slice(0,4)}),
+      trKinds:[['nar','NAR-India Member','Approved instantly'],['other','Other','Subject to review']].map(([k,t,d])=>{const on=(s.trKind||'nar')===k;return {t,d,bg:on?'#000':'#fff',fg:on?'var(--rez-full-white)':'#000',border:on?'#000':'var(--rez-smoke)',tap:()=>set({trKind:k})};}),
+      trIsNar:(s.trKind||'nar')==='nar', trCity:s.trCity||'Mumbai', trCities:['Mumbai','Pune','Bengaluru','Delhi NCR','Hyderabad','Chennai','Kolkata','Ahmedabad'], trCitySet:e=>set({trCity:e.target.value,trAs:{}}),
+      trAssocOpen:!!s.trAssocOpen, trAssocToggle:()=>set({trAssocOpen:!s.trAssocOpen}),
+      trAssocs:(()=>{const loc={Mumbai:['Mumbai Realtors Association','Brihanmumbai Developers Association'],Pune:['Pune Realtors Association','Realtors Association of Pune'],Bengaluru:['Bangalore Realtors Association','Karnataka Realtors Forum']}[s.trCity||'Mumbai']||[(s.trCity||'Mumbai')+' Realtors Association'];
+        return ['Direct NAR-India Member','Estate Agents Association of India',...loc].map(n=>{const on=!!(s.trAs||{})[n];return {name:n,on,bg:on?'#000':'#fff',border:on?'#000':'var(--rez-smoke)',tap:()=>set({trAs:{...(s.trAs||{}),[n]:!on}})};});})(),
+      trAssocLabel:(()=>{const l=Object.keys(s.trAs||{}).filter(k=>s.trAs[k]);return l.length?l.join(', '):'Select your associations';})(),
+      trFn:s.trFn||'', trLn:s.trLn||'', trFirm:s.trFirm||'', trRera:s.trRera||'',
+      trFnSet:e=>set({trFn:e.target.value}), trLnSet:e=>set({trLn:e.target.value}), trFirmSet:e=>set({trFirm:e.target.value}), trReraSet:e=>set({trRera:e.target.value.toUpperCase()}),
+      trDoneHead:(s.trKind||'nar')==='nar'?'Membership verified':'Request submitted',
+      trDoneBody:(s.trKind||'nar')==='nar'?'Your 14-day free trial is ready. Sign in with +91 '+(s.trMob||'')+' to start.':'The Rezide team will review your details within one working day and confirm by SMS.',
+      trBtn:s.tr==='mob'?'Send OTP':s.tr==='otp'?'Verify':s.tr==='form'?'Verify and request access':'Sign In to Start',
+      trBtnBg:(()=>{const ok=s.tr==='mob'?(s.trMob||'').length===10:s.tr==='otp'?(s.trOtp||'').length===4:s.tr==='form'?!!((s.trFn||'').trim()&&(s.trLn||'').trim()&&(s.trFirm||'').trim()&&(s.trRera||'').trim().length>=6):true;return ok?'#000':'var(--rez-steel)';})(),
+      trNext:()=>{if(s.tr==='mob'){if((s.trMob||'').length===10)set({tr:'otp',trOtp:''});return;}
+        if(s.tr==='otp'){if((s.trOtp||'').length===4)set({tr:'form'});return;}
+        if(s.tr==='form'){if((s.trFn||'').trim()&&(s.trLn||'').trim()&&(s.trFirm||'').trim()&&(s.trRera||'').trim().length>=6)set({tr:'done',trAssocOpen:false});return;}
+        set({tr:null});window.scrollTo({top:0,behavior:'smooth'});},
+      trSignIn:e=>{e.preventDefault();set({tr:null});window.scrollTo({top:0,behavior:'smooth'});},
+      trSeePlans:()=>{set({tr:null});const el=document.getElementById('pricing');if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-20,behavior:'smooth'});},
+      billOpts:[[false,'Monthly'],[true,'Annual']].map(([v,label])=>({label,save:v,bg:!!s.annual===v?'#000':'transparent',fg:!!s.annual===v?'var(--rez-full-white)':'#000',tap:()=>set({annual:v})})),
+      member:!!s.member, toggleMember:()=>set({member:!s.member}), memBox:s.member?'#000':'#fff', memBorder:s.member?'var(--rez-mocaccino)':'var(--rez-smoke)',
+      planCards:PLANS.map(p=>{const dark=!!p.tag, pr=s.member?(s.annual?p.ma:p.mm):(s.annual?p.a:p.m);
+        return {name:p.name,who:p.who,tag:!!p.tag,price:inr(pr),strike:pr<p.m,was:inr(p.m),off:p.off,n:String(p.n),cr:String(p.cr),
+          bill:s.annual?'billed '+inr(pr*12)+' a year':'billed monthly',
+          bg:dark?'#000':'#fff',fg:dark?'var(--rez-full-white)':'#000',border:dark?'#000':'var(--rez-smoke)',tile:dark?'rgba(224,224,224,.1)':'#F4F2EF',memFg:dark?'var(--rez-mocaccino)':'#6B5236',
+          btnBg:dark?'var(--rez-mocaccino)':'#000',btnFg:dark?'#000':'var(--rez-full-white)',btnBorder:dark?'var(--rez-mocaccino)':'#000',
+          agents:PLAN_AG[p.k].map(i=>({name:AGENTS_RAW[i][0],soon:!!AGENTS_RAW[i][4]})),
+          choose:()=>set({co:s.authed?'cart':'auth',coAuth:'phone',coOtp:'',coPlan:p.k,coAdd:{},coPack:0})};}),
+      compareOpen:!!s.cmp, toggleCompare:()=>set({cmp:!s.cmp}), compareLabel:s.cmp?'Hide comparison':'Compare all plans',
+      cmpRows:(()=>{const pr=p=>s.member?(s.annual?p.ma:p.mm):(s.annual?p.a:p.m);
+        const row=(k,cells,o)=>Object.assign({k,kw:500,kfg:'#000',bg:'#fff',cells:cells.map(c=>Object.assign({tick:false,text:true,v:'',w:600,fg:'#000',bg:'#fff'},c,o&&o.bg?{bg:o.bg}:{}))},o||{});
+        const head=k=>row(k,PLANS.map(()=>({v:''})),{kw:700,kfg:'#6B5236',bg:'#F4F2EF'});
+        return [row('',PLANS.map(p=>({v:p.name,w:800}))),
+          row('Per user / month',PLANS.map(p=>({v:inr(pr(p)),w:800}))),
+          row('Ai-R agents',PLANS.map(p=>({v:String(p.n)}))),
+          row('Credits / month',PLANS.map(p=>({v:p.cr+'M'}))),
+          head('AI-R AGENTS'),
+          ...AGENTS_RAW.map((a,i)=>row(a[0]+(a[4]?' (soon)':''),PLANS.map(p=>PLAN_AG[p.k].includes(i)?{tick:true,text:false}:{v:'—',fg:'#C9C5BE'}))),
+          head('INDICATIVE MONTHLY OUTPUT'),
+          ...SKUS.map(u=>row(u[0],PLANS.map(p=>u[1][p.k]?{v:String(u[1][p.k])}:{v:'—',fg:'#C9C5BE'}))),
+          row('Forms, lists and search',PLANS.map(()=>({v:'Free'})))];})(),
+coOpen:!!s.co, coClose:()=>{clearTimeout(this._coT);set({co:null});},
+      coEyebrow:s.co==='auth'?'SIGN IN TO BUY':s.co==='done'?'RECEIPT':'CHECKOUT', coTitle:s.co==='auth'?'Verify it is you.':s.co==='done'?'You are all set.':'Your order.',
+      coOnAuth:s.co==='auth', coAuthPhone:(s.coAuth||'phone')==='phone', coAuthOtp:s.coAuth==='otp',
+      coPhone:s.coPhone||'', coOtp:s.coOtp||'',
+      coPhoneSet:e=>set({coPhone:e.target.value.replace(/\D/g,'').slice(0,10)}), coOtpSet:e=>set({coOtp:e.target.value.replace(/\D/g,'').slice(0,4)}),
+      coAuthBtn:s.coAuth==='otp'?'Verify and Continue':'Send OTP',
+      coAuthBg:(s.coAuth==='otp'?(s.coOtp||'').length===4:(s.coPhone||'').length===10)?'#000':'var(--rez-steel)',
+      coAuthNext:()=>{if(s.coAuth!=='otp'){if((s.coPhone||'').length===10)set({coAuth:'otp',coOtp:''});return;} if((s.coOtp||'').length===4)set({authed:true,co:'cart'});},
+      coOnCart:s.co==='cart', coOnPaying:s.co==='paying', coOnDone:s.co==='done',
+      ...(()=>{const plan=PLANS.find(p=>p.k===s.coPlan), seats=s.seats||1, ann=!!s.annual;
+        const unit=plan?(s.member?(ann?plan.ma:plan.mm):(ann?plan.a:plan.m)):0;
+        const months=ann?12:1, adds=s.coAdd||{}, pack=PACKS.find(([n])=>n===s.coPack);
+        const lines=[];let sub=0;const add=(k,v)=>{sub+=v;lines.push({k,v:inr(v),w:500,fg:'#000'});};
+        if(plan)add(plan.name+' × '+seats+(seats>1?' users':' user')+', '+(ann?'12 months':'1 month'),unit*seats*months);
+        ADDONS.forEach(([name,,m,y])=>{if(adds[name])add(name+(y?', 1 year':ann?', 12 months':', 1 month'),y?y:(ann?m*0.8*12:m));});
+        if(pack)add(pack[0]+'M top-up credits',pack[1]);
+        const gst=Math.round(sub*0.18);if(sub)lines.push({k:'GST 18%',v:inr(gst),w:500,fg:'var(--rez-graphite)'});
+        return {coHasPlan:!!plan, seats:String(seats),
+          coSeatNote:seats>=9?'For 10 or more users, request a custom plan.':inr(unit)+' per user / month',
+          seatDown:()=>set({seats:Math.max(1,seats-1)}), seatUp:()=>set({seats:Math.min(9,seats+1)}),
+          coPlans:[{k:null,name:'None',price:'Add-ons only'}].concat(PLANS.map(p=>({k:p.k,name:p.name,price:inr(s.member?(ann?p.ma:p.mm):(ann?p.a:p.m))+' / user'}))).map(p=>({...p,border:(s.coPlan||null)===p.k?'#000':'var(--rez-smoke)',bg:(s.coPlan||null)===p.k?'#F4F2EF':'#fff',tap:()=>set({coPlan:p.k})})),
+          coAddons:ADDONS.map(([name,,m,y])=>{const on=!!adds[name];return {name,on,price:y?inr(y)+' / year':inr(ann?m*0.8:m)+' / month',box:on?'#000':'#fff',border:on?'#000':'var(--rez-smoke)',bg:on?'#F4F2EF':'#fff',tap:()=>set({coAdd:{...adds,[name]:!on}})};}),
+          coPacks:[[0,0]].concat(PACKS).map(([n,p])=>{const on=(s.coPack||0)===n;return {label:n?n+'M · '+inr(p):'No top-up',border:on?'#000':'var(--rez-smoke)',bg:on?'#000':'#fff',fg:on?'var(--rez-full-white)':'#000',tap:()=>set({coPack:n})};}),
+          coLines:lines, coTotal:inr(sub+gst),
+          coPayBg:sub?'#000':'var(--rez-steel)', coPayLabel:sub?'Pay '+inr(sub+gst):'Select something to buy',
+          coPay:()=>{if(!sub)return;set({co:'paying'});this._coT=setTimeout(()=>this.setState({co:'done'}),1600);},
+          coDoneNote:(plan?plan.name+' is active for '+seats+(seats>1?' users. Invite your team from the dashboard.':' user.'):'Your purchase is active.')+' A GST invoice has been sent to your registered email.'};})(),
+      buyPack:()=>set({co:s.authed?'cart':'auth',coAuth:'phone',coOtp:'',coPlan:null,coAdd:{},coPack:s.pack||5}),
+      packSel:(s.pack||5)+'M credits',
+      addonCards:ADDONS.map(([name,does,m,y])=>({name,does,buy:()=>set({co:s.authed?'cart':'auth',coAuth:'phone',coOtp:'',coPlan:null,coAdd:{[name]:true},coPack:0}),price:y?inr(y)+' / year':(s.annual?inr(m*0.8)+' / month, billed yearly':inr(m)+' / month')})),
+      packCards:PACKS.map(([n,p])=>({size:n+'M credits',price:inr(p),best:n===20,border:(s.pack||5)===n?'#000':'var(--rez-smoke)',bg:(s.pack||5)===n?'#F4F2EF':'#fff',tap:()=>set({pack:n})})),
+      agentChips:AGENTS_RAW.map((x,i)=>[x,i]).filter(([x])=>!x[4]).map(([[name,role,icon,desc,soon],i])=>{const on=(s.sel||0)===i;return {name,role,icon,soon:!!soon,
+        pick:()=>{clearInterval(this._vi);set({sel:i,vt:0,vPlay:false});},
+        rowBg:on?'#fff':'transparent',rowBorder:on?'#000':'transparent',iconBg:on?'#000':'#fff',iconFg:on?'var(--rez-full-white)':'#000'};}),
+      sel:(()=>{const a=AGENTS_RAW[s.sel||0];return {name:a[0],roleUp:a[1].toUpperCase(),desc:a[3],slot:'air-vid-'+(s.sel||0),badge:a[4]?'SOON':'LIVE',badgeBg:a[4]?'var(--rez-full-white)':'var(--rez-mocaccino)',badgeFg:a[4]?'#380516':'#000'};})(),
+      selPlay:()=>this._vToggle(), selIcon:s.vPlay?'pause-circle':'play-circle', selPct:((s.vt||0)/30*100)+'%', selTime:'0:'+String(Math.floor(s.vt||0)).padStart(2,'0'),
+      _old:AGENTS_RAW.map(([name,role,icon,desc,soon],i)=>[name,role,icon,desc,soon,i]).map(([name,role,icon,desc,soon,i])=>({name,role,icon,desc,soon:!!soon,live:!soon,play:()=>this._vid(i),badge:soon?'SOON':'LIVE',badgeBg:soon?'var(--rez-full-white)':'var(--rez-mocaccino)',badgeFg:soon?'#380516':'#000',
+        bg:soon?'#380516':'#15302B',border:soon?'rgba(224,224,224,.24)':'rgba(224,224,224,.18)',
+      })),
+      vidOpen:s.vid!=null, vid:s.vid!=null?{...AGENTS[s.vid],slot:'air-vid-'+s.vid}:{name:'',role:'',desc:'',slot:'air-vid'},
+      vidIcon:s.vPlay?'pause-circle':'play-circle', vidPct:((s.vt||0)/30*100)+'%', vidTime:'0:'+String(Math.floor(s.vt||0)).padStart(2,'0'),
+      vidToggle:()=>this._vToggle(), vidClose:()=>{clearInterval(this._vi);set({vid:null,vPlay:false,vt:0});}, stop:e=>e.stopPropagation(),
+      tTabs:[['watch','Watch Them','play'],['hear','Hear Them','volume'],['read','Read Them','message']].map(([id,label])=>({label,bg:s.tab===id?'#fff':'transparent',shadow:s.tab===id?'var(--shadow-sm)':'none',weight:s.tab===id?700:500,fg:s.tab===id?'#000':'var(--rez-graphite)',onClick:()=>set({tab:id})})),
+      tHearPeople:[...PEOPLE,...PEOPLE].slice(0,6).map((x,i)=>{const P=PEOPLE[i%PEOPLE.length];const nm=['Akhil Bisht','Rukmani Iyer','Arjun Mehta','Sana Qureshi','Vikram Rao','Neha Kapoor'][i];const ph=PEOPLE[i%PEOPLE.length][2];const k=100+i;return {name:nm,role:P[1],dur:['2:14','1:48','2:31','1:56','2:05','1:39'][i],photo:U(ph),playIcon:s.playing===k?'pause-circle':'play-circle',prog:s.playing===k?'42%':'0%',onPlay:()=>set({playing:s.playing===k?null:k})};}),
+      tWatch:s.tab==='watch', tHear:s.tab==='hear', tRead:s.tab==='read',
+      tPeople:PEOPLE.map(([name,role,ph,short,quote,dur],i)=>({name,role,short,quote,dur,photo:U(ph),vslot:'rc-v-'+i,aslot:'rc-a-'+i,rslot:'rc-r-'+i,
+        playIcon:s.playing===i?'pause-circle':'play-circle',prog:s.playing===i?'42%':'0%',onPlay:()=>set({playing:s.playing===i?null:i})})),
+      faqs:FAQS.map(([q,a],i)=>({q,a,open:s.faq===i,rot:s.faq===i?'90deg':'-90deg',toggle:()=>set({faq:s.faq===i?null:i})})),
+      cbFields:[['fn','First name','auto'],['ln','Last name','auto'],['mob','Mobile number','auto'],['em','Email address','auto'],['firm','Firm name','1 / -1']].map(([k,ph,span])=>({ph,span,value:s.cb[k]||'',onInput:e=>set({cb:{...s.cb,[k]:e.target.value}})})),
+      cbDone:s.cbDone, cbSubmit:()=>set({cbDone:true})
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="d5415e21-2062-46ad-bfdb-6eb1fec77f55"></script>
+</head>
+<body>
+
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html,body{margin:0}</style>
+<style>/* Montserrat ??? primary content type (Julieta Ulanovsky). Variable 300???900. */
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:300 900;font-display:swap;src:url("0db80b65-6174-4b9d-a92a-6454cf153f83") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:300 900;font-display:swap;src:url("b4b11e76-c799-4d81-8679-5dd804aea2d5") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Montserrat";font-style:italic;font-weight:300 900;font-display:swap;src:url("2bf5f3fc-eced-482d-b9a1-60e2997b0a03") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+/* Special Gothic ??? secondary content type (Alistair McCready). Google Fonts ships weight 400 only. */
+@font-face{font-family:"Special Gothic";font-style:normal;font-weight:400;font-display:swap;src:url("2cfb0aa3-efe8-4a51-b1fc-ca3c98ddb3b3") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Special Gothic";font-style:normal;font-weight:400;font-display:swap;src:url("75d0d3e1-fbf2-4002-800d-1a1a2648e3dd") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Special Gothic Expanded One ??? wide caps for eyebrows/section marks. */
+@font-face{font-family:"Special Gothic Expanded One";font-style:normal;font-weight:400;font-display:swap;src:url("6cd12b26-8346-466b-9130-8da21739b56b") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+:root{
+/* ?????? Brand primitives (Visual Identity ??1.8) ?????? */
+--rez-timber-green:#15302B;
+--rez-timber-green-tint:#2F4842;
+--rez-forest-ink:#02110C;
+--rez-burgundy:#380516;
+--rez-mocaccino:#A3835F;
+--rez-black:#000000;
+--rez-white:#FFFFFF;
+--rez-full-white:#E0E0E0;
+--rez-cream:#FDF9F0;
+--rez-cream-warm:#F9F7F3;
+
+/* ?????? Grayscale accents (Visual Identity ??1.9) ?????? */
+--rez-cloud:#EDEFF7;
+--rez-smoke:#D3D6E0;
+--rez-steel:#BCBFCC;
+--rez-space:#9DA2B3;
+--rez-graphite:#6E7180;
+--rez-arsenic:#40424D;
+--rez-phantom:#1E1E24;
+
+/* ?????? Semantic aliases ??? Light Mode (black on white) ?????? */
+--surface-page:var(--rez-white);
+--surface-card:var(--rez-white);
+--surface-sunken:var(--rez-cloud);
+--surface-inverse:var(--rez-black);
+--surface-announce:var(--rez-burgundy);
+--surface-feature:var(--rez-timber-green);
+--surface-warm:var(--rez-mocaccino);
+
+--text-primary:var(--rez-black);
+--text-secondary:var(--rez-graphite);
+--text-muted:var(--rez-space);
+--text-inverse:var(--rez-full-white);
+--text-on-accent:var(--rez-full-white);
+--text-warm:var(--rez-mocaccino);
+
+--border-subtle:var(--rez-smoke);
+--border-strong:var(--rez-black);
+--border-inverse:rgba(224,224,224,.24);
+
+--focus-ring:var(--rez-mocaccino);
+
+/* Reserved-use accents. Burgundy = announcements only. Timber Green = new-feature comms only. */
+--accent-announce:var(--rez-burgundy);
+--accent-feature:var(--rez-timber-green);
+--accent-warm:var(--rez-mocaccino);
+
+/* Status ??? not defined by the brand book; derived from brand hues. Flagged in readme.md. */
+--status-success:#15302B;
+--status-danger:#380516;
+--status-info:#40424D;
+}
+
+/* ?????? Dark Mode (Visual Identity ??1.8 "Dark Mode" combination) ?????? */
+:root[data-theme="dark"]{
+--surface-page:var(--rez-forest-ink);
+--surface-card:var(--rez-timber-green);
+--surface-sunken:#0A1C16;
+--surface-inverse:var(--rez-full-white);
+--text-primary:var(--rez-full-white);
+--text-secondary:var(--rez-steel);
+--text-muted:var(--rez-space);
+--text-inverse:var(--rez-black);
+--border-subtle:rgba(224,224,224,.18);
+--border-strong:var(--rez-full-white);
+}
+
+:root{
+/* Families. Rexton (logo type) is a licensed face and is NOT bundled ??? the wordmark ships as vector art. */
+--font-primary:"Montserrat",system-ui,"Helvetica Neue",Arial,sans-serif;
+--font-secondary:"Special Gothic","Montserrat",system-ui,sans-serif;
+--font-eyebrow:"Special Gothic Expanded One","Special Gothic",system-ui,sans-serif;
+--font-logo:"Special Gothic Expanded One","Special Gothic",system-ui,sans-serif;
+--font-mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
+
+/* Weights (Montserrat Light ??? Black) */
+--weight-light:300;--weight-regular:400;--weight-medium:500;--weight-semibold:600;--weight-bold:700;--weight-extrabold:800;--weight-black:900;
+
+/* Type scale */
+--text-display-1:clamp(44px,5vw,72px);
+--text-display-2:clamp(34px,3.6vw,52px);
+--text-h1:40px;--text-h2:32px;--text-h3:24px;--text-h4:20px;
+--text-body-lg:18px;--text-body:16px;--text-body-sm:14px;--text-caption:12px;--text-micro:11px;
+
+/* Line heights */
+--leading-tight:1.05;--leading-snug:1.2;--leading-normal:1.45;--leading-relaxed:1.6;
+
+/* Tracking ??? the brand sets wide tracking on eyebrows and the wordmark, tight on display heads */
+--tracking-display:-0.02em;--tracking-normal:0;--tracking-wide:0.08em;--tracking-eyebrow:0.16em;--tracking-wordmark:0.22em;
+
+/* Composed roles */
+--type-eyebrow:var(--weight-regular) var(--text-micro)/1.2 var(--font-eyebrow);
+--type-display:var(--weight-semibold) var(--text-display-1)/var(--leading-tight) var(--font-primary);
+--type-heading:var(--weight-semibold) var(--text-h3)/var(--leading-snug) var(--font-primary);
+--type-body:var(--weight-regular) var(--text-body)/var(--leading-normal) var(--font-primary);
+--type-label:var(--weight-medium) var(--text-body-sm)/1.3 var(--font-primary);
+--type-alt-heading:var(--weight-regular) var(--text-h2)/var(--leading-snug) var(--font-secondary);
+}
+
+:root{
+--space-0:0;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;--space-20:80px;--space-24:96px;--space-32:128px;
+/* Layout */
+--container-max:1200px;
+--gutter:var(--space-6);
+--section-y:var(--space-20);
+/* Control heights */
+--control-sm:32px;--control-md:40px;--control-lg:48px;--control-xl:56px;
+/* Icon sizes ??? icons are drawn on a 32??32 grid with a 2px stroke */
+--icon-sm:16px;--icon-md:20px;--icon-lg:24px;--icon-xl:32px;
+--icon-grid:32px;--icon-stroke:2px;
+}
+
+:root{
+--radius-xs:4px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:28px;--radius-pill:999px;
+/* Roles observed in the identity's "Typography In Use" composition */
+--radius-card:var(--radius-xl);
+--radius-control:var(--radius-pill);
+--radius-field:var(--radius-pill);
+--radius-tag:var(--radius-sm);
+}
+
+:root{
+/* The brand is flat-first: colour blocks, not elevation. Shadows are for lifted surfaces only. */
+--shadow-none:none;
+--shadow-sm:0 1px 2px rgba(2,17,12,.08);
+--shadow-md:0 8px 24px rgba(2,17,12,.10);
+--shadow-lg:0 24px 60px rgba(2,17,12,.18);
+--shadow-inset-hairline:inset 0 0 0 1px var(--border-subtle);
+--ring-focus:0 0 0 3px rgba(163,131,95,.45);
+/* Protection scrim for type over photography */
+--scrim-bottom:linear-gradient(180deg,rgba(2,17,12,0) 0%,rgba(2,17,12,.72) 100%); /* @kind other */
+--scrim-side:linear-gradient(90deg,rgba(2,17,12,.78) 0%,rgba(2,17,12,0) 68%); /* @kind other */
+--blur-glass:blur(18px); /* @kind other */
+--glass-fill:rgba(224,224,224,.10); /* @kind color */
+}
+
+:root{
+--ease-standard:cubic-bezier(.2,.8,.2,1); /* @kind other */
+--ease-out:cubic-bezier(.16,1,.3,1); /* @kind other */
+--ease-in:cubic-bezier(.4,0,1,1); /* @kind other */
+--duration-instant:80ms; /* @kind other */
+--duration-fast:140ms; /* @kind other */
+--duration-base:220ms; /* @kind other */
+--duration-slow:360ms; /* @kind other */
+--transition-control:background-color var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard),border-color var(--duration-fast) var(--ease-standard),transform var(--duration-fast) var(--ease-standard); /* @kind other */
+--press-scale:.98; /* @kind other */
+}
+
+</style>
+<style>/* Montserrat ??? primary content type (Julieta Ulanovsky). Variable 300???900. */
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:300 900;font-display:swap;src:url("0db80b65-6174-4b9d-a92a-6454cf153f83") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:300 900;font-display:swap;src:url("b4b11e76-c799-4d81-8679-5dd804aea2d5") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Montserrat";font-style:italic;font-weight:300 900;font-display:swap;src:url("2bf5f3fc-eced-482d-b9a1-60e2997b0a03") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+/* Special Gothic ??? secondary content type (Alistair McCready). Google Fonts ships weight 400 only. */
+@font-face{font-family:"Special Gothic";font-style:normal;font-weight:400;font-display:swap;src:url("2cfb0aa3-efe8-4a51-b1fc-ca3c98ddb3b3") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Special Gothic";font-style:normal;font-weight:400;font-display:swap;src:url("75d0d3e1-fbf2-4002-800d-1a1a2648e3dd") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Special Gothic Expanded One ??? wide caps for eyebrows/section marks. */
+@font-face{font-family:"Special Gothic Expanded One";font-style:normal;font-weight:400;font-display:swap;src:url("6cd12b26-8346-466b-9130-8da21739b56b") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+</style>
+<style>:root{
+/* ?????? Brand primitives (Visual Identity ??1.8) ?????? */
+--rez-timber-green:#15302B;
+--rez-timber-green-tint:#2F4842;
+--rez-forest-ink:#02110C;
+--rez-burgundy:#380516;
+--rez-mocaccino:#A3835F;
+--rez-black:#000000;
+--rez-white:#FFFFFF;
+--rez-full-white:#E0E0E0;
+--rez-cream:#FDF9F0;
+--rez-cream-warm:#F9F7F3;
+
+/* ?????? Grayscale accents (Visual Identity ??1.9) ?????? */
+--rez-cloud:#EDEFF7;
+--rez-smoke:#D3D6E0;
+--rez-steel:#BCBFCC;
+--rez-space:#9DA2B3;
+--rez-graphite:#6E7180;
+--rez-arsenic:#40424D;
+--rez-phantom:#1E1E24;
+
+/* ?????? Semantic aliases ??? Light Mode (black on white) ?????? */
+--surface-page:var(--rez-white);
+--surface-card:var(--rez-white);
+--surface-sunken:var(--rez-cloud);
+--surface-inverse:var(--rez-black);
+--surface-announce:var(--rez-burgundy);
+--surface-feature:var(--rez-timber-green);
+--surface-warm:var(--rez-mocaccino);
+
+--text-primary:var(--rez-black);
+--text-secondary:var(--rez-graphite);
+--text-muted:var(--rez-space);
+--text-inverse:var(--rez-full-white);
+--text-on-accent:var(--rez-full-white);
+--text-warm:var(--rez-mocaccino);
+
+--border-subtle:var(--rez-smoke);
+--border-strong:var(--rez-black);
+--border-inverse:rgba(224,224,224,.24);
+
+--focus-ring:var(--rez-mocaccino);
+
+/* Reserved-use accents. Burgundy = announcements only. Timber Green = new-feature comms only. */
+--accent-announce:var(--rez-burgundy);
+--accent-feature:var(--rez-timber-green);
+--accent-warm:var(--rez-mocaccino);
+
+/* Status ??? not defined by the brand book; derived from brand hues. Flagged in readme.md. */
+--status-success:#15302B;
+--status-danger:#380516;
+--status-info:#40424D;
+}
+
+/* ?????? Dark Mode (Visual Identity ??1.8 "Dark Mode" combination) ?????? */
+:root[data-theme="dark"]{
+--surface-page:var(--rez-forest-ink);
+--surface-card:var(--rez-timber-green);
+--surface-sunken:#0A1C16;
+--surface-inverse:var(--rez-full-white);
+--text-primary:var(--rez-full-white);
+--text-secondary:var(--rez-steel);
+--text-muted:var(--rez-space);
+--text-inverse:var(--rez-black);
+--border-subtle:rgba(224,224,224,.18);
+--border-strong:var(--rez-full-white);
+}
+</style>
+<style>:root{
+/* Families. Rexton (logo type) is a licensed face and is NOT bundled ??? the wordmark ships as vector art. */
+--font-primary:"Montserrat",system-ui,"Helvetica Neue",Arial,sans-serif;
+--font-secondary:"Special Gothic","Montserrat",system-ui,sans-serif;
+--font-eyebrow:"Special Gothic Expanded One","Special Gothic",system-ui,sans-serif;
+--font-logo:"Special Gothic Expanded One","Special Gothic",system-ui,sans-serif;
+--font-mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
+
+/* Weights (Montserrat Light ??? Black) */
+--weight-light:300;--weight-regular:400;--weight-medium:500;--weight-semibold:600;--weight-bold:700;--weight-extrabold:800;--weight-black:900;
+
+/* Type scale */
+--text-display-1:clamp(44px,5vw,72px);
+--text-display-2:clamp(34px,3.6vw,52px);
+--text-h1:40px;--text-h2:32px;--text-h3:24px;--text-h4:20px;
+--text-body-lg:18px;--text-body:16px;--text-body-sm:14px;--text-caption:12px;--text-micro:11px;
+
+/* Line heights */
+--leading-tight:1.05;--leading-snug:1.2;--leading-normal:1.45;--leading-relaxed:1.6;
+
+/* Tracking ??? the brand sets wide tracking on eyebrows and the wordmark, tight on display heads */
+--tracking-display:-0.02em;--tracking-normal:0;--tracking-wide:0.08em;--tracking-eyebrow:0.16em;--tracking-wordmark:0.22em;
+
+/* Composed roles */
+--type-eyebrow:var(--weight-regular) var(--text-micro)/1.2 var(--font-eyebrow);
+--type-display:var(--weight-semibold) var(--text-display-1)/var(--leading-tight) var(--font-primary);
+--type-heading:var(--weight-semibold) var(--text-h3)/var(--leading-snug) var(--font-primary);
+--type-body:var(--weight-regular) var(--text-body)/var(--leading-normal) var(--font-primary);
+--type-label:var(--weight-medium) var(--text-body-sm)/1.3 var(--font-primary);
+--type-alt-heading:var(--weight-regular) var(--text-h2)/var(--leading-snug) var(--font-secondary);
+}
+</style>
+<style>:root{
+--space-0:0;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;--space-20:80px;--space-24:96px;--space-32:128px;
+/* Layout */
+--container-max:1200px;
+--gutter:var(--space-6);
+--section-y:var(--space-20);
+/* Control heights */
+--control-sm:32px;--control-md:40px;--control-lg:48px;--control-xl:56px;
+/* Icon sizes ??? icons are drawn on a 32??32 grid with a 2px stroke */
+--icon-sm:16px;--icon-md:20px;--icon-lg:24px;--icon-xl:32px;
+--icon-grid:32px;--icon-stroke:2px;
+}
+</style>
+<style>:root{
+--radius-xs:4px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:28px;--radius-pill:999px;
+/* Roles observed in the identity's "Typography In Use" composition */
+--radius-card:var(--radius-xl);
+--radius-control:var(--radius-pill);
+--radius-field:var(--radius-pill);
+--radius-tag:var(--radius-sm);
+}
+</style>
+<style>:root{
+/* The brand is flat-first: colour blocks, not elevation. Shadows are for lifted surfaces only. */
+--shadow-none:none;
+--shadow-sm:0 1px 2px rgba(2,17,12,.08);
+--shadow-md:0 8px 24px rgba(2,17,12,.10);
+--shadow-lg:0 24px 60px rgba(2,17,12,.18);
+--shadow-inset-hairline:inset 0 0 0 1px var(--border-subtle);
+--ring-focus:0 0 0 3px rgba(163,131,95,.45);
+/* Protection scrim for type over photography */
+--scrim-bottom:linear-gradient(180deg,rgba(2,17,12,0) 0%,rgba(2,17,12,.72) 100%); /* @kind other */
+--scrim-side:linear-gradient(90deg,rgba(2,17,12,.78) 0%,rgba(2,17,12,0) 68%); /* @kind other */
+--blur-glass:blur(18px); /* @kind other */
+--glass-fill:rgba(224,224,224,.10); /* @kind color */
+}
+</style>
+<style>:root{
+--ease-standard:cubic-bezier(.2,.8,.2,1); /* @kind other */
+--ease-out:cubic-bezier(.16,1,.3,1); /* @kind other */
+--ease-in:cubic-bezier(.4,0,1,1); /* @kind other */
+--duration-instant:80ms; /* @kind other */
+--duration-fast:140ms; /* @kind other */
+--duration-base:220ms; /* @kind other */
+--duration-slow:360ms; /* @kind other */
+--transition-control:background-color var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard),border-color var(--duration-fast) var(--ease-standard),transform var(--duration-fast) var(--ease-standard); /* @kind other */
+--press-scale:.98; /* @kind other */
+}
+</style>
+<script src="7f7cf27d-86a9-4a77-8510-a0b6bb427c87"></script>
+<script src="6f8fe5f1-7f62-4179-a3c5-818f32819c5e"></script>
+<script src="059f6ef8-d7ae-43f3-b04f-85f23bea3337"></script>
+<script src="20b3f344-5244-4dd2-aef9-de9678a95eb7"></script>
+</helmet>
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}"><dc-import name="RzHome" hint-size="100%,100vh"></dc-import></sc-if>
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}"><dc-import name="RzList" hint-size="100%,100vh"></dc-import></sc-if>
+<sc-if value="{{ isRealtor }}" hint-placeholder-val="{{ false }}"><dc-import name="RzFind" hint-size="100%,100vh"></dc-import></sc-if>
+<sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}"><dc-import name="RzAccount" hint-size="100%,100vh"></dc-import></sc-if>
+<sc-if value="{{ isCorner }}" hint-placeholder-val="{{ false }}"><dc-import name="RzCorner" hint-size="100%,100vh"></dc-import></sc-if>
+<sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}"><iframe ref="{{ dashRef }}" title="Realtor dashboard" style="display:block;width:100%;height:100vh;border:0"></iframe></sc-if>
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}"><dc-import name="RzLogin" key="{{ loginKey }}" hint-size="100%,100vh"></dc-import></sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script="">
+class Component extends DCLogic {
+  state = (()=>{const h=(location.hash||'').slice(1); if(!h||h==='home'){try{localStorage.removeItem('rz_cust');localStorage.removeItem('rz_tab');}catch(e){} if(!h)history.replaceState(null,'','#home');} return { r: h||'home' };})();
+  componentDidMount() {
+    this._h = () => { this.setState({ r: (location.hash || '#home').slice(1) }); window.scrollTo(0, 0); };
+    window.addEventListener('hashchange', this._h);
+  }
+  componentWillUnmount() { window.removeEventListener('hashchange', this._h); }
+  renderVals() {
+    const raw = this.state.r, login = /^(login|signup)/.test(raw);
+    const r = raw==='dashboard' ? 'dashboard' : login ? 'login' : ['home','list','realtor','corner','account'].includes(raw) ? raw : 'home';
+    return { dashRef: el => { if (el && window.RZ_DASH && !el.__rz) { el.__rz = 1;
+        const hook = () => { try { const d = el.contentDocument; if (!d || d.__rzHook) return; d.__rzHook = 1; d.addEventListener('click', e => { const t = e.target && e.target.closest && e.target.closest('[data-rz-home],[aria-label="Rezide home"]'); if (t) { e.preventDefault(); e.stopPropagation(); location.hash = 'home'; } }, true); } catch (x) {} };
+        el.addEventListener('load', hook); const iv = setInterval(() => { hook(); try { const d = el.contentDocument; if (d && d.querySelector('[data-rz-home]')) { d.__rzHook = 0; hook(); clearInterval(iv); } } catch (x) {} }, 500); setTimeout(() => clearInterval(iv), 20000);
+        el.srcdoc = window.RZ_DASH; } }, isDash: raw==='dashboard', isLogin: login, loginKey: raw, isHome: r==='home', isList: r==='list', isRealtor: r==='realtor', isCorner: r==='corner', isAccount: r==='account' };
+  }
+}
+</script>
+
+
+</body></html>

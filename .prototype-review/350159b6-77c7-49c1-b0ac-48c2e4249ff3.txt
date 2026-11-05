@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="_ds/rezide-design-system-37386e3c-60fb-47c9-8147-b0401bce1969/styles.css">
+<script src="_ds/rezide-design-system-37386e3c-60fb-47c9-8147-b0401bce1969/_ds_bundle.js"></script>
+<style>html,body{margin:0;background:#E8E9EC}a{color:#000}a:hover{color:var(--rez-mocaccino)}input::placeholder{color:#8A8F99}input,select{font-size:16px}
+@media (max-width:860px){[data-m="split"]{grid-template-columns:1fr!important;gap:28px!important;padding:24px 16px 48px!important}[data-m="h1"]{font-size:34px!important}}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;background:#ECEEF5;font-family:var(--font-primary);color:#000">
+  <div style="max-width:1200px;width:100%;margin:0 auto;padding:32px 32px 0;box-sizing:border-box;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <a href="#home" style="display:flex;flex-direction:column;gap:8px;text-decoration:none;color:#000">
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="30" hint-size="170px,30px"></x-import>
+      <span style="font:500 14px/1.2 var(--font-primary);color:#000">{{ tagline }}</span>
+    </a>
+  </div>
+
+  <div data-m="split" style="flex:1;max-width:1200px;width:100%;margin:0 auto;padding:40px 32px 64px;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,460px);gap:64px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:28px;min-width:0">
+      <sc-for list="{{ blocks }}" as="bk" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:{{ bk.pb }};border-bottom:{{ bk.bb }}">
+          <div style="font:400 12px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">{{ bk.eyebrow }}</div>
+          <h1 data-m="h1" style="margin:0;font:700 {{ bk.size }}/1.04 var(--font-primary);letter-spacing:-0.02em;text-wrap:balance">{{ bk.headline }}</h1>
+          <sc-if value="{{ bk.bold }}" hint-placeholder-val="{{ false }}"><p style="margin:0;max-width:520px;font:700 17px/1.5 var(--font-primary);color:#000">{{ bk.bold }}</p></sc-if>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ bk.points }}" as="p" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="flex:none;width:30px;height:30px;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ p.icon }}" size="16px" hint-size="16px,16px"></x-import></span>
+                <span style="font:500 14px/1.4 var(--font-primary);color:#3A3F47">{{ p.t }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="background:#fff;border-radius:20px;box-shadow:var(--shadow-md);padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;width:100%">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+          <h2 style="margin:0;font:600 26px/1.1 var(--font-primary);letter-spacing:-0.01em">{{ cardTitle }}</h2>
+          <span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ cardSub }}</span>
+        </div>
+        <div role="tablist" style="display:flex;gap:2px;padding:4px;border-radius:999px;background:#ECEEF5">
+          <sc-for list="{{ roleTabs }}" as="t" hint-placeholder-count="2">
+            <button role="tab" onClick="{{ t.onClick }}" style="height:38px;min-width:96px;padding:0 18px;border:0;border-radius:999px;background:{{ t.bg }};box-shadow:{{ t.shadow }};color:{{ t.fg }};font:{{ t.weight }} 14px/1 var(--font-primary);cursor:pointer;transition:background 220ms cubic-bezier(.2,.8,.2,1)">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ isRealtorSignup }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:14px;background:color-mix(in oklch, var(--rez-mocaccino) 18%, #fff);color:#000">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="clock" size="18px" hint-size="18px,18px"></x-import>
+          <span style="font:500 14px/1.35 var(--font-primary)">Get a 14-day FREE trial, subject to verification.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <input value="{{ fname }}" onInput="{{ onFname }}" placeholder="First name" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+            <input value="{{ lname }}" onInput="{{ onLname }}" placeholder="Last name" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <input value="{{ firm }}" onInput="{{ onFirm }}" placeholder="Firm name" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+            <input value="{{ rera }}" onInput="{{ onRera }}" placeholder="Firm RERA ID" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <select value="{{ rcity }}" onChange="{{ onRcity }}" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:500 15px/1 var(--font-primary);color:{{ rcityFg }};outline:none">
+              <option value="">City</option>
+              <sc-for list="{{ cityOpts }}" as="o" hint-placeholder-count="8"><option value="{{ o }}">{{ o }}</option></sc-for>
+            </select>
+            <select value="{{ assoc }}" onChange="{{ onAssoc }}" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:500 15px/1 var(--font-primary);color:{{ assocFg }};outline:none">
+              <option value="">Member of (optional)</option>
+              <sc-for list="{{ assocOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for>
+            </select>
+          </div>
+          <input value="{{ email }}" onInput="{{ onEmail }}" type="email" placeholder="Work email" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSignupForm }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <input value="{{ fname }}" onInput="{{ onFname }}" placeholder="First name" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+            <input value="{{ lname }}" onInput="{{ onLname }}" placeholder="Last name" style="min-width:0;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+          </div>
+          <input value="{{ email }}" onInput="{{ onEmail }}" type="email" placeholder="Email (optional)" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;font:500 15px/1 var(--font-primary);outline:none">
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showPhone }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;height:52px;border:1px solid var(--rez-smoke);border-radius:999px;overflow:hidden">
+          <span style="flex:none;display:flex;align-items:center;gap:8px;height:100%;padding:0 16px;border-right:1px solid var(--rez-smoke);font:600 15px/1 var(--font-primary)">IN +91</span>
+          <input value="{{ phone }}" onInput="{{ onPhone }}" inputmode="numeric" placeholder="Mobile number" style="flex:1;min-width:0;height:100%;padding:0 18px;border:0;font:500 15px/1 var(--font-primary);outline:none;letter-spacing:.02em">
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showOtp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">
+            <span>Sent to +91 {{ phone }}</span>
+            <button onClick="{{ editPhone }}" style="padding:0;border:0;background:none;font:600 14px/1 var(--font-primary);color:#000;text-decoration:underline;text-underline-offset:3px;cursor:pointer">Change</button>
+          </div>
+          <input value="{{ otp }}" onInput="{{ onOtp }}" inputmode="numeric" placeholder="Enter 4-digit OTP" style="height:52px;padding:0 18px;border:1px solid #000;border-radius:999px;font:600 18px/1 var(--font-primary);letter-spacing:.3em;text-align:center;outline:none">
+          <span style="font:400 13px/1 var(--font-primary);color:var(--rez-graphite);text-align:center">Didn't get it? <a href="#" onClick="{{ resend }}" style="font-weight:600">Resend OTP</a></span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;border-radius:16px;background:var(--rez-cloud)">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check-circle" size="24px" hint-size="24px,24px"></x-import>
+          <span style="font:600 15px/1.35 var(--font-primary)">{{ doneMsg }}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showBtn }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ onAction }}" style="height:52px;border:0;border-radius:999px;background:{{ btnBg }};color:var(--rez-full-white);font:700 14px/1 var(--font-primary);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background 140ms">{{ btnLabel }}</button>
+      </sc-if>
+      <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+        <a href="{{ doneHref }}" style="height:52px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#000;color:var(--rez-full-white);font:700 14px/1 var(--font-primary);letter-spacing:.1em;text-transform:uppercase;text-decoration:none">{{ doneCta }}</a>
+      </sc-if>
+
+      <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+        <span style="font:400 12px/1.5 var(--font-primary);color:var(--rez-graphite);text-align:center">By signing up, you agree to <a href="#">Terms of Use</a> and read our <a href="#">Privacy Policy</a>.</span>
+      </sc-if>
+      <div style="padding-top:14px;border-top:1px solid var(--rez-smoke);text-align:center;font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ switchQ }} <button onClick="{{ switchMode }}" style="padding:0;border:0;background:none;font:700 14px/1 var(--font-primary);color:#000;text-decoration:underline;text-underline-offset:3px;cursor:pointer">{{ switchLabel }}</button></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = (() => {
+    const q = new URLSearchParams(location.search), h = location.hash.slice(1);
+    const role = (q.get('role') || (h.includes('realtor') ? 'realtor' : 'customer'));
+    return { role: role === 'realtor' ? 'realtor' : 'customer', cust: q.get('as') === 'owner' ? 'owner' : 'seeker',
+      mode: (q.get('mode') || (h.includes('signup') ? 'signup' : 'signin')) === 'signup' ? 'signup' : 'signin',
+      step: 'phone', phone: '', otp: '', fname: '', lname: '', email: '' };
+  })();
+  renderVals() {
+    const s = this.state, set = o => this.setState(o);
+    const realtor = s.role === 'realtor', owner = !realtor && s.cust === 'owner', signup = s.mode === 'signup';
+    const reset = { step: 'phone', otp: '' };
+    const C = {realtor:{
+      eyebrow: 'FOR REALTORS', headline: 'Run your real estate business.',
+      sub: '',
+      points: [['settings', 'AI agents that actually work as a team'], ['file-text', 'List a property in under a minute'], ['play-circle', 'Branded videos, brochures, flyers and posts with a tap'], ['share', 'Ready to upload for every social platform'], ['user', 'Leads that manage themselves'], ['message', 'Co-broking matches with verified realtors'], ['pie-chart', 'Your whole business at a glance']]
+    }, owner:{
+      eyebrow: 'FOR PROPERTY OWNERS', headline: 'List it. Manage it. Close it.',
+      sub: '',
+      points: [['file-text', 'List in minutes with a live preview'], ['bar-chart', 'Price analysis from real transactions'], ['user', 'Realtor assistance, only if you choose']]
+    }, seeker:{
+      eyebrow: 'FOR PROPERTY SEEKERS', headline: 'Genuine listings only.',
+      sub: '', bold: 'Only available. No fakes. No duplicates.',
+      points: [['shield-check', 'Verified listings and RERA-registered projects'], ['search', 'Search properties your way'], ['bell-off', 'No spam calls. Realtors reach you only when you ask.'], ['star', 'Save properties and track visits in one place']]
+    }};
+    const keys = realtor ? ['realtor'] : ['seeker','owner'];
+    const okP = s.phone.length === 10, okO = s.otp.length === 4, okN = s.fname.trim() && s.lname.trim();
+    const okR = !realtor || ((s.firm || '').trim() && (s.rera || '').length >= 8 && s.rcity && /.+@.+\..+/.test(s.email || ''));
+    const ready = s.step === 'phone' ? (okP && (!signup || (okN && okR))) : okO;
+    const suOpts = realtor ? ['Realtor', 'Realtor firm'] : ['Property seeker', 'Property owner'];
+    const done = s.step === 'done';
+    return {
+      tagline: realtor ? 'Powering India\u2019s Leading Realtors' : 'Real Estate Simplified!',
+      roleTabs: [['customer', 'Customer'], ['realtor', 'Realtor']].map(([id, label]) => { const on = s.role === id; return { label, bg: on ? '#fff' : 'transparent', shadow: on ? 'var(--shadow-sm)' : 'none', fg: on ? '#000' : 'var(--rez-graphite)', weight: on ? 700 : 500, onClick: () => set({ role: id, ...reset }) }; }),
+      isCustomer: !realtor,
+      blocks: keys.map((k, i) => ({ ...C[k], points: C[k].points.map(([icon, t]) => ({ icon, t })), size: realtor ? 'clamp(30px,3.4vw,40px)' : 'clamp(28px,3vw,36px)', pb: i < keys.length - 1 ? '28px' : '0', bb: i < keys.length - 1 ? '1px solid var(--rez-steel)' : '0' })),
+      cardTitle: done ? (signup ? 'You\u2019re in.' : 'Welcome back.') : s.step === 'otp' ? 'Enter the OTP.' : signup ? 'Sign up' : 'Sign in',
+      cardSub: s.step === 'otp' ? 'We\u2019ve sent a 4-digit code to your mobile.' : signup ? 'Create your Rezide account.' : (realtor ? 'Log in to your realtor dashboard.' : 'Log in with your mobile number.'),
+      isSignup: signup && !done, isSignupForm: signup && !realtor && s.step === 'phone', isRealtorSignup: signup && realtor && s.step === 'phone',
+      firm: s.firm || '', rera: s.rera || '', rcity: s.rcity || '', assoc: s.assoc || '',
+      onFirm: e => set({ firm: e.target.value }), onRera: e => set({ rera: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 14) }),
+      onRcity: e => set({ rcity: e.target.value }), onAssoc: e => set({ assoc: e.target.value }),
+      rcityFg: s.rcity ? '#000' : '#8A8F99', assocFg: s.assoc ? '#000' : '#8A8F99',
+      cityOpts: ['Mumbai', 'Pune', 'Bengaluru', 'Delhi NCR', 'Hyderabad', 'Chennai', 'Ahmedabad', 'Kolkata'],
+      assocOpts: ['NAR-India Independent', 'NAR-India, AREA', 'NAR-India, SMART', 'NAR-India, TREK', 'Other association'],
+      suRole: realtor ? (s.suRole || 'Realtor') : (owner ? 'Property owner' : 'Property seeker'), suRoleOpts: suOpts,
+      onSuRole: e => { const v = e.target.value; realtor ? set({ suRole: v }) : set({ cust: v === 'Property owner' ? 'owner' : 'seeker' }); },
+      fname: s.fname, lname: s.lname, email: s.email,
+      onFname: e => set({ fname: e.target.value }), onLname: e => set({ lname: e.target.value }), onEmail: e => set({ email: e.target.value }),
+      showPhone: s.step === 'phone', showOtp: s.step === 'otp', isDone: done,
+      phone: s.phone, otp: s.otp,
+      onPhone: e => set({ phone: e.target.value.replace(/\D/g, '').slice(0, 10) }),
+      onOtp: e => set({ otp: e.target.value.replace(/\D/g, '').slice(0, 4) }),
+      editPhone: () => set(reset), resend: e => { e.preventDefault(); set({ otp: '' }); },
+      showBtn: !done, btnLabel: s.step === 'otp' ? (signup ? (realtor ? 'Verify & Start 14-Day Trial' : 'Verify & Sign Up') : 'Verify & Sign In') : 'Send OTP',
+      btnBg: ready ? '#000' : 'var(--rez-steel)',
+      onAction: () => { if (!ready) return;
+        if (s.step === 'otp' && !realtor) { try { localStorage.setItem('rz_cust', JSON.stringify({ role: owner ? 'owner' : 'seeker', fname: s.fname || 'Viraj', lname: s.lname || 'Bhatia', phone: s.phone })); } catch (e) {} window.location.href = '#account'; return; }
+        if (s.step === 'otp' && realtor) { window.location.href = '#dashboard'; return; }
+        set({ step: s.step === 'phone' ? 'otp' : 'done' }); },
+      doneMsg: realtor && signup ? 'Your 14-day trial has started. We\u2019ll verify your RERA ID within 24 hours.' : realtor ? 'Your realtor dashboard is ready.' : owner ? 'You can now list and manage your property.' : 'Your saved homes and visits are ready.',
+      doneCta: realtor ? 'Go to Realtor Dashboard' : owner ? 'Go to My Listings' : 'Go to My Account',
+      doneHref: realtor ? '#dashboard' : '#account',
+      switchQ: signup ? 'Already have an account?' : 'Don\u2019t have an account?',
+      switchLabel: signup ? 'Sign in' : 'Sign up',
+      switchMode: () => set({ mode: signup ? 'signin' : 'signup', ...reset })
+    };
+  }
+}
+</script>
+</body>
+</html>

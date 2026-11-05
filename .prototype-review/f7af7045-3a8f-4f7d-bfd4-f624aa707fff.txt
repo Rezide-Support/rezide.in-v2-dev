@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0;background:#fff;font-family:var(--font-primary);color:#000}
+a{color:#000;text-decoration:none}a:hover{color:var(--rez-mocaccino)}
+@media (max-width:1100px) and (min-width:761px){[data-m="nav"]{overflow-x:auto;scrollbar-width:none;justify-content:flex-start!important}[data-m="nav"] a{padding:0 10px!important;font-size:12px!important}}
+@media (max-width:760px){
+html,body{overflow-x:hidden}
+[data-m="hdr"]{flex-wrap:wrap!important;height:auto!important;padding:12px 16px 0!important;gap:6px 12px!important;justify-content:space-between!important}
+[data-m="nav"]{order:3;flex:1 1 100%!important;justify-content:flex-start!important;overflow-x:auto;scrollbar-width:none;margin:0 -16px!important;padding:0 8px 6px!important}
+[data-m="acct"]{grid-template-columns:1fr!important;padding:16px!important;gap:16px!important}
+[data-m="side"]{position:static!important}
+[data-m="menu"]{flex-direction:row!important;overflow-x:auto;scrollbar-width:none;border:0!important}
+[data-m="menu"]>*{flex:none}
+[data-m="menu"] button{border-bottom:0!important;border-radius:999px!important;height:40px!important;padding:0 14px!important}
+[data-m="card"]{grid-template-columns:1fr!important}
+[data-m="card"]>:first-child{min-height:200px}
+[data-m="title"]{font-size:28px!important}
+[data-m="two"]{grid-template-columns:1fr!important}
+input{font-size:16px!important}}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="position:relative;z-index:20;background:#fff;border-bottom:1px solid var(--rez-smoke)">
+  <div data-m="hdr" style="max-width:1280px;margin:0 auto;width:100%;box-sizing:border-box;padding:0 32px;height:76px;display:flex;align-items:center;gap:28px">
+    <a href="#home" style="display:flex;align-items:center;color:#000">
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="22" hint-size="140px,24px"></x-import>
+    </a>
+    <sc-if value="{{ notLogged }}" hint-placeholder-val="{{ true }}">
+    <nav data-m="nav" style="flex:1;min-width:0;display:flex;justify-content:center;align-items:center;gap:4px;white-space:nowrap">
+      <a href="#home" style="display:flex;align-items:center;height:48px;padding:0 16px;font:500 13px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite)">PROPERTIES</a>
+      <a href="#home" style="display:flex;align-items:center;height:48px;padding:0 16px;font:500 13px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite)">PROJECTS</a>
+      <a href="#list" onClick="{{ markAdd }}" style="display:flex;align-items:center;height:48px;padding:0 16px;font:500 13px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite)">LIST PROPERTY</a>
+      <a href="#realtor" style="display:flex;align-items:center;height:48px;padding:0 16px;font:500 13px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite)">FIND REALTOR</a>
+      <span style="width:1px;height:18px;margin:0 6px;background:var(--rez-smoke)"></span>
+      <a href="#corner" style="display:flex;align-items:center;height:48px;padding:0 16px;font:500 13px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite)">REALTOR CORNER</a>
+    </nav>
+    </sc-if>
+    <sc-if value="{{ logged }}" hint-placeholder-val="{{ false }}">
+      <span style="flex:1"></span>
+      <a href="#home" style="display:flex;align-items:center;gap:6px;font:600 13px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">BACK TO REZIDE</a>
+    </sc-if>
+    <div style="display:flex;align-items:center;gap:10px;flex:none">
+      <sc-if value="{{ logged }}" hint-placeholder-val="{{ false }}">
+        <span style="font:600 14px/1 var(--font-primary)">{{ firstName }}</span>
+      </sc-if>
+      <span style="width:40px;height:40px;border-radius:999px;background:#000;color:var(--rez-full-white);display:flex;align-items:center;justify-content:center">
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="user" size="18px" hint-size="18px,18px"></x-import>
+      </span>
+    </div>
+  </div>
+</header>
+
+<sc-if value="{{ notLogged }}" hint-placeholder-val="{{ true }}">
+<main style="flex:1;display:flex;align-items:center;justify-content:center;padding:56px 16px;background:var(--rez-cloud)">
+  <div style="width:100%;max-width:440px;display:flex;flex-direction:column;gap:22px;padding:28px 32px 32px;border-radius:20px;background:#fff;border:1px solid var(--rez-smoke);box-sizing:border-box">
+    <div role="tablist" style="display:flex;padding:4px;border-radius:999px;background:var(--rez-cloud)">
+        <sc-for list="{{ lgRoles }}" as="lr" hint-placeholder-count="2">
+          <button role="tab" onClick="{{ lr.onClick }}" style="flex:1;height:40px;border:0;border-radius:999px;background:{{ lr.bg }};color:#000;box-shadow:{{ lr.shadow }};font:{{ lr.weight }} 14px/1 var(--font-primary);cursor:pointer;transition:background 220ms cubic-bezier(.2,.8,.2,1)">{{ lr.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+      <h1 style="margin:0;font:600 32px/1.1 var(--font-primary);letter-spacing:-0.02em">{{ lgTitle }}</h1>
+      <p style="margin:0;font:400 15px/1.45 var(--font-primary);color:var(--rez-graphite)">{{ lgSub }}</p>
+    </div>
+    <sc-if value="{{ lgPhone }}" hint-placeholder-val="{{ true }}">
+      <label style="display:flex;flex-direction:column;gap:8px">
+        <span style="font:600 13px/1 var(--font-primary)">Mobile number</span>
+        <div style="display:flex;align-items:center;height:52px;border:1px solid #000;border-radius:999px;overflow:hidden">
+          <span style="padding:0 14px 0 20px;font:600 15px/1 var(--font-primary);border-right:1px solid var(--rez-smoke)">+91</span>
+          <input value="{{ phone }}" onChange="{{ onPhone }}" inputmode="numeric" placeholder="10-digit mobile" style="flex:1;min-width:0;height:100%;border:0;outline:none;padding:0 16px;font:500 15px/1 var(--font-primary);background:transparent">
+        </div>
+      </label>
+      <button onClick="{{ sendOtp }}" style="height:52px;border:0;border-radius:999px;background:{{ sendBg }};color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer">Get OTP</button>
+    </sc-if>
+    <sc-if value="{{ lgOtp }}" hint-placeholder-val="{{ false }}">
+      <label style="display:flex;flex-direction:column;gap:8px">
+        <span style="font:600 13px/1 var(--font-primary)">4-digit OTP</span>
+        <input value="{{ otp }}" onChange="{{ onOtp }}" inputmode="numeric" placeholder="• • • •" style="height:52px;border:1px solid #000;border-radius:999px;outline:none;padding:0 20px;font:700 20px/1 var(--font-primary);letter-spacing:.5em;text-align:center">
+        <span style="font:400 13px/1.4 var(--font-primary);color:var(--rez-graphite)">Prototype: any 4 digits work.</span>
+      </label>
+      <button onClick="{{ verify }}" style="height:52px;border:0;border-radius:999px;background:{{ verifyBg }};color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer">Verify and Continue</button>
+      <button onClick="{{ backPhone }}" style="height:32px;border:0;background:none;font:600 13px/1 var(--font-primary);color:var(--rez-graphite);cursor:pointer;text-decoration:underline;text-underline-offset:3px">Change number</button>
+    </sc-if>
+    
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ logged }}" hint-placeholder-val="{{ false }}">
+<main data-m="acct" style="flex:1;width:100%;max-width:1280px;margin:0 auto;box-sizing:border-box;padding:32px;display:grid;grid-template-columns:280px minmax(0,1fr);gap:40px;align-items:start">
+  <aside data-m="side" style="position:sticky;top:20px;display:flex;flex-direction:column;gap:14px">
+    <sc-if value="{{ logged }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--rez-smoke);border-radius:20px;background:#fff">
+      <span style="flex:none;width:48px;height:48px;border-radius:999px;background:#000;color:var(--rez-full-white);display:flex;align-items:center;justify-content:center;font:700 16px/1 var(--font-primary)">{{ sideIni }}</span>
+      <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><b style="font:600 16px/1.2 var(--font-primary)">{{ sideName }}</b><span style="font:400 13px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ sidePhone }}</span></span>
+    </div>
+    </sc-if>
+    <div style="display:flex;padding:4px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff">
+      <sc-for list="{{ roles }}" as="r" hint-placeholder-count="2">
+        <button onClick="{{ r.onClick }}" style="flex:1;height:42px;border:0;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }};font:600 14px/1 var(--font-primary);cursor:pointer;transition:background 220ms cubic-bezier(.2,.8,.2,1)">{{ r.label }}</button>
+      </sc-for>
+    </div>
+    <div data-m="menu" style="display:flex;flex-direction:column;gap:4px;border:1px solid var(--rez-smoke);border-radius:20px;padding:8px;background:#fff">
+      <sc-for list="{{ menu }}" as="m" hint-placeholder-count="9">
+        <button onClick="{{ m.onClick }}" style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border:0;border-radius:14px;background:{{ m.bg }};color:#000;font:{{ m.weight }} 15px/1 var(--font-primary);cursor:pointer;text-align:left" style-hover="background:var(--rez-cloud)">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ m.icon }}" size="18px" hint-size="18px,18px"></x-import>
+          <span style="flex:1">{{ m.label }}</span>
+          <sc-if value="{{ m.count }}" hint-placeholder-val="{{ false }}"><span style="min-width:22px;height:22px;padding:0 7px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:{{ m.cBg }};font:700 11px/1 var(--font-primary)">{{ m.count }}</span></sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </aside>
+
+  <section style="min-width:0;display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+      <h1 data-m="title" style="margin:0;font:600 36px/1.1 var(--font-primary);letter-spacing:-0.02em">{{ title }}</h1>
+      <sc-if value="{{ showCats }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;padding:4px;border:1px solid var(--rez-smoke);border-radius:999px">
+          <sc-for list="{{ cats }}" as="c" hint-placeholder-count="2">
+            <button onClick="{{ c.onClick }}" style="height:38px;padding:0 20px;border:0;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};font:600 14px/1 var(--font-primary);cursor:pointer">{{ c.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isMyListings }}" hint-placeholder-val="{{ false }}">
+        <a href="#list" onClick="{{ markAdd }}" style="display:flex">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="md" icon-left="plus" hint-size="150px,44px">Add Listing</x-import>
+        </a>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ showTypes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none">
+        <sc-for list="{{ ptypes }}" as="t" hint-placeholder-count="6">
+          <button onClick="{{ t.onClick }}" style="flex:none;height:38px;padding:0 18px;border:1px solid {{ t.border }};border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};font:600 14px/1 var(--font-primary);cursor:pointer">{{ t.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ noMatch }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:48px 24px;border:1px dashed var(--rez-smoke);border-radius:20px;text-align:center;font:500 15px/1.45 var(--font-primary);color:var(--rez-graphite)">Nothing in this property type yet.</div>
+    </sc-if>
+    <sc-if value="{{ isMyListings }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        <sc-for list="{{ ownerStats }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;gap:8px;padding:18px 20px;border-radius:20px;background:var(--rez-cloud)">
+            <span style="font:700 28px/1 var(--font-primary)">{{ st.v }}</span>
+            <span style="font:500 13px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ st.l }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCards }}" hint-placeholder-val="{{ true }}">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:16px">
+            <span style="flex:1;height:1px;background:var(--rez-smoke)"></span>
+            <span style="padding:9px 16px;border-radius:999px;background:var(--rez-cloud);font:600 13px/1 var(--font-primary);color:var(--rez-graphite)">{{ g.date }}</span>
+            <span style="flex:1;height:1px;background:var(--rez-smoke)"></span>
+          </div>
+          <sc-for list="{{ g.items }}" as="p" hint-placeholder-count="1">
+            <article data-m="card" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff">
+              <div style="position:relative;min-height:260px;background:var(--rez-cloud)">
+                <image-slot id="{{ p.slot }}" shape="rect" placeholder="Property photo"></image-slot>
+                <span style="position:absolute;top:16px;left:16px;height:30px;padding:0 14px;display:flex;align-items:center;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 12px/1 var(--font-primary);pointer-events:none">{{ p.status }}</span>
+                <div style="position:absolute;top:14px;right:14px;display:flex;gap:8px">
+                  <button aria-label="Shortlist" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:{{ p.starBg }};color:#000;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="star" size="18px" hint-size="18px,18px"></x-import></button>
+                  <button aria-label="Share" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#000;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="share" size="18px" hint-size="18px,18px"></x-import></button>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:16px;padding:22px 24px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                  <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                    <h3 style="margin:0;font:600 20px/1.25 var(--font-primary)">{{ p.title }}</h3>
+                    <span style="font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ p.loc }}</span>
+                  </div>
+                  <button aria-label="Download PDF" style="flex:none;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;color:#000;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="file-download" size="18px" hint-size="18px,18px"></x-import></button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <span style="font:700 26px/1 var(--font-primary);letter-spacing:-0.01em">{{ p.price }}</span>
+                    <span style="font:400 13px/1 var(--font-primary);color:var(--rez-graphite)">{{ p.rate }}</span>
+                  </div>
+                  <span style="padding:8px 12px;border-radius:8px;background:var(--rez-cloud);font:600 13px/1 var(--font-primary)">{{ p.area }}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:14px 8px;border-radius:16px;background:var(--rez-cloud);text-align:center">
+                  <sc-for list="{{ p.specs }}" as="sp" hint-placeholder-count="4">
+                    <div style="display:flex;flex-direction:column;gap:5px;min-width:0"><span style="font:600 14px/1.2 var(--font-primary)">{{ sp.v }}</span><span style="font:400 11px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ sp.l }}</span></div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ p.note }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:10px 14px;border-radius:12px;border:1px solid var(--rez-smoke);font:500 13px/1.4 var(--font-primary)">{{ p.note }}</div>
+                </sc-if>
+                <div style="display:flex;justify-content:space-between;gap:12px;font:400 12px/1.35 var(--font-primary);color:var(--rez-graphite)">
+                  <div style="display:flex;flex-direction:column;gap:3px"><span>Listing realtor</span><span style="font:600 13px/1.3 var(--font-primary);color:#000">{{ p.agent }}</span></div>
+                  <div style="display:flex;flex-direction:column;gap:3px;text-align:right"><span>Last updated</span><span style="font:600 13px/1.3 var(--font-primary);color:#000">{{ p.updated }}</span></div>
+                </div>
+              </div>
+            </article>
+          </sc-for>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <sc-if value="{{ isMyListings }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <sc-for list="{{ myListings }}" as="p" hint-placeholder-count="3">
+          <article data-m="card" style="display:grid;grid-template-columns:240px minmax(0,1fr);border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff">
+            <div style="position:relative;min-height:190px;background:var(--rez-cloud)">
+              <image-slot id="{{ p.slot }}" shape="rect" placeholder="Property photo"></image-slot>
+              <span style="position:absolute;top:14px;left:14px;height:28px;padding:0 12px;display:flex;align-items:center;border-radius:999px;background:{{ p.sBg }};color:{{ p.sFg }};font:600 12px/1 var(--font-primary);pointer-events:none">{{ p.status }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;padding:20px 22px">
+              <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                  <h3 style="margin:0;font:600 19px/1.25 var(--font-primary)">{{ p.title }}</h3>
+                  <span style="font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ p.loc }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                  <span style="font:700 22px/1 var(--font-primary)">{{ p.price }}</span>
+                  <span style="font:500 12px/1 var(--font-primary);color:var(--rez-graphite)">{{ p.intent }}</span>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:12px 8px;border-radius:14px;background:var(--rez-cloud);text-align:center">
+                <sc-for list="{{ p.stats }}" as="sp" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:5px"><span style="font:700 16px/1 var(--font-primary)">{{ sp.v }}</span><span style="font:400 11px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ sp.l }}</span></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px">
+                <span style="font:400 12px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ p.meta }}</span>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <button style="height:36px;padding:0 16px;border:1px solid #000;border-radius:999px;background:#fff;color:#000;font:600 13px/1 var(--font-primary);cursor:pointer" style-hover="background:var(--rez-cloud)">Edit</button>
+                  <button style="height:36px;padding:0 16px;border:1px solid #000;border-radius:999px;background:#fff;color:#000;font:600 13px/1 var(--font-primary);cursor:pointer" style-hover="background:var(--rez-cloud)">Delist</button>
+                  <button style="height:36px;padding:0 16px;border:1px solid #380516;border-radius:999px;background:#fff;color:#380516;font:600 13px/1 var(--font-primary);cursor:pointer" style-hover="background:var(--rez-cloud)">Delete</button>
+                  <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="sm" icon-right="arrow-right" hint-size="120px,36px">{{ p.cta }}</x-import>
+                </div>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRows }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px 20px;padding:18px 22px;border-bottom:1px solid var(--rez-smoke);background:#fff">
+            <div style="flex:none;width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;border-radius:14px;background:var(--rez-cloud)">
+              <span style="font:700 20px/1 var(--font-primary)">{{ r.day }}</span>
+              <span style="font:600 11px/1 var(--font-primary);letter-spacing:.08em;color:var(--rez-graphite)">{{ r.mon }}</span>
+            </div>
+            <div style="flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:5px">
+              <span style="font:600 16px/1.3 var(--font-primary)">{{ r.title }}</span>
+              <span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ r.sub }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span style="font:700 16px/1 var(--font-primary)">{{ r.value }}</span>
+              <span style="height:26px;padding:0 12px;display:flex;align-items:center;border-radius:999px;background:{{ r.sBg }};color:{{ r.sFg }};font:600 12px/1 var(--font-primary)">{{ r.status }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:72px 24px;border:1px dashed var(--rez-smoke);border-radius:20px;text-align:center">
+        <span style="width:64px;height:64px;border-radius:999px;background:var(--rez-cloud);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ emptyIcon }}" size="26px" hint-size="26px,26px"></x-import></span>
+        <h3 style="margin:0;font:600 22px/1.2 var(--font-primary)">{{ emptyTitle }}</h3>
+        <p style="margin:0;max-width:360px;font:400 15px/1.45 var(--font-primary);color:var(--rez-graphite)">{{ emptySub }}</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:28px;padding:28px;border:1px solid var(--rez-smoke);border-radius:20px">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+          <div style="display:flex;align-items:center;gap:18px">
+            <div style="width:96px;height:96px;flex:none"><image-slot id="acct-avatar" shape="circle" placeholder="Photo"></image-slot></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font:600 22px/1.2 var(--font-primary)">{{ fullName }}</span><span style="font:500 13px/1 var(--font-primary);color:var(--rez-graphite)">{{ roleLabel }}</span></div>
+          </div>
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="secondary" size="md" hint-size="130px,44px">Edit Profile</x-import>
+        </div>
+        <div data-m="two" style="display:grid;grid-template-columns:1fr 1fr;gap:22px 40px">
+          <sc-for list="{{ profileFields }}" as="pf" hint-placeholder-count="6">
+            <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:14px;border-bottom:1px solid var(--rez-smoke)">
+              <span style="font:600 13px/1 var(--font-primary);color:var(--rez-graphite)">{{ pf.l }}</span>
+              <span style="font:500 16px/1.3 var(--font-primary);word-break:break-word">{{ pf.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden">
+        <sc-for list="{{ settings }}" as="st" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:16px;padding:18px 22px;border-bottom:1px solid var(--rez-smoke)">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <span style="font:600 15px/1.3 var(--font-primary)">{{ st.l }}</span>
+              <span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ st.d }}</span>
+            </div>
+            <button onClick="{{ st.onClick }}" role="switch" aria-label="{{ st.l }}" style="flex:none;position:relative;width:46px;height:26px;border:0;border-radius:999px;background:{{ st.bg }};cursor:pointer;transition:background 220ms">
+              <span style="position:absolute;top:3px;left:{{ st.x }};width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:var(--shadow-sm);transition:left 220ms cubic-bezier(.2,.8,.2,1)"></span>
+            </button>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </section>
+</main>
+</sc-if>
+
+<footer style="background:#000;color:var(--rez-full-white);padding:28px 32px">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font:400 13px/1.4 var(--font-primary);opacity:.8">
+    <span>© 2026 Rezide. Powering India's Leading Realtors.</span>
+    <span>Customer account</span>
+  </div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SL={homes:['Config','Bathrooms','Parking','Furnishing'],offices:['Seats','Cabins','Parking','Fit-out'],retail:['Frontage','Floor','Washroom','Parking'],industrial:['Clear height','Docks','Power','Parking'],land:['Facing','Road width','Zone','Approval']};
+const PROPS=[
+ {type:'homes',title:'D Tower, Oberoi Splendor',loc:'Andheri East, Mumbai',sale:'₹ 4.75 Cr',srate:'₹ 55,041 per sq ft',rent:'₹ 1.45 L / mo',rrate:'₹ 168 per sq ft / mo',area:'Carpet: 863 sq ft',specs:['2 BHK','2 Baths','1 Park','Semi'],agent:'Buildstone Realty',updated:'Aug 20, 2026',status:'Available'},
+ {type:'offices',title:'Unit 1204, One BKC',loc:'Bandra Kurla Complex, Mumbai',sale:'₹ 18.40 Cr',srate:'₹ 46,000 per sq ft',rent:'₹ 12.0 L / mo',rrate:'₹ 300 per sq ft / mo',area:'Carpet: 4,000 sq ft',specs:['44','4','6','Furnished'],agent:'Keystone Properties',updated:'Aug 16, 2026',status:'Available'},
+ {type:'homes',title:'C Tower, Oberoi Springs',loc:'Andheri West, Mumbai',sale:'₹ 4.75 Cr',srate:'₹ 56,080 per sq ft',rent:'₹ 1.30 L / mo',rrate:'₹ 153 per sq ft / mo',area:'Carpet: 847 sq ft',specs:['2 BHK','2 Baths','1 Park','Fully'],agent:'Skyline Realty',updated:'Aug 12, 2026',status:'Coming Soon'},
+ {type:'retail',title:'Shop 8, High Street Phoenix',loc:'Lower Parel, Mumbai',sale:'₹ 6.20 Cr',srate:'₹ 77,500 per sq ft',rent:'₹ 4.8 L / mo',rrate:'₹ 600 per sq ft / mo',area:'Carpet: 800 sq ft',specs:['22 ft','Ground','Private','2'],agent:'Networth Realty',updated:'Aug 04, 2026',status:'Available'},
+ {type:'homes',title:'A Tower, Oberoi Esquire',loc:'Goregaon East, Mumbai',sale:'₹ 7.75 Cr',srate:'₹ 56,693 per sq ft',rent:'₹ 2.10 L / mo',rrate:'₹ 154 per sq ft / mo',area:'Carpet: 1,367 sq ft',specs:['3 BHK','4 Baths','2 Parks','Unfurnished'],agent:'Prime Estates Consulting',updated:'Jul 30, 2026',status:'Available'},
+ {type:'industrial',title:'Warehouse 3, Bhiwandi Logistics Park',loc:'Bhiwandi, Mumbai MMR',sale:'₹ 24.0 Cr',srate:'₹ 4,800 per sq ft',rent:'₹ 11.5 L / mo',rrate:'₹ 23 per sq ft / mo',area:'Built-up: 50,000 sq ft',specs:['36 ft','6','500 kVA','12'],agent:'Urban Nest Advisors',updated:'Jul 22, 2026',status:'Available'},
+ {type:'land',title:'Plot 42, Panvel Enclave',loc:'Panvel, Navi Mumbai',sale:'₹ 3.10 Cr',srate:'₹ 7,750 per sq ft',rent:'₹ 1.2 L / mo',rrate:'₹ 30 per sq ft / mo',area:'Plot: 4,000 sq ft',specs:['East','40 ft','Residential','NA'],agent:'Buildstone Realty',updated:'Jul 10, 2026',status:'Available'},
+ {type:'offices',title:'Unit 702, Lodha Supremus',loc:'Worli, Mumbai',sale:'₹ 9.60 Cr',srate:'₹ 40,000 per sq ft',rent:'₹ 6.0 L / mo',rrate:'₹ 250 per sq ft / mo',area:'Carpet: 2,400 sq ft',specs:['26','3','4','Warm shell'],agent:'Skyline Realty',updated:'Jun 28, 2026',status:'Coming Soon'}];
+const TYPES=[['all','All'],['homes','Homes'],['offices','Offices'],['retail','Retail'],['industrial','Industrial'],['land','Land']];
+const PROJ=[
+ {title:'Oberoi Elysian',loc:'Goregaon West, Mumbai',price:'₹ 3.40 Cr onwards',rate:'Under Construction · Possession 2028',area:'2 – 4 BHK',specs:['12','45 Fl','2028','RERA'],sl:['Towers','Floors','Possession','Registered'],agent:'Oberoi Realty',updated:'Sep 02, 2026',status:'Under Construction'},
+ {title:'Lodha Bellevue',loc:'Mahalaxmi, Mumbai',price:'₹ 6.90 Cr onwards',rate:'Ready to Move',area:'3 – 4 BHK',specs:['2','64 Fl','Ready','RERA'],sl:['Towers','Floors','Possession','Registered'],agent:'Lodha Group',updated:'Aug 25, 2026',status:'Ready to Move'}];
+const LIST_URL='#list';
+const CORNER_URL='#corner';
+const DATES=['Oct 17, 2026','Sep 28, 2026','Aug 14, 2026'];
+const OWN=[
+ {title:'B - 1702, Lodha Park',loc:'Worli, Mumbai',price:'₹ 9.20 Cr',intent:'Home · For Sale',status:'Live',sBg:'#000',sFg:'#E0E0E0',stats:[['1,284','Views'],['36','Shortlists'],['8','Visits'],['2','Offers']],meta:'Listed Sep 02, 2026 · Assisted by Skyline Realty',cta:'View Offers'},
+ {title:'A - 904, Oberoi Esquire',loc:'Goregaon East, Mumbai',price:'₹ 2.10 L / mo',intent:'Home · For Rent',status:'Under review',sBg:'#A3835F',sFg:'#000',stats:[['—','Views'],['—','Shortlists'],['—','Visits'],['—','Offers']],meta:'Submitted Oct 16, 2026 · Verification in 24 hours',cta:'View Status'},
+ {title:'Unit 702, Lodha Supremus',loc:'Worli, Mumbai',price:'₹ 6.0 L / mo',intent:'Office · For Lease',status:'Live',sBg:'#000',sFg:'#E0E0E0',stats:[['642','Views'],['14','Shortlists'],['3','Visits'],['0','Offers']],meta:'Listed Aug 28, 2026',cta:'View Visits'},
+ {title:'Shop 12, Phoenix Palladium',loc:'Lower Parel, Mumbai',price:'₹ 5.60 Cr',intent:'Retail · For Sale',status:'Draft',sBg:'#fff',sFg:'#000',stats:[['—','Views'],['—','Shortlists'],['—','Visits'],['—','Offers']],meta:'Photos and video pending',cta:'Continue Listing'}];
+const ST={ok:['#000','#E0E0E0'],warm:['#A3835F','#000'],muted:['#E0E0E0','#000']};
+class Component extends DCLogic {
+  state=(()=>{let c=null;try{c=JSON.parse(localStorage.getItem('rz_cust')||'null');}catch(e){}const role=c&&c.role==='owner'?'owner':'seeker';let t=null;try{t=localStorage.getItem('rz_tab');localStorage.removeItem('rz_tab');}catch(e){}return {logged:!!c,cust:c,lg:'phone',phone:'',otp:'',role,ptype:'all',tab:t||(role==='owner'?'mylistings':'viewed'),cat:'sale',set:{visits:true,offers:true,shared:true,news:false,wa:true}};})();
+  renderVals(){
+    const s=this.state,set=p=>this.setState(p);
+    const seekerMenu=[['viewed','Viewed','compass',4],['shared','Shared','share',2],['shortlisted','Shortlisted','star',3],['visits','Visits','map-pin',3],['offers','Offers','bag',2],['rejected','Rejected','x',1],['profile','Profile','user'],['settings','Settings','settings'],['logout','Logout','arrow-right']];
+    const ownerMenu=[['mylistings','My Listings','file-text',4],['visits','Visits','map-pin',5],['offers','Offers','bag',2],['profile','Profile','user'],['settings','Settings','settings'],['logout','Logout','arrow-right']];
+    const menuDef=s.role==='owner'?ownerMenu:seekerMenu;
+    const tab=menuDef.some(m=>m[0]===s.tab)?s.tab:menuDef[0][0];
+    const owner=s.role==='owner';
+    const TITLES={viewed:'Viewed by me',shared:'Shared with me',shortlisted:'Shortlisted by me',rejected:'Rejected by me',visits:owner?'Visits for my property':'My visits',offers:owner?'Offers on my property':'My offers',mylistings:'My listings',profile:'Profile',settings:'Settings'};
+    const cardTabs=['viewed','shared','shortlisted','rejected'];
+    const isCards=cardTabs.includes(tab);
+    const projOk=['viewed','shortlisted'].includes(tab);
+    const cat=(s.cat==='projects'&&!projOk)?'sale':s.cat;
+    const n={viewed:8,shared:3,shortlisted:5,rejected:2}[tab]||0;
+    const items=[];
+    if(isCards){
+      if(cat==='projects') PROJ.forEach((p,i)=>items.push({...p,specs:p.specs.map((v,j)=>({v,l:p.sl[j]})),slot:'acct-proj-'+i,note:'',starBg:tab==='shortlisted'?'var(--rez-mocaccino)':'rgba(255,255,255,.92)'}));
+      else PROPS.slice(0,n).filter(p=>s.ptype==='all'||p.type===s.ptype).forEach((p,i)=>{const rent=cat==='rental';items.push({title:p.title,loc:p.loc,price:rent?p.rent:p.sale,rate:rent?p.rrate:p.srate,area:p.area,agent:p.agent,updated:p.updated,status:p.status,
+        specs:p.specs.map((v,j)=>({v,l:SL[p.type][j]})),slot:'acct-'+tab+'-'+i,
+        note:tab==='shared'?'Shared by '+p.agent+' · "Fits your 2–3 BHK brief in the western suburbs."':tab==='rejected'?'You rejected this: price above budget.':'',
+        starBg:tab==='shortlisted'?'var(--rez-mocaccino)':'rgba(255,255,255,.92)'});});
+    }
+    const groups=[];items.forEach((it,i)=>{const d=DATES[Math.min(i,DATES.length-1)];let g=groups.find(x=>x.date===d);if(!g){g={date:d,items:[]};groups.push(g);}g.items.push(it);});
+    const rowsDef={
+      visits:owner?[['18','OCT','B - 1702, Lodha Park','Buyer: Ananya Desai · via Skyline Realty · 11:30 AM','Video tour','Confirmed','ok'],['20','OCT','B - 1702, Lodha Park','Buyer: Rohan Pillai · Site visit · 4:00 PM','Site visit','Requested','warm'],['12','OCT','B - 1702, Lodha Park','Buyer: Karan Malhotra · 6:00 PM','Site visit','Completed','muted']]
+        :[['21','OCT','D Tower, Oberoi Splendor','Andheri East · with Buildstone Realty · 11:00 AM','Site visit','Confirmed','ok'],['23','OCT','B Wing, Lodha Park','Worli · Video tour with Urban Nest Advisors · 7:30 PM','Video tour','Requested','warm'],['09','OCT','A Tower, Oberoi Esquire','Goregaon East · with Prime Estates Consulting','Site visit','Completed','muted']],
+      offers:owner?[['17','OCT','B - 1702, Lodha Park','From Ananya Desai · via Skyline Realty','₹ 8.85 Cr','New offer','warm'],['11','OCT','B - 1702, Lodha Park','From Vikram Rao · direct','₹ 8.40 Cr','Countered','muted']]
+        :[['16','OCT','D Tower, Oberoi Splendor','Asking ₹ 4.75 Cr · via Buildstone Realty','₹ 4.50 Cr','Under review','warm'],['02','OCT','C Tower, Oberoi Springs','Asking ₹ 4.75 Cr · via Skyline Realty','₹ 4.40 Cr','Declined','muted']]};
+    const rows=(rowsDef[tab]||[]).map(([day,mon,title,sub,value,status,k])=>({day,mon,title,sub,value,status,sBg:ST[k][0],sFg:ST[k][1]}));
+    const sw=k=>({bg:s.set[k]?'#000':'var(--rez-smoke)',x:s.set[k]?'23px':'3px',onClick:()=>set({set:{...s.set,[k]:!s.set[k]}})});
+    const ok=s.phone.length===10, otpOk=s.otp.length===4;
+    return {
+      logged:s.logged, notLogged:!s.logged, firstName:(s.cust&&s.cust.fname)||'Viraj',
+      lgPhone:s.lg==='phone', lgOtp:s.lg==='otp',
+      lgRoles:[['customer','Customer'],['realtor','Realtor']].map(([id,label])=>{const on=(s.lgRole||'customer')===id;return {label,bg:on?'#fff':'transparent',shadow:on?'var(--shadow-sm)':'none',weight:on?700:500,onClick:()=>this.setState({lgRole:id,lg:'phone',otp:''})};}),
+      lgTitle:s.lg==='otp'?'Enter the OTP.':((s.lgRole||'customer')==='realtor'?'Realtor login.':'Welcome back.'), lgSub:s.lg==='otp'?'Sent to +91 '+s.phone+'.':((s.lgRole||'customer')==='realtor'?'Sign in to your Rezide dashboard.':'Log in with your mobile number to see your homes, visits and offers.'),
+      phone:s.phone, otp:s.otp,
+      onPhone:e=>set({phone:e.target.value.replace(/\D/g,'').slice(0,10)}), onOtp:e=>set({otp:e.target.value.replace(/\D/g,'').slice(0,4)}),
+      sendBg:ok?'#000':'var(--rez-graphite)', verifyBg:otpOk?'#000':'var(--rez-graphite)',
+      sendOtp:()=>ok&&set({lg:'otp'}), verify:()=>{if(!otpOk)return; if((s.lgRole||'customer')==='realtor'){window.location.href='#dashboard';return;} try{localStorage.setItem('rz_cust',JSON.stringify({role:s.role,fname:'Viraj',lname:'Bhatia',phone:s.phone}));}catch(e){} set({logged:true});}, backPhone:()=>set({lg:'phone',otp:''}),
+      roles:[['seeker','Seeker'],['owner','Owner']].map(([id,label])=>({label,bg:s.role===id?'#000':'transparent',fg:s.role===id?'var(--rez-full-white)':'var(--rez-graphite)',onClick:()=>{try{const c=JSON.parse(localStorage.getItem('rz_cust')||'{}');localStorage.setItem('rz_cust',JSON.stringify({...c,role:id}));}catch(e){}set({role:id,tab:id==='owner'?'mylistings':'viewed',cat:'sale'});}})),
+      menu:menuDef.map(([id,label,icon,count])=>{const on=tab===id;return {label,icon,count:count?String(count):'',cBg:on?'var(--rez-mocaccino)':'var(--rez-cloud)',bg:on?'var(--rez-cloud)':'transparent',weight:on?700:500,
+        onClick:()=>id==='addlisting'?(()=>{try{localStorage.setItem('rz_add','1');}catch(e){}window.location.href=LIST_URL;})():id==='logout'?(()=>{try{localStorage.removeItem('rz_cust');}catch(e){}set({logged:false,cust:null,lg:'phone',otp:'',tab:'viewed',role:'seeker'});})():set({tab:id})};}),
+      ...(()=>{const c=s.cust||{};const fn=c.fname||'Viraj',ln=c.lname||'Bhatia',ph=c.phone||s.phone||'';return {sideName:fn+' '+ln,sideIni:(fn[0]+ln[0]).toUpperCase(),sidePhone:ph?'+91 '+ph.slice(0,5)+' '+ph.slice(5):'Verified member'};})(),
+      markAdd:()=>{try{localStorage.setItem('rz_add','1');}catch(e){}},
+      title:TITLES[tab],
+      showTypes:isCards&&cat!=='projects', ptypes:TYPES.map(([id,label])=>({label,bg:s.ptype===id?'#000':'#fff',fg:s.ptype===id?'var(--rez-full-white)':'#000',border:s.ptype===id?'#000':'var(--rez-smoke)',onClick:()=>set({ptype:id})})),
+      noMatch:isCards&&cat!=='projects'&&groups.length===0,
+      showCats:isCards||tab==='visits'||tab==='offers',
+      cats:[['sale','Sale'],['rental','Rental'],...(projOk?[['projects','Projects']]:[])].map(([id,label])=>({label,bg:cat===id?'#000':'transparent',fg:cat===id?'var(--rez-full-white)':'var(--rez-graphite)',onClick:()=>set({cat:id})})),
+      isCards:isCards&&groups.length>0, groups,
+      isMyListings:tab==='mylistings',
+      ownerStats:[['4','Listings'],['1,284','Total views'],['8','Visits'],['2','Offers']].map(([v,l])=>({v,l})),
+      myListings:OWN.map((p,i)=>({...p,slot:'acct-own-'+i,stats:p.stats.map(([v,l])=>({v,l}))})),
+      isRows:rows.length>0&&cat!=='rental', rows,
+      isEmpty:(['visits','offers'].includes(tab)&&cat==='rental'),
+      emptyIcon:tab==='offers'?'bag':'map-pin', emptyTitle:'Nothing here yet.', emptySub:tab==='offers'?'Offers on rentals will appear here.':'Rental visits you book will appear here.',
+      isProfile:tab==='profile', isSettings:tab==='settings',
+      fullName:'Viraj Bhatia', roleLabel:owner?'Property Owner':'Property Seeker',
+      profileFields:[['First name','Viraj'],['Last name','Bhatia'],['Mobile number','+91 99677 19220'],['Secondary mobile','+91 81695 52370'],['Email','viraj.bhatia@example.in'],['Preferred city','Mumbai']].map(([l,v])=>({l,v})),
+      settings:[['visits','Visit reminders','A reminder a day before and an hour before every visit.'],['offers','Offer updates','New offers, counters and acceptances.'],['shared','Shared by realtors','When a realtor shares a home with you.'],['wa','WhatsApp updates','Get the same alerts on WhatsApp.'],['news','Weekly newsletter','Stay updated in the loop, once a week.']].map(([k,l,d])=>({l,d,...sw(k)})),
+    };
+  }
+}
+</script>
+</body>
+</html>

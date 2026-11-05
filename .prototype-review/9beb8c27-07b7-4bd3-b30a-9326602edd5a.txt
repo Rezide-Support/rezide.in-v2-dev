@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style id="rez-mobile">@media (max-width:760px){
+html,body{overflow-x:hidden}
+header>div[style]{flex-wrap:wrap!important;height:auto!important;padding:10px 16px 0!important;gap:4px 12px!important;justify-content:space-between!important}
+header nav[style]{order:3;flex:1 1 100%!important;justify-content:flex-start!important;overflow-x:auto!important;scrollbar-width:none;margin:0 -16px!important;padding:0 8px!important}
+header nav::-webkit-scrollbar{display:none}
+[style*="padding: 88px 32px"],[style*="padding: 80px 32px"],[style*="padding: 72px 32px"]{padding:48px 16px!important}
+[style*="padding: 88px 32px 0px"]{padding-bottom:0!important}
+[style*="padding: 32px 32px 8px"],[style*="padding: 20px 32px 96px"],[style*="padding: 24px 32px 96px"],[style*="padding: 40px 32px"],[style*="padding: 28px 32px"]{padding-left:16px!important;padding-right:16px!important}
+:not(header>*)[style*="max-width: 1280px"][style*="padding: 0px 32px"]{padding-left:0!important;padding-right:0!important}
+footer[style]{padding:40px 16px 24px!important}
+[style*="min-height: 560px"]{min-height:0!important}
+[data-m="heroinner"]{gap:20px!important}
+h1[style*="clamp(48px"],h1[style*="clamp(44px"],h1[style*="clamp(40px"]{font-size:36px!important;line-height:1.06!important}
+h1[style*="white-space: nowrap"]{white-space:normal!important;font-size:26px!important}
+h2[style*="font: 600 44px"],h2[style*="font: 600 40px"],h3[style*="font: 600 40px"]{font-size:28px!important}
+[data-m="railcard"]{flex-basis:80%!important}
+[role="tablist"]{max-width:100%;overflow-x:auto;flex-wrap:nowrap!important;scrollbar-width:none}
+[style*="height: 44px; padding: 0px 24px"]{height:38px!important;padding:0 14px!important}
+[data-m="stack"]{grid-template-columns:1fr!important}
+[data-m="stack"]>:first-child{min-height:240px}
+[data-m="phone"]{order:0!important}
+[data-m="sep"]{display:none!important}
+input,select,textarea{font-size:16px!important}
+}</style>
+<style>@keyframes rezKenBurns{0%{scale:1.02;translate:0 0}50%{scale:1.1;translate:-1.5% -1%}100%{scale:1.06;translate:1.5% .5%}}
+image-slot[data-motion="on"]::part(image){animation:rezKenBurns 24s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){image-slot::part(image){animation:none}}</style>
+<style>body{margin:0;background:#fff;font-family:Montserrat,sans-serif;color:#000}a{color:#000}a:hover{color:#A3835F}select,input{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="position:relative;z-index:20;background:#fff;border-bottom:1px solid var(--rez-smoke)">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,2.5vw,32px);height:76px;display:flex;align-items:center;gap:clamp(12px,2vw,28px)">
+    <a href="#home" style="display:flex;color:#000"><x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="26" hint-size="150px,26px"></x-import></a>
+    <nav style="flex:1;min-width:0;display:flex;justify-content:safe center;align-items:center;gap:0;white-space:nowrap;overflow-x:auto;scrollbar-width:none">
+      <a href="#home" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">PROPERTIES</a>
+      <a href="#home" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">PROJECTS</a>
+      <a href="#list" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">LIST PROPERTY</a>
+      <a href="#realtor" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:700 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:#000;text-decoration:none" style-hover="color:#000">FIND REALTOR<span style="position:absolute;left:clamp(6px,1vw,18px);right:clamp(6px,1vw,18px);bottom:0;height:3px;border-radius:3px;background:var(--rez-mocaccino)"></span></a>
+      <span style="width:1px;height:18px;margin:0 6px;background:var(--rez-smoke)"></span>
+      <a href="#corner" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">REALTOR CORNER</a>
+    </nav>
+    <a href="#login" aria-label="Customer login" style="display:flex;color:#000"><x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="user" label="Customer login" tone="outline" size="md" hint-size="40px,40px"></x-import></a>
+  </div>
+</header>
+<section style="position:relative;min-height:560px;display:flex;align-items:center;padding:88px 32px;box-sizing:border-box;overflow:hidden;background:#02110C">
+  <div style="position:absolute;inset:0">
+    <image-slot data-motion="on" id="fr-hero-bg" shape="rect" placeholder="Drop realtor hero photo" src="https://images.unsplash.com/photo-1647580427155-0483906cb9de?fm=jpg&amp;q=70&amp;w=2400&amp;auto=format&amp;fit=crop" credit="Photo by Eric Ardito on Unsplash" credit-href="https://unsplash.com/@ericardito"></image-slot>
+  </div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(2,17,12,.78) 0%,rgba(2,17,12,.5) 48%,rgba(2,17,12,.12) 100%)"></div>
+  <sc-if value="{{ wideHero }}" hint-placeholder-val="{{ true }}">
+  <div style="position:absolute;inset:0;pointer-events:none;max-width:1280px;margin:0 auto">
+    <div style="position:absolute;top:14%;right:6%;display:flex;align-items:center;gap:12px;padding:12px 18px 12px 12px;border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow-md);color:#000">
+      <span style="width:38px;height:38px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="20px" hint-size="20px,20px"></x-import></span>
+      <span style="display:flex;flex-direction:column;gap:3px"><b style="font:700 14px/1 var(--font-primary)">RERA Registered</b><span style="display:flex;align-items:center;gap:6px;font:500 11px/1 var(--font-primary);color:var(--rez-graphite)">Verified<button onClick="{{ infoRera }}" aria-label="Why it matters" title="Why it matters" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:999px;background:var(--rez-mocaccino);color:#000;cursor:pointer;pointer-events:auto"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="13px" hint-size="13px,13px"></x-import></button></span></span>
+    </div>
+    <div style="position:absolute;top:35%;right:14%;display:flex;align-items:center;gap:12px;padding:12px 18px 12px 12px;border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow-md);color:#000">
+      <span style="width:38px;height:38px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="20px" hint-size="20px,20px"></x-import></span>
+      <span style="display:flex;flex-direction:column;gap:3px"><b style="font:700 14px/1 var(--font-primary)">GST Registered</b><span style="display:flex;align-items:center;gap:6px;font:500 11px/1 var(--font-primary);color:var(--rez-graphite)">Verified<button onClick="{{ infoGst }}" aria-label="Why it matters" title="Why it matters" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:999px;background:var(--rez-mocaccino);color:#000;cursor:pointer;pointer-events:auto"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="13px" hint-size="13px,13px"></x-import></button></span></span>
+    </div>
+    <div style="position:absolute;top:56%;right:4%;display:flex;align-items:center;gap:12px;padding:12px 18px 12px 12px;border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow-md);color:#000">
+      <span style="width:38px;height:38px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="20px" hint-size="20px,20px"></x-import></span>
+      <span style="display:flex;flex-direction:column;gap:3px"><b style="font:700 14px/1 var(--font-primary)">NAR-India Member</b><span style="display:flex;align-items:center;gap:6px;font:500 11px/1 var(--font-primary);color:var(--rez-graphite)">Verified<button onClick="{{ infoNar }}" aria-label="Why it matters" title="Why it matters" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:999px;background:var(--rez-mocaccino);color:#000;cursor:pointer;pointer-events:auto"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="13px" hint-size="13px,13px"></x-import></button></span></span>
+    </div>
+    <div style="position:absolute;top:77%;right:12%;display:flex;align-items:center;gap:12px;padding:12px 18px 12px 12px;border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow-md);color:#000">
+      <span style="width:38px;height:38px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="20px" hint-size="20px,20px"></x-import></span>
+      <span style="display:flex;flex-direction:column;gap:3px"><b style="font:700 14px/1 var(--font-primary)">Tech Enabled</b><span style="display:flex;align-items:center;gap:6px;font:500 11px/1 var(--font-primary);color:var(--rez-graphite)">On Rezide<button onClick="{{ infoTech }}" aria-label="Why it matters" title="Why it matters" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:999px;background:var(--rez-mocaccino);color:#000;cursor:pointer;pointer-events:auto"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="13px" hint-size="13px,13px"></x-import></button></span></span>
+    </div>
+  </div>
+  </sc-if>
+  <div style="position:relative;width:100%;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:28px;pointer-events:none">
+    <h1 style="margin:0;font:600 clamp(48px,6vw,84px)/1.02 var(--font-primary);letter-spacing:-0.025em;color:var(--rez-full-white);text-shadow:0 2px 24px rgba(2,17,12,.45)">Find your realtor.</h1>
+    <sc-if value="{{ narrowHero }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-wrap:wrap;gap:8px"><span onClick="{{ infoRera }}" style="cursor:pointer;display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 8px;border-radius:999px;background:rgba(255,255,255,.85);backdrop-filter:blur(18px);color:#000;font:700 13px/1 var(--font-primary)"><span style="width:24px;height:24px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="14px" hint-size="14px,14px"></x-import></span>RERA Registered</span><span onClick="{{ infoGst }}" style="cursor:pointer;display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 8px;border-radius:999px;background:rgba(255,255,255,.85);backdrop-filter:blur(18px);color:#000;font:700 13px/1 var(--font-primary)"><span style="width:24px;height:24px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="14px" hint-size="14px,14px"></x-import></span>GST Registered</span><span onClick="{{ infoNar }}" style="cursor:pointer;display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 8px;border-radius:999px;background:rgba(255,255,255,.85);backdrop-filter:blur(18px);color:#000;font:700 13px/1 var(--font-primary)"><span style="width:24px;height:24px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="14px" hint-size="14px,14px"></x-import></span>NAR-India Member</span><span onClick="{{ infoTech }}" style="cursor:pointer;display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 8px;border-radius:999px;background:rgba(255,255,255,.85);backdrop-filter:blur(18px);color:#000;font:700 13px/1 var(--font-primary)"><span style="width:24px;height:24px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="14px" hint-size="14px,14px"></x-import></span>Tech Enabled</span></div>
+    </sc-if>
+    <div style="pointer-events:auto;width:min(640px,100%);display:flex;flex-direction:column;gap:12px;padding:16px;background:#fff;border-radius:28px;box-shadow:var(--shadow-lg);box-sizing:border-box">
+      <div style="display:flex;gap:4px;padding:4px;width:max-content;border-radius:999px;background:var(--rez-cloud)">
+        <sc-for list="{{ byTabs }}" as="t" hint-placeholder-count="2">
+          <button onClick="{{ t.onClick }}" style="height:38px;padding:0 20px;border:0;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};font:600 14px/1 var(--font-primary);cursor:pointer">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input value="{{ q }}" onInput="{{ onQ }}" placeholder="{{ qPh }}" style="flex:1;min-width:0;height:54px;padding:0 22px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;outline:none;font:500 16px/1 var(--font-primary)">
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="lg" icon-left="search" onClick="{{ toResults }}" hint-size="128px,54px">Search</x-import>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="fr-results" style="padding:40px 32px 0">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <button onClick="{{ openSpec }}" style="display:flex;align-items:center;gap:10px;height:48px;padding:0 18px 0 22px;border:1px solid {{ specBorder }};border-radius:999px;background:#fff;font:600 15px/1 var(--font-primary);cursor:pointer">
+        <span>{{ specLabel }}</span>
+        <span style="display:flex;transform:rotate(-90deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span>
+      </button>
+      <sc-for list="{{ dds }}" as="d" hint-placeholder-count="4">
+        <span style="position:relative;display:flex">
+          <select aria-label="{{ d.label }}" value="{{ d.value }}" onChange="{{ d.onChange }}" style="appearance:none;-webkit-appearance:none;height:48px;padding:0 44px 0 22px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;outline:none;font:600 15px/1 var(--font-primary);color:{{ d.fg }};cursor:pointer">
+            <option value="">{{ d.label }}</option>
+            <sc-for list="{{ d.options }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for>
+          </select>
+          <span style="position:absolute;right:18px;top:17px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span>
+        </span>
+      </sc-for>
+      <button onClick="{{ clearAll }}" style="padding:0 6px;border:0;background:none;font:600 13px/1 var(--font-primary);color:var(--rez-mocaccino);text-decoration:underline;text-underline-offset:3px;cursor:pointer">Clear all</button>
+    </div>
+    <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ chips }}" as="ch" hint-placeholder-count="2">
+          <button onClick="{{ ch.onRemove }}" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px 0 14px;border:1px solid #000;border-radius:999px;background:#fff;font:500 13px/1 var(--font-primary);cursor:pointer"><span>{{ ch.label }}</span><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="x" size="12px" hint-size="12px,12px"></x-import></button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-top:12px;border-top:1px solid var(--rez-smoke)">
+      <h2 style="margin:0;font:600 28px/1.15 var(--font-primary);letter-spacing:-0.01em"><span style="font-weight:800">{{ cityName }}</span> {{ resNoun }}.</h2>
+      <span style="font:400 15px/1 var(--font-primary);color:var(--rez-graphite)">{{ count }} found</span>
+    </div>
+  </div>
+</section>
+<section style="padding:24px 32px 96px">
+  <sc-if value="{{ isFirm }}" hint-placeholder-val="{{ false }}">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:18px">
+    <sc-for list="{{ cards }}" as="c" hint-placeholder-count="8">
+      <article onClick="{{ c.open }}" data-m="stack" style="display:grid;grid-template-columns:180px minmax(0,1fr);border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;cursor:pointer;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px 14px;background:#F6F7FA;border-right:1px solid var(--rez-smoke);text-align:center">
+          <span style="width:72px;height:72px;border-radius:{{ c.logoRad }};background:{{ c.logoBg }};display:flex;align-items:center;justify-content:center;color:var(--rez-full-white);font:700 24px/1 var(--font-primary);letter-spacing:.04em">{{ c.ini }}</span>
+          <span style="display:flex;flex-direction:column;gap:5px"><b style="font:700 14px/1 var(--font-primary);letter-spacing:.14em;text-transform:uppercase;color:{{ c.logoBg }}">{{ c.word }}</b><span style="font:500 9px/1.3 var(--font-primary);letter-spacing:.18em;color:var(--rez-graphite);text-transform:uppercase">{{ c.tag }}</span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;padding:20px 22px;min-width:0">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <h3 style="margin:0;font:600 20px/1.2 var(--font-primary);letter-spacing:-0.01em">{{ c.firm }}</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ c.creds }}" as="cr" hint-placeholder-count="3">
+                <button onClick="{{ cr.onInfo }}" title="Why it matters" style="display:flex;align-items:center;gap:6px;height:28px;padding:0 12px 0 4px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:600 12px/1 var(--font-primary);color:#000;white-space:nowrap;cursor:pointer" style-hover="border-color:#000">
+                  <span style="width:20px;height:20px;border-radius:999px;background:#1F7A4D;color:#fff;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="12px" hint-size="12px,12px"></x-import></span>
+                  <span>{{ cr.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;padding-top:14px;border-top:1px solid var(--rez-smoke)">
+            <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:5px;min-width:0"><span style="font:400 10px/1 var(--font-eyebrow);letter-spacing:.14em;color:var(--rez-graphite)">SPECIALIZATION</span><span style="font:600 14px/1.4 var(--font-primary);color:#000;text-wrap:pretty">{{ c.specs }}</span></div>
+            <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:5px;min-width:0"><span style="font:400 10px/1 var(--font-eyebrow);letter-spacing:.14em;color:var(--rez-graphite)">LOCATION</span><span style="font:600 14px/1.4 var(--font-primary);color:#000">{{ c.areas }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:400 10px/1 var(--font-eyebrow);letter-spacing:.14em;color:var(--rez-graphite)">SINCE</span><span style="font:600 16px/1 var(--font-primary);color:#000">{{ c.since }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:400 10px/1 var(--font-eyebrow);letter-spacing:.14em;color:var(--rez-graphite)">TEAM</span><span style="font:600 16px/1 var(--font-primary);color:#000">{{ c.team }}</span></div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+            <span style="font:400 10px/1 var(--font-eyebrow);letter-spacing:.14em;color:var(--rez-graphite)">LIVE LISTINGS</span>
+            <span style="display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:#ECEEF5;font:600 13px/1 var(--font-primary);color:#000"><b style="font-weight:800">{{ c.rent }}</b> Rental</span>
+            <span style="display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:#ECEEF5;font:600 13px/1 var(--font-primary);color:#000"><b style="font-weight:800">{{ c.sale }}</b> Sale</span>
+          </div>
+        </div>
+      </article>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ isName }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:18px">
+    <sc-for list="{{ cards }}" as="c" hint-placeholder-count="6">
+      <article onClick="{{ c.open }}" data-m="stack" style="display:grid;grid-template-columns:150px minmax(0,1fr);cursor:pointer;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+        <div style="position:relative;min-height:190px;background:var(--rez-cloud)"><image-slot id="{{ c.pslot }}" shape="rect" placeholder="Photo" src="{{ c.photo }}" credit="Photo on Unsplash" credit-href="https://unsplash.com"></image-slot></div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:16px 18px;min-width:0">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:0"><h3 style="margin:0;font:600 18px/1.2 var(--font-primary)">{{ c.person }}</h3><span style="font:500 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ c.firm }}</span></div>
+            <span style="flex:none;width:40px;height:40px;border-radius:10px;background:{{ c.logoBg }};color:var(--rez-full-white);display:flex;align-items:center;justify-content:center;font:700 12px/1 var(--font-primary)">{{ c.ini }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;font:400 13px/1.4 var(--font-primary);color:var(--rez-graphite)">
+            <div style="display:flex;gap:8px;align-items:center;min-width:0"><b style="flex:none;color:#000;font-weight:700">Member of</b><span style="flex:1 1 auto;min-width:0">{{ c.assoc }}</span><button onClick="{{ c.onAssoc }}" aria-label="Why it matters" title="Why it matters" style="flex:none;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:var(--rez-mocaccino);color:#000;cursor:pointer;padding:0"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="12px" hint-size="12px,12px"></x-import></button></div>
+            <div style="display:flex;gap:8px;align-items:baseline;min-width:0"><b style="flex:none;color:#000;font-weight:700">Specializing</b><span style="flex:1 1 auto;min-width:0">{{ c.specs }}</span></div>
+            <div style="display:flex;gap:8px;align-items:baseline;min-width:0"><b style="flex:none;color:#000;font-weight:700">Live Listings</b><span style="flex:1 1 auto;min-width:0">{{ c.rent }} Rental · {{ c.resale }} Sale</span></div>
+            <div style="display:flex;gap:8px;align-items:baseline;min-width:0"><b style="flex:none;color:#000;font-weight:700">Speaks</b><span style="flex:1 1 auto;min-width:0">{{ c.langs }}</span></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:auto">
+            <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="sm" icon-left="phone-outgoing" hint-size="90px,36px">Call</x-import>
+            <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="secondary" size="sm" icon-left="message-dots" hint-size="110px,36px">WhatsApp</x-import>
+          </div>
+        </div>
+      </article>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ noRes }}" hint-placeholder-val="{{ false }}"><div style="max-width:1200px;margin:0 auto;padding:56px 24px;border:1px dashed var(--rez-smoke);border-radius:20px;text-align:center;font:500 16px/1.4 var(--font-primary);color:var(--rez-graphite)">No realtors match these filters.</div></sc-if>
+</section>
+</div>
+<sc-if value="{{ infoOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:110;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div onClick="{{ closeInfo }}" style="position:absolute;inset:0;background:rgba(2,17,12,.55);backdrop-filter:blur(4px)"></div>
+  <div role="dialog" style="position:relative;width:min(440px,100%);background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);padding:26px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="width:44px;height:44px;border-radius:999px;background:#000;color:var(--rez-mocaccino);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="22px" hint-size="22px,22px"></x-import></span>
+        <span style="display:flex;flex-direction:column;gap:4px"><h2 style="margin:0;font:600 22px/1.15 var(--font-primary)">{{ infoTitle }}</h2><span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ infoSub }}</span></span>
+      </div>
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="x" label="Close" tone="ghost" size="sm" onClick="{{ closeInfo }}" hint-size="36px,36px"></x-import>
+    </div>
+    <span style="font:600 13px/1 var(--font-primary)">What it means for you</span>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ infoPts }}" as="p" hint-placeholder-count="4">
+        <div style="display:flex;align-items:flex-start;gap:10px;font:400 14px/1.4 var(--font-primary)"><span style="display:flex;color:var(--rez-mocaccino);margin-top:1px"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check-circle" size="18px" hint-size="18px,18px"></x-import></span><span>{{ p }}</span></div>
+      </sc-for>
+    </div>
+    <button onClick="{{ closeInfo }}" style="height:48px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer">Got It</button>
+  </div>
+</div>
+</sc-if>
+<sc-if value="{{ specOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div onClick="{{ closeSpec }}" style="position:absolute;inset:0;background:rgba(2,17,12,.55);backdrop-filter:blur(4px)"></div>
+  <div role="dialog" style="position:relative;width:min(480px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden">
+    <div style="display:flex;flex-direction:column;gap:14px;padding:24px 26px 14px;border-bottom:1px solid var(--rez-smoke)">
+      <h2 style="margin:0;font:600 24px/1.15 var(--font-primary)">Select specializations</h2>
+      <input value="{{ sq }}" onInput="{{ onSq }}" placeholder="Search by name" style="height:46px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary)">
+    </div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:4px 26px">
+      <sc-for list="{{ specItems }}" as="it" hint-placeholder-count="8">
+        <button onClick="{{ it.onClick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;height:54px;padding:0;border:0;border-bottom:1px solid var(--rez-smoke);background:none;cursor:pointer;font:500 16px/1 var(--font-primary);text-align:left">
+          <span>{{ it.label }}</span>
+          <span style="width:22px;height:22px;box-sizing:border-box;border:1.5px solid {{ it.boxBorder }};border-radius:4px;background:{{ it.boxBg }};color:var(--rez-full-white);display:flex;align-items:center;justify-content:center"><span style="display:flex;opacity:{{ it.chk }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="16px" hint-size="16px,16px"></x-import></span></span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 26px 22px;border-top:1px solid var(--rez-smoke)">
+      <button onClick="{{ closeSpec }}" style="height:50px;border:1px solid #000;border-radius:999px;background:#fff;font:600 15px/1 var(--font-primary);cursor:pointer">Cancel</button>
+      <button onClick="{{ doneSpec }}" style="height:50px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer">Done</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SPECS=['Residential Lease','Residential Outright','Residential Primary','Residential Pre-leased','Commercial Lease','Commercial Outright','Commercial Pre-leased','Retail','Warehouse','Dark Stores','Land','Holiday Homes','Bank Auctions'];
+const PHOTOS=['photo-1573497019940-1c28c88b4f3e','photo-1560250097-0b93528c311a','photo-1600878459138-e1123b37cb30','photo-1573496359142-b8d87734a5a2','photo-1642257859842-c95f9fa8121d','photo-1585240975858-7264fd020798','photo-1588178454780-441fa5b99fa5','photo-1685760259914-ee8d2c92d2e0'];
+const INFO={
+ rera:['RERA Registered','Registered with the state Real Estate Regulatory Authority.',['Verified identity and office address on public record','Bound by RERA code of conduct and fair-practice rules','Complaints can be raised with the RERA authority','Must disclose accurate project and listing details']],
+ gst:['GST Registered','A tax-compliant business with a valid GSTIN.',['Proper invoices for brokerage and service fees','A registered, accountable business entity','Transparent fees with tax shown separately','Input tax credit for business clients']],
+ tech:['Tech Enabled','Active on the Rezide platform.',['Listings, visits and deals tracked in one place','Verified profile with ratings from real clients','Instant replies, video tours and digital paperwork','Every interaction logged for full transparency']],
+ nar:['NAR-India Member','Member of the National Association of Realtors, India.',['Follows the NAR-India code of ethics','Trained in professional standards and practice','Access to a national network of verified realtors','Disputes handled through a professional grievance process']]};
+const CITIES=['Mumbai','Pune','Bengaluru','Hyderabad','Gurugram','Noida','Chennai','Ahmedabad'];
+const LOCS={Mumbai:['Worli','Bandra West','Andheri West','Goregaon East','Powai','Borivali West','Chembur','Thane West']};
+const LANGS=['English','Hindi','Marathi','Gujarati','Tamil','Telugu','Kannada'];
+const FIRMS=[
+ ['AssetPro Investment & Realty','Rukmani Iyer','A51800004146',1994,6,214,33,['Worli','Lower Parel'],['Lodha Park','Omkar 1973'],['Residential Outright','Residential Lease'],['English','Hindi'],'F','#1E2A78'],
+ ['Dipesh H Vora Estate Agent','Dipesh Vora','A51800002214',1988,4,17,4,['Borivali West','Goregaon West'],['Rishabraj Phoenix'],['Residential Outright','Residential Primary'],['Gujarati','Hindi','English'],'M','#7B2D6B'],
+ ['Skyline Realty','Arjun Mehta','A51800011023',2006,12,96,41,['Bandra West','Andheri West'],['Rustomjee Seasons','Kalpataru Sparkle'],['Residential Lease','Commercial Lease'],['English','Hindi','Marathi'],'M','#15302B'],
+ ['Urban Nest Advisors','Sana Qureshi','A51800020871',2012,8,58,72,['Powai','Chembur'],['Hiranandani Gardens'],['Residential Lease','Residential Pre-leased'],['English','Hindi'],'F','#380516'],
+ ['Keystone Commercial','Vikram Rao','A51800031540',2009,15,44,63,['Lower Parel','Andheri East'],['One BKC','Peninsula Business Park'],['Commercial Lease','Commercial Outright','Warehouse'],['English','Telugu','Hindi'],'M','#000'],
+ ['Networth Realty','Neha Kapoor','A51800008812',1999,22,131,48,['Goregaon East','Malad West'],['Oberoi Garden City'],['Residential Primary','Residential Outright','Holiday Homes'],['English','Hindi','Punjabi'],'F','#2F4842'],
+ ['Landmark Land & Estates','Karan Malhotra','A51800040217',2015,5,23,2,['Thane West','Bhiwandi'],['—'],['Land','Warehouse','Dark Stores'],['Hindi','Marathi'],'M','#5A4632'],
+ ['Crest Auction Partners','Priya Nair','A51800051109',2018,3,12,0,['Worli','Chembur'],['—'],['Bank Auctions','Residential Outright'],['English','Malayalam','Hindi'],'F','#1E2A78']];
+class Component extends DCLogic {
+  state={by:'name',q:'',spec:[],city:'Mumbai',loc:'',lang:'',gender:'',specOpen:false,draft:[],sq:''};
+  componentDidMount(){this._rs=()=>this.setState({w:window.innerWidth});window.addEventListener('resize',this._rs);this._rs();}
+  componentWillUnmount(){window.removeEventListener('resize',this._rs);}
+  renderVals(){
+    const s=this.state,set=o=>this.setState(o);
+    const q=s.q.toLowerCase();
+    const list=FIRMS.filter(r=>(!q||(s.by==='name'?r[1]:r[0]).toLowerCase().includes(q))&&(!s.spec.length||s.spec.some(x=>r[9].includes(x)))&&(!s.loc||r[7].includes(s.loc))&&(s.by==='firm'||((!s.lang||r[10].includes(s.lang))&&(!s.gender||r[11]===s.gender[0]))));
+    const dd=(k,label,opts,ph)=>({label,ph,options:opts,value:s[k],fg:s[k]?'#000':'var(--rez-graphite)',onChange:e=>set({[k]:e.target.value,...(k==='city'?{loc:''}:{})})});
+    return {
+      byTabs:[['name','By Name'],['firm','By Firm']].map(([id,label])=>({label,bg:s.by===id?'#000':'transparent',fg:s.by===id?'var(--rez-full-white)':'#000',onClick:()=>set({by:id})})),
+      q:s.q, onQ:e=>set({q:e.target.value}), qPh:s.by==='name'?'Search realtor by name':'Search by firm name',
+      toResults:()=>{const el=document.getElementById('fr-results');if(el)window.scrollTo({top:el.offsetTop-20,behavior:'smooth'});},
+      dds:[dd('city','City',CITIES),dd('loc','Location',LOCS[s.city]||[]),...(s.by==='name'?[dd('lang','Language',LANGS),dd('gender','Gender',['Female','Male'])]:[])], isFirm:s.by==='firm'&&list.length>0, isName:s.by==='name'&&list.length>0,
+      specLabel:s.spec.length?('Specialization · '+s.spec.length):'Specialization', specBorder:s.spec.length?'#000':'var(--rez-smoke)',
+      openSpec:()=>set({specOpen:true,draft:[...s.spec],sq:''}),
+      specOpen:s.specOpen, closeSpec:()=>set({specOpen:false}), doneSpec:()=>set({spec:s.draft,specOpen:false}),
+      sq:s.sq, onSq:e=>set({sq:e.target.value}),
+      specItems:SPECS.filter(x=>!s.sq||x.toLowerCase().includes(s.sq.toLowerCase())).map(x=>{const on=s.draft.includes(x);return {label:x,chk:on?1:0,boxBg:on?'#000':'#fff',boxBorder:on?'#000':'var(--rez-graphite)',onClick:()=>set({draft:on?s.draft.filter(y=>y!==x):[...s.draft,x]})};}),
+      chips:s.spec.map(x=>({label:x,onRemove:()=>set({spec:s.spec.filter(y=>y!==x)})})), hasChips:s.spec.length>0,
+      clearAll:()=>set({spec:[],loc:'',lang:'',gender:'',q:''}),
+      wideHero:(s.w??1280)>=1000, narrowHero:(s.w??1280)<1000, count:String(list.length), resNoun:s.by==='firm'?'Firms':'Realtors', cityName:s.city,
+      cards:list.map((r,i)=>({open:()=>{location.href='Realtor Profile.dc.html?'+new URLSearchParams({type:s.by==='firm'?'firm':'agent',name:r[1],firm:r[0],ini:r[0].split(' ').filter(w=>/^[A-Z]/.test(w)).map(w=>w[0]).join('').slice(0,3),logoBg:r[12]||'#2A3B8F',photo:PHOTOS[i]||'',since:String(r[3]),team:String(r[4]),rent:String(r[6]),sale:String(r[5]),specs:r[9].join(', ').replace(/Outright/g,'Sales'),areas:r[7].join(', '),langs:r[10].join(', '),creds:['RERA',...(i%3!==2?['NAR-India']:[]),...(i%4!==3?['GST']:[])].join(',')}).toString();},firm:r[0],person:r[1],rera:r[2],since:String(r[3]),team:String(r[4]),sale:String(r[5]),rent:String(r[6]),areas:r[7].join(', '),bldg:r[8].join(', '),specs:r[9].join(' · '),langs:r[10].join(', '),
+        credRows:[{label:'RERA No.',value:r[2],tickBg:'#1F7A4D',onInfo:()=>set({info:'rera'})},
+          ...(i%4!==3?[{label:'GST No.',value:'27AA'+String.fromCharCode(66+i)+'CR'+(1234+i*111)+'F1Z'+(i+1),tickBg:'#1F7A4D',onInfo:()=>set({info:'gst'})}]:[]),
+          ...(i%3!==2?[{label:'Association',value:'NAR-India',tickBg:'#1F7A4D',onInfo:()=>set({info:'nar'})}]:[])],
+        creds:[['rera','RERA'],...(i%3!==2?[['nar','NAR-India']]:[]),...(i%4!==3?[['gst','GST']]:[])].map(([k,label])=>({label,onInfo:()=>set({info:k})})),
+        word:r[0].split(' ')[0], tag:r[0].split(' ').slice(1).join(' ')||'Realty', logoRad:['14px','999px','4px 20px','20px 4px'][i%4],
+        photo:PHOTOS[i]?('https://images.unsplash.com/'+PHOTOS[i]+'?fm=jpg&q=70&w=600&h=760&auto=format&fit=crop&crop=faces'):'',pslot:'fr-p-'+i,listings:String(r[5]+r[6]), resale:String(r[5]), assoc:['TREK','NAR-India, SMART','NAR-India, AREA','NAR-India, TREK'][i%4], onAssoc:()=>set({info:'nar'}), specs:r[9].join(', ').replace(/Outright/g,'Sales'),ini:r[0].split(' ').filter(w=>/^[A-Z]/.test(w)).map(w=>w[0]).join('').slice(0,3),logoBg:r[12],slot:'fr-logo-'+i})),
+      noRes:list.length===0,
+      infoRera:()=>set({info:'rera'}), infoGst:()=>set({info:'gst'}), infoNar:()=>set({info:'nar'}), infoTech:()=>set({info:'tech'}),
+      infoOpen:!!s.info, closeInfo:()=>set({info:null}),
+      infoTitle:s.info?INFO[s.info][0]:'', infoSub:s.info?INFO[s.info][1]:'', infoPts:s.info?INFO[s.info][2]:[]
+    };
+  }
+}
+</script>
+</body>
+</html>

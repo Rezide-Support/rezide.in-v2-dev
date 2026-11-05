@@ -1,0 +1,466 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Foldable / dual-screen devices (Viewport Segments API, Chromium 138+).
+ * A device reports two segments when spanned across two screens (Surface Duo)
+ * or half-folded (Galaxy Z Fold / Pixel Fold in book or table-top posture).
+ * `FoldWatcher` (src/components/layout/fold-watcher.tsx) reads
+ * `window.viewport.segments` and sets `data-fold` plus pixel geometry on <html>:
+ *   fold-x: two segments side by side (vertical hinge, "book" posture)
+ *   fold-y: two segments stacked (horizontal hinge, "table-top" posture)
+ *   --seg-0-width, --seg-1-left, --seg-1-width, --hinge-width   (fold-x)
+ *   --seg-0-height, --seg-1-top, --seg-1-height, --hinge-height (fold-y)
+ * JS rather than the `(horizontal-viewport-segments: 2)` media query because
+ * the CSS optimiser drops that query. Elsewhere nothing matches.
+ */
+@custom-variant fold-x (&:where([data-fold="x"], [data-fold="x"] *));
+@custom-variant fold-y (&:where([data-fold="y"], [data-fold="y"] *));
+
+/*
+ * Rezide design tokens (Visual Identity §1.8–1.9), ported from the prototype's
+ * design-system bundle. shadcn/ui semantic variables are mapped onto them below.
+ */
+:root {
+  /* Brand primitives */
+  --rez-timber-green: #15302b;
+  --rez-timber-green-tint: #2f4842;
+  --rez-forest-ink: #02110c;
+  --rez-burgundy: #380516;
+  --rez-mocaccino: #a3835f;
+  /* Darker mocaccino for text on white. The brand hue fails WCAG AA at small sizes. */
+  --rez-mocaccino-ink: #7a5c3b;
+  --rez-black: #000000;
+  --rez-white: #ffffff;
+  --rez-full-white: #e0e0e0;
+  --rez-cream: #fdf9f0;
+  --rez-cream-warm: #f9f7f3;
+
+  /* Grayscale accents */
+  --rez-cloud: #edeff7;
+  --rez-smoke: #d3d6e0;
+  --rez-steel: #bcbfcc;
+  --rez-space: #9da2b3;
+  --rez-graphite: #666978; /* prototype #6e7180, darkened to pass WCAG AA (4.5:1) on cloud and beige panels */
+  --rez-arsenic: #40424d;
+  --rez-phantom: #1e1e24;
+
+  /* Elevation (flat-first brand: shadows only on lifted surfaces) */
+  --shadow-sm: 0 1px 2px rgba(2, 17, 12, 0.08);
+  --shadow-md: 0 8px 24px rgba(2, 17, 12, 0.1);
+  --shadow-lg: 0 24px 60px rgba(2, 17, 12, 0.18);
+  --ring-focus: 0 0 0 3px rgba(163, 131, 95, 0.45);
+
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* shadcn/ui semantic variables → Rezide light mode (black on white) */
+  --background: var(--rez-white);
+  --foreground: var(--rez-black);
+  --card: var(--rez-white);
+  --card-foreground: var(--rez-black);
+  --popover: var(--rez-white);
+  --popover-foreground: var(--rez-black);
+  --primary: var(--rez-black);
+  --primary-foreground: var(--rez-full-white);
+  --secondary: var(--rez-cloud);
+  --secondary-foreground: var(--rez-black);
+  --muted: var(--rez-cloud);
+  --muted-foreground: var(--rez-graphite);
+  --accent: var(--rez-cloud);
+  --accent-foreground: var(--rez-black);
+  --destructive: #9b1c31;
+  --border: var(--rez-smoke);
+  --input: var(--rez-smoke);
+  --ring: var(--rez-mocaccino);
+  --radius: 1.25rem;
+
+  --chart-1: var(--rez-black);
+  --chart-2: var(--rez-mocaccino);
+  --chart-3: var(--rez-timber-green);
+  --chart-4: var(--rez-graphite);
+  --chart-5: var(--rez-burgundy);
+  --sidebar: var(--rez-white);
+  --sidebar-foreground: var(--rez-black);
+  --sidebar-primary: var(--rez-black);
+  --sidebar-primary-foreground: var(--rez-full-white);
+  --sidebar-accent: var(--rez-cloud);
+  --sidebar-accent-foreground: var(--rez-black);
+  --sidebar-border: var(--rez-smoke);
+  --sidebar-ring: var(--rez-mocaccino);
+}
+
+@theme inline {
+  --font-sans: var(--font-montserrat), var(--font-montserrat-ext), system-ui, "Helvetica Neue", Arial, sans-serif;
+  --font-secondary: var(--font-special-gothic), var(--font-montserrat), var(--font-montserrat-ext), system-ui, sans-serif;
+  --font-eyebrow: var(--font-special-gothic-expanded), var(--font-special-gothic), var(--font-montserrat-ext), system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --color-rez-timber: var(--rez-timber-green);
+  --color-rez-timber-tint: var(--rez-timber-green-tint);
+  --color-rez-forest: var(--rez-forest-ink);
+  --color-rez-burgundy: var(--rez-burgundy);
+  --color-rez-mocaccino: var(--rez-mocaccino);
+  --color-rez-mocaccino-ink: var(--rez-mocaccino-ink);
+  --color-rez-full-white: var(--rez-full-white);
+  --color-rez-cream: var(--rez-cream);
+  --color-rez-cloud: var(--rez-cloud);
+  --color-rez-smoke: var(--rez-smoke);
+  --color-rez-steel: var(--rez-steel);
+  --color-rez-space: var(--rez-space);
+  --color-rez-graphite: var(--rez-graphite);
+  --color-rez-arsenic: var(--rez-arsenic);
+  --color-rez-phantom: var(--rez-phantom);
+
+  --shadow-rez-sm: var(--shadow-sm);
+  --shadow-rez-md: var(--shadow-md);
+  --shadow-rez-lg: var(--shadow-lg);
+
+  --ease-rez: var(--ease-standard);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Rezide radii: 8 tag · 12 · 16 · 20 card · 28 hero search */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  /* Visible keyboard focus everywhere, in the brand mocaccino ring. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--rez-mocaccino);
+    outline-offset: 2px;
+  }
+  /* iOS zooms inputs below 16px. */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+}
+
+@layer utilities {
+  .eyebrow {
+    font-family: var(--font-eyebrow);
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrim-bottom {
+    background: linear-gradient(180deg, rgba(2, 17, 12, 0) 45%, rgba(2, 17, 12, 0.82) 100%);
+  }
+}
+
+@keyframes rez-ken-burns {
+  0% {
+    scale: 1.02;
+    translate: 0 0;
+  }
+  50% {
+    scale: 1.1;
+    translate: -1.5% -1%;
+  }
+  100% {
+    scale: 1.06;
+    translate: 1.5% 0.5%;
+  }
+}
+
+.ken-burns {
+  animation: rez-ken-burns 24s ease-in-out infinite alternate;
+  will-change: scale, translate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ken-burns {
+    animation: none;
+  }
+}
+
+/* Properties map, styled like GeoEstate's map (geo_estate_new/src/index.css): tiles in colour. */
+.rez-map .leaflet-container {
+  font-family: var(--font-sans);
+}
+.rez-map .leaflet-control-zoom {
+  border: 1px solid #d8e2d0;
+  box-shadow: 0 3px 12px #29432b20;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.rez-map .leaflet-control-zoom a {
+  color: #3f6446;
+}
+
+/* Map pins (GeoEstate style): listing = green house pin, cluster = blue count circle,
+   project = green building pin with an orange count badge. */
+.rez-pin-marker {
+  background: none;
+  border: 0;
+}
+.rez-pin {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-top: 1px;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #326448;
+  color: #fff;
+  transform: rotate(-45deg);
+  box-shadow: -2px 3px 7px #16352550;
+  cursor: pointer;
+}
+.rez-pin > span {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  transform: rotate(45deg);
+}
+.rez-pin--cluster {
+  border-radius: 50%;
+  background: #2f7fb2;
+  transform: none;
+}
+.rez-pin--cluster > span {
+  transform: none;
+}
+.rez-pin-marker:hover .rez-pin,
+.rez-pin-marker:focus .rez-pin {
+  background: #c18735;
+  box-shadow: 0 0 0 4px #c1873533;
+}
+.rez-project-pin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-top: 1px;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #326448;
+  color: #fff;
+  transform: rotate(-45deg);
+  box-shadow: -2px 3px 7px #16352550;
+  cursor: pointer;
+}
+.rez-project-pin > span {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  transform: rotate(45deg);
+}
+.rez-project-pin svg,
+.rez-pin svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rez-project-pin b {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 3px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #c18735;
+  color: #fff;
+  font-size: 9px;
+  line-height: 1;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 5px #263b2a44;
+}
+.rez-pin-marker:hover .rez-project-pin,
+.rez-pin-marker:focus .rez-project-pin {
+  background: #244e36;
+  box-shadow: 0 0 0 4px #32644833;
+}
+
+/* Search center pin, cluster popup and map result popups (GeoEstate's map). */
+.rez-center-marker {
+  background: none;
+  border: 0;
+}
+.rez-center-halo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #3677d033;
+}
+.rez-center-halo > span {
+  width: 16px;
+  height: 16px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #3677d0;
+  box-shadow: 0 2px 7px #1a3d7055;
+}
+.rez-center-tooltip {
+  border: 0;
+  border-radius: 6px;
+  background: #24384c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+.rez-center-tooltip::before {
+  border-top-color: #24384c;
+}
+.rez-map-popup .leaflet-popup-content {
+  width: auto;
+  margin: 12px;
+}
+.rez-map-popup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.rez-map-popup-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rez-map-popup-item img {
+  width: 100%;
+  height: 110px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.rez-map-popup-item small {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-rez-graphite);
+}
+.rez-map-popup-item h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.rez-map-popup-item p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-rez-graphite);
+}
+.rez-map-popup-item strong {
+  font-size: 14px;
+}
+.rez-map-popup-specs,
+.rez-map-popup-note {
+  font-size: 12px;
+  color: var(--color-rez-graphite);
+}
+.rez-map-popup-item a {
+  margin-top: 4px;
+  border-radius: 6px;
+  background: #000;
+  padding: 8px 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ---------- Foldable / dual-screen overlays (see FoldWatcher) ---------- */
+/* Centred dialogs and toasts would sit exactly on a vertical hinge: move them onto the right screen. */
+[data-fold="x"] [data-slot="dialog-content"] {
+  left: calc(var(--seg-1-left) + var(--seg-1-width) / 2);
+  max-width: min(28rem, calc(var(--seg-1-width) - 2rem));
+}
+[data-fold="x"] [data-sonner-toaster][data-x-position="center"] {
+  left: calc(var(--seg-1-left) + var(--seg-1-width) / 2);
+}
+/* Table-top posture: content on the top screen, controls on the bottom one. Dialogs go below the hinge. */
+[data-fold="y"] [data-slot="dialog-content"] {
+  top: calc(var(--seg-1-top) + var(--seg-1-height) / 2);
+  max-height: calc(var(--seg-1-height) - 2rem);
+}

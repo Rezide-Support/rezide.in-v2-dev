@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style id="rez-mobile">@media (max-width:760px){[data-m="lpgrid"]{grid-template-columns:1fr!important}[data-m="lpside"]{display:none!important}
+html,body{overflow-x:hidden}
+header>div[style]{flex-wrap:wrap!important;height:auto!important;padding:10px 16px 0!important;gap:4px 12px!important;justify-content:space-between!important}
+header nav[style]{order:3;flex:1 1 100%!important;justify-content:flex-start!important;overflow-x:auto!important;scrollbar-width:none;margin:0 -16px!important;padding:0 8px!important}
+header nav::-webkit-scrollbar{display:none}
+[style*="padding: 88px 32px"],[style*="padding: 80px 32px"],[style*="padding: 72px 32px"]{padding:48px 16px!important}
+[style*="padding: 88px 32px 0px"]{padding-bottom:0!important}
+[style*="padding: 32px 32px 8px"],[style*="padding: 20px 32px 96px"],[style*="padding: 24px 32px 96px"],[style*="padding: 40px 32px"],[style*="padding: 28px 32px"]{padding-left:16px!important;padding-right:16px!important}
+:not(header>*)[style*="max-width: 1280px"][style*="padding: 0px 32px"]{padding-left:0!important;padding-right:0!important}
+footer[style]{padding:40px 16px 24px!important}
+[style*="min-height: 560px"]{min-height:0!important}
+[data-m="heroinner"]{gap:20px!important}
+h1[style*="clamp(48px"],h1[style*="clamp(44px"],h1[style*="clamp(40px"]{font-size:36px!important;line-height:1.06!important}
+h1[style*="white-space: nowrap"]{white-space:normal!important;font-size:26px!important}
+h2[style*="font: 600 44px"],h2[style*="font: 600 40px"],h3[style*="font: 600 40px"]{font-size:28px!important}
+[data-m="railcard"]{flex-basis:80%!important}
+[role="tablist"]{max-width:100%;overflow-x:auto;flex-wrap:nowrap!important;scrollbar-width:none}
+[style*="height: 44px; padding: 0px 24px"]{height:38px!important;padding:0 14px!important}
+[data-m="stack"]{grid-template-columns:1fr!important}
+[data-m="stack"]>:first-child{min-height:240px}
+[data-m="phone"]{order:0!important}
+[data-m="sep"]{display:none!important}
+input,select,textarea{font-size:16px!important}
+}</style>
+<style>body{margin:0;background:#F4F5F8;font-family:Montserrat,sans-serif;color:#000}a{color:#000}a:hover{color:#A3835F}input,select,textarea{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="position:relative;z-index:20;background:#fff;border-bottom:1px solid var(--rez-smoke)">
+  <div style="max-width:1280px;margin:0 auto;padding:0 clamp(16px,2.5vw,32px);height:76px;display:flex;align-items:center;gap:clamp(12px,2vw,28px)">
+    <a href="#home" style="display:flex;color:#000"><x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="26" hint-size="150px,26px"></x-import></a>
+    <sc-if value="{{ notCust }}" hint-placeholder-val="{{ true }}">
+    <nav style="flex:1;min-width:0;display:flex;justify-content:safe center;align-items:center;gap:0;white-space:nowrap;overflow-x:auto;scrollbar-width:none">
+      <a href="#home" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">PROPERTIES</a>
+      <a href="#home" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">PROJECTS</a>
+      <a href="#list" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:700 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:#000;text-decoration:none" style-hover="color:#000">LIST PROPERTY<span style="position:absolute;left:clamp(6px,1vw,18px);right:clamp(6px,1vw,18px);bottom:0;height:3px;border-radius:3px;background:var(--rez-mocaccino)"></span></a>
+      <a href="#realtor" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">FIND REALTOR</a>
+      <span style="width:1px;height:18px;margin:0 6px;background:var(--rez-smoke)"></span>
+      <a href="#corner" style="position:relative;flex:none;display:flex;align-items:center;height:48px;padding:0 clamp(6px,1vw,18px);font:500 clamp(11px,1vw,13px)/1 var(--font-primary);letter-spacing:clamp(0em,.4vw - .02em,.06em);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">REALTOR CORNER</a>
+    </nav>
+    </sc-if>
+    <sc-if value="{{ notCust }}" hint-placeholder-val="{{ true }}">
+    <a href="#login" aria-label="Customer login" style="display:flex;color:#000"><x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="user" label="Customer login" tone="outline" size="md" hint-size="40px,40px"></x-import></a>
+    </sc-if>
+    <sc-if value="{{ isCust }}" hint-placeholder-val="{{ false }}">
+      <span style="flex:1"></span>
+      <div style="display:flex;align-items:center;gap:20px">
+        <a href="#home" style="font:600 13px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite);text-decoration:none" style-hover="color:#000">BACK TO REZIDE</a>
+        <span style="display:flex;align-items:center;gap:10px"><span style="font:600 14px/1 var(--font-primary)">{{ hdrName }}</span><span style="width:40px;height:40px;border-radius:999px;background:#000;color:var(--rez-full-white);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="user" size="18px" hint-size="18px,18px"></x-import></span></span>
+      </div>
+    </sc-if>
+  </div>
+</header>
+<sc-if value="{{ notWizard }}" hint-placeholder-val="{{ true }}">
+<section style="background:#02110C;color:var(--rez-full-white);padding:72px 32px">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:48px">
+    <div style="flex:1 1 520px;display:flex;flex-direction:column;gap:28px;max-width:640px">
+      <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-mocaccino)">LIST PROPERTY</span>
+      <h1 style="margin:0;font:600 clamp(44px,5.5vw,76px)/1.02 var(--font-primary);letter-spacing:-0.025em">Sell or rent faster. <span style="color:var(--rez-mocaccino)">100% free.</span></h1>
+      <p style="margin:0;font:400 19px/1.5 var(--font-primary);opacity:.85;max-width:560px">List in minutes to connect with verified buyers and tenants.<br><span style="color:var(--rez-mocaccino)">Want assistance? Top local realtors can assist, if you choose.</span></p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <sc-for list="{{ heroPoints }}" as="hp" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:12px;font:500 16px/1.3 var(--font-primary)"><span style="display:flex;color:var(--rez-mocaccino)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check-circle" size="22px" hint-size="22px,22px"></x-import></span><span>{{ hp }}</span></div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="width:min(440px,100%);background:#fff;color:#000;border-radius:20px;box-shadow:var(--shadow-lg);padding:32px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <h2 style="margin:0;font:600 26px/1.15 var(--font-primary);letter-spacing:-0.01em">{{ vTitle }}</h2>
+        <p style="margin:0;font:400 14px/1.45 var(--font-primary);color:var(--rez-graphite)">{{ vSub }}</p>
+      </div>
+      <sc-if value="{{ isPhone }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <sc-if value="{{ guest }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">First name</span><input value="{{ fname }}" onInput="{{ onFname }}" placeholder="First name" style="height:52px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);min-width:0"></label>
+            <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Last name</span><input value="{{ lname }}" onInput="{{ onLname }}" placeholder="Last name" style="height:52px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);min-width:0"></label>
+          </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:600 13px/1 var(--font-primary)">I want to</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px;background:var(--rez-cloud)">
+              <sc-for list="{{ heroIntents }}" as="m" hint-placeholder-count="2">
+                <button onClick="{{ m.onClick }}" style="height:44px;border:0;border-radius:999px;background:{{ m.bg }};color:#000;font:{{ m.weight }} 15px/1 var(--font-primary);cursor:pointer;transition:background 220ms">{{ m.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ guest }}" hint-placeholder-val="{{ true }}">
+          <label style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:600 13px/1 var(--font-primary)">Mobile number</span>
+            <span style="display:flex;align-items:center;gap:10px;height:52px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px">
+              <span style="font:600 15px/1 var(--font-primary)">+91</span>
+              <span style="width:1px;height:22px;background:var(--rez-smoke)"></span>
+              <input value="{{ phone }}" onInput="{{ onPhone }}" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" style="flex:1;min-width:0;border:0;outline:none;font:500 16px/1 var(--font-primary);background:transparent">
+            </span>
+          </label>
+          </sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isOtp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value="{{ otp }}" onInput="{{ onOtp }}" inputmode="numeric" maxlength="4" placeholder="• • • •" style="height:64px;border:1px solid #000;border-radius:16px;text-align:center;outline:none;font:600 28px/1 var(--font-primary);letter-spacing:.6em;padding-left:.6em">
+          <div style="display:flex;justify-content:space-between;font:500 13px/1 var(--font-primary);color:var(--rez-graphite)">
+            <button onClick="{{ editPhone }}" style="padding:0;border:0;background:none;font:inherit;color:#000;text-decoration:underline;text-underline-offset:3px;cursor:pointer">Change number</button>
+            <span>Resend in 0:30</span>
+          </div>
+        </div>
+      </sc-if>
+      <button onClick="{{ vAction }}" style="height:54px;border:0;border-radius:999px;background:{{ vBtnBg }};color:var(--rez-full-white);font:600 16px/1 var(--font-primary);cursor:pointer">{{ vBtn }}</button>
+      <p style="margin:0;padding-top:14px;border-top:1px solid var(--rez-smoke);font:400 12px/1.45 var(--font-primary);color:var(--rez-graphite);text-align:center">By continuing you agree to our terms. Your number stays private. Prototype: any 6 digits work as OTP.</p>
+    </div>
+  </div>
+</section>
+<section style="background:#fff;padding:80px 32px">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:36px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h2 style="margin:0;font:600 40px/1.1 var(--font-primary);letter-spacing:-0.02em">List free in 5 simple steps.</h2>
+      <p style="margin:0;font:400 17px/1.45 var(--font-primary);color:var(--rez-graphite)">Get verified buyers and tenants.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ landSteps }}" as="ls" hint-placeholder-count="7">
+          <div style="display:flex;align-items:center;gap:18px;padding:18px 22px;border:1px solid var(--rez-smoke);border-radius:20px;background:#fff">
+            <span style="flex:none;width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--rez-cloud);font:700 15px/1 var(--font-primary)">{{ ls.n }}</span>
+            <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 17px/1.2 var(--font-primary)">{{ ls.t }}</span><span style="font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ ls.d }}</span></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:20px;padding:32px;border:1px solid var(--rez-smoke);border-radius:20px">
+          <h3 style="margin:0;font:600 28px/1.1 var(--font-primary);letter-spacing:-0.01em">What you get. Free.</h3>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ freeList }}" as="fl" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:12px;font:500 16px/1.3 var(--font-primary)"><span style="display:flex;color:var(--rez-mocaccino)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check-circle" size="20px" hint-size="20px,20px"></x-import></span><span>{{ fl }}</span></div>
+            </sc-for>
+          </div>
+          <button onClick="{{ toTop }}" style="height:54px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 16px/1 var(--font-primary);cursor:pointer">List Property Free</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px;padding:32px;border-radius:20px;background:var(--rez-mocaccino);color:#000">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;opacity:.72">ADD-ON · VALUATION REPORT</span>
+              <h3 style="margin:0;font:600 26px/1.15 var(--font-primary);letter-spacing:-0.01em">Know your price before you list.</h3>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+            <sc-for list="{{ valFeats }}" as="vf" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.35)"><span style="font:600 14px/1.2 var(--font-primary)">{{ vf.t }}</span><span style="font:400 12px/1.35 var(--font-primary)">{{ vf.d }}</span></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <button onClick="{{ toTop }}" style="height:48px;padding:0 24px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer">Get Valuation Report</button>
+            <button style="height:48px;padding:0 22px;border:1px solid #000;border-radius:999px;background:transparent;color:#000;font:600 15px/1 var(--font-primary);cursor:pointer">View Sample Report</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;background:var(--rez-cloud)">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="26px" hint-size="26px,26px"></x-import>
+          <span style="display:flex;flex-direction:column;gap:3px"><b style="font:600 15px/1.2 var(--font-primary)">Verified by Rezide.</b><span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">Your number is shared only when you accept an enquiry.</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</sc-if>
+<sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+<main style="flex:1;padding:32px">
+  <div data-m="lpgrid" style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;align-items:start">
+  <aside data-m="lpside" style="position:sticky;top:20px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--rez-smoke);border-radius:20px;background:#fff">
+      <span style="flex:none;width:48px;height:48px;border-radius:999px;background:#000;color:var(--rez-full-white);display:flex;align-items:center;justify-content:center;font:700 16px/1 var(--font-primary)">{{ sideIni }}</span>
+      <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><b style="font:600 16px/1.2 var(--font-primary)">{{ sideName }}</b><span style="font:400 13px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ sidePhone }}</span></span>
+    </div>
+    <div style="display:flex;padding:4px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff">
+      <sc-for list="{{ sideRoles }}" as="r" hint-placeholder-count="2">
+        <button onClick="{{ r.onClick }}" style="flex:1;height:42px;border:0;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }};font:600 13px/1 var(--font-primary);white-space:nowrap;cursor:pointer;transition:background 220ms cubic-bezier(.2,.8,.2,1)">{{ r.label }}</button>
+      </sc-for>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:4px;border:1px solid var(--rez-smoke);border-radius:20px;padding:8px;background:#fff">
+      <sc-for list="{{ sideMenu }}" as="m" hint-placeholder-count="6">
+        <a href="{{ m.href }}" onClick="{{ m.onClick }}" style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-radius:14px;background:{{ m.bg }};color:#000;font:{{ m.weight }} 15px/1 var(--font-primary);text-decoration:none" style-hover="background:var(--rez-cloud)">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ m.icon }}" size="18px" hint-size="18px,18px"></x-import>
+          <span style="flex:1">{{ m.label }}</span>
+          <sc-if value="{{ m.count }}" hint-placeholder-val="{{ false }}"><span style="min-width:22px;height:22px;padding:0 7px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:{{ m.cBg }};color:#000;font:700 11px/1 var(--font-primary)">{{ m.count }}</span></sc-if>
+        </a>
+      </sc-for>
+    </nav>
+  </aside>
+  <div style="min-width:0">
+  <div style="max-width:1280px;margin:0 auto 20px;background:#fff;border-radius:20px;padding:20px 24px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+        <sc-if value="{{ isCust }}" hint-placeholder-val="{{ false }}"><a href="#account" onClick="{{ toMyListings }}" style="display:flex;align-items:center;gap:6px;font:600 13px/1 var(--font-primary);color:var(--rez-graphite);text-decoration:none" style-hover="color:#000"><span style="display:flex;transform:rotate(180deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="arrow-right" size="14px" hint-size="14px,14px"></x-import></span>My Listings</a><span style="color:var(--rez-steel)">/</span></sc-if>
+        <h2 style="margin:0;font:600 20px/1.2 var(--font-primary)">{{ formTitle }}</h2>
+        
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:200px">
+        <div style="flex:1;height:6px;border-radius:999px;background:var(--rez-cloud);overflow:hidden"><div style="height:100%;width:{{ pct }};background:var(--rez-mocaccino);transition:width 360ms cubic-bezier(.2,.8,.2,1)"></div></div>
+        <span style="font:700 12px/1 var(--font-primary)">{{ pct }}</span>
+      </div>
+    </div>
+    <div style="position:relative;display:grid;grid-template-columns:{{ stepCols }};padding-top:4px">
+      <span style="position:absolute;left:{{ barL }};right:{{ barL }};top:25px;height:3px;border-radius:3px;background:var(--rez-smoke)"></span>
+      <span style="position:absolute;left:{{ barL }};top:25px;height:3px;border-radius:3px;background:#000;width:{{ barW }};transition:width 360ms cubic-bezier(.2,.8,.2,1)"></span>
+      <sc-for list="{{ steps }}" as="st" hint-placeholder-count="10">
+        <button onClick="{{ st.onClick }}" title="{{ st.title }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;padding:0 2px;border:0;background:none;cursor:{{ st.cursor }};min-width:0">
+          <span style="width:44px;height:44px;box-sizing:border-box;border-radius:999px;display:flex;align-items:center;justify-content:center;background:{{ st.ring }};border:3px solid {{ st.ringBorder }}">
+            <span style="width:30px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:{{ st.bg }};color:var(--rez-full-white)"><span style="display:flex;opacity:{{ st.chk }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="16px" hint-size="16px,16px"></x-import></span></span>
+          </span>
+          <span style="font:{{ st.weight }} 9px/1.25 var(--font-primary);letter-spacing:0;text-transform:uppercase;color:{{ st.label }};text-align:center;max-width:100%;overflow-wrap:normal;word-break:normal;display:{{ st.lblShow }}">{{ st.title }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:{{ cols }};gap:24px;align-items:start">
+    <section style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div style="background:#fff;border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:28px">
+        <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:20px;border-bottom:1px solid var(--rez-smoke)">
+          <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-mocaccino)">STEP {{ stepN }} OF {{ stepTot }}</span>
+          <h1 style="margin:0;font:600 28px/1.15 var(--font-primary);letter-spacing:-0.02em">{{ stepTitle }}</h1>
+        </div>
+<sc-if value="{{ s1 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 14px/1 var(--font-primary)">Property type <span style="color:#B42318">*</span></span>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{ cats }}" as="c" hint-placeholder-count="5">
+        <button onClick="{{ c.pick }}" style="display:flex;align-items:center;gap:10px;height:52px;padding:0 22px 0 16px;border:1px solid {{ c.border }};border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};font:600 15px/1 var(--font-primary);cursor:pointer">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="{{ c.icon }}" size="20px" hint-size="20px,20px"></x-import><span>{{ c.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;padding-top:20px;border-top:1px solid var(--rez-smoke)">
+    <span style="font:600 14px/1 var(--font-primary)">{{ unitHead }} <span style="color:#B42318">*</span></span>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{ unitPills }}" as="u" hint-placeholder-count="6">
+        <button onClick="{{ u.onClick }}" style="height:42px;padding:0 18px;border:1px solid {{ u.border }};border-radius:999px;background:{{ u.bg }};color:{{ u.fg }};font:500 14px/1 var(--font-primary);cursor:pointer">{{ u.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if><sc-if value="{{ tProfile }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span style="font:600 14px/1 var(--font-primary)">For this listing I am <span style="color:#B42318">*</span></span>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{ roles }}" as="it" hint-placeholder-count="3">
+        <button onClick="{{ it.onClick }}" style="height:44px;padding:0 20px;border:1px solid {{ it.border }};border-radius:999px;background:{{ it.bg }};color:{{ it.fg }};font:500 15px/1 var(--font-primary);cursor:pointer">{{ it.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+    <sc-for list="{{ profFields }}" as="lf" hint-placeholder-count="2">
+      <label style="display:flex;flex-direction:column;gap:8px">
+        <span style="font:600 13px/1 var(--font-primary)">{{ lf.label }}</span>
+        <input value="{{ lf.value }}" onInput="{{ lf.onInput }}" placeholder="{{ lf.ph }}" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary)">
+      </label>
+    </sc-for>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span style="font:600 14px/1 var(--font-primary)">Property is in city <span style="color:#B42318">*</span></span>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{ cityPills }}" as="it" hint-placeholder-count="8">
+        <button onClick="{{ it.onClick }}" style="height:42px;padding:0 18px;border:1px solid {{ it.border }};border-radius:999px;background:{{ it.bg }};color:{{ it.fg }};font:500 14px/1 var(--font-primary);cursor:pointer">{{ it.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <sc-if value="{{ isPoa }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font:600 13px/1 var(--font-primary)">Upload POA document</span>
+      <div style="height:120px;border-radius:16px;overflow:hidden;background:var(--rez-cloud)"><image-slot id="lp-poa-doc" shape="rect" placeholder="Drop POA document scan"></image-slot></div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ s23 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:28px">
+  <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:24px;border-bottom:1px solid var(--rez-smoke)">
+    <h3 style="margin:0;font:600 18px/1.2 var(--font-primary)">Pricing and commercials</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font:600 14px/1 var(--font-primary)">I want to <span style="color:#B42318">*</span></span><span style="font:400 12px/1 var(--font-primary);color:var(--rez-graphite)">Pre-filled from your sign up. You can change it.</span></span>
+      <div style="display:flex;gap:4px;padding:4px;width:max-content;border-radius:999px;background:var(--rez-cloud)">
+        <sc-for list="{{ intents }}" as="m" hint-placeholder-count="2">
+          <button onClick="{{ m.onClick }}" style="height:44px;padding:0 26px;border:0;border-radius:999px;background:{{ m.bg }};color:#000;font:{{ m.weight }} 15px/1 var(--font-primary);cursor:pointer;transition:background 220ms">{{ m.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font:600 14px/1 var(--font-primary)">{{ priceLabel }} <span style="color:#B42318">*</span></span>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <label style="flex:1 1 280px;display:flex;align-items:center;gap:10px;height:54px;padding:0 8px 0 20px;border:1px solid var(--rez-smoke);border-radius:999px">
+          <span style="font:600 16px/1 var(--font-primary)">₹</span>
+          <input value="{{ priceFmt }}" onInput="{{ onPrice }}" inputmode="numeric" placeholder="Enter amount" style="flex:1;min-width:0;border:0;outline:none;font:500 16px/1 var(--font-primary);background:transparent">
+          <sc-if value="{{ hasPrice }}" hint-placeholder-val="{{ false }}"><span style="padding:8px 12px;border-radius:999px;background:var(--rez-cloud);font:600 13px/1 var(--font-primary)">{{ priceWords }}</span></sc-if>
+        </label>
+        <sc-for list="{{ priceTypes }}" as="p" hint-placeholder-count="2">
+          <button onClick="{{ p.onClick }}" style="height:54px;padding:0 20px;border:1px solid {{ p.border }};border-radius:999px;background:{{ p.bg }};color:{{ p.fg }};font:500 14px/1 var(--font-primary);cursor:pointer">{{ p.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <sc-if value="{{ showTrx }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-radius:16px;background:#000;color:var(--rez-full-white)">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="width:40px;height:40px;border-radius:999px;background:var(--rez-mocaccino);color:#000;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="bar-chart" size="20px" hint-size="20px,20px"></x-import></span>
+          <span style="display:flex;flex-direction:column;gap:4px">
+            <span style="font:600 15px/1.2 var(--font-primary)">{{ trxCount }} registered transactions found nearby.</span>
+            <span style="font:400 13px/1.3 var(--font-primary);opacity:.8">See how your price compares before you publish.</span>
+          </span>
+        </div>
+        <button onClick="{{ openPa }}" style="height:44px;padding:0 22px;border:0;border-radius:999px;background:var(--rez-full-white);color:#000;font:600 14px/1 var(--font-primary);cursor:pointer">View Price Analysis</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ trxPills }}" as="tp" hint-placeholder-count="2">
+          <button onClick="{{ tp.onClick }}" style="display:flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:1px solid #000;border-radius:999px;background:#fff;color:#000;font:600 14px/1 var(--font-primary);cursor:pointer" style-hover="background:var(--rez-cloud)"><span>{{ tp.label }}</span><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="arrow-right" size="14px" hint-size="14px,14px"></x-import></button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-for list="{{ advGroup }}" as="g" hint-placeholder-count="1">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 14px/1 var(--font-primary)">{{ g.title }}</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="5">
+            <button onClick="{{ it.onClick }}" style="height:42px;padding:0 18px;border:1px solid {{ it.border }};border-radius:999px;background:{{ it.bg }};color:{{ it.fg }};font:500 14px/1 var(--font-primary);cursor:pointer">{{ it.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <sc-if value="{{ s2 }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <h3 style="margin:0;font:600 18px/1.2 var(--font-primary)">Project / property</h3>
+    <sc-if value="{{ noProj }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px;background:var(--rez-cloud)">
+          <sc-for list="{{ srcTabs }}" as="t" hint-placeholder-count="2">
+            <button onClick="{{ t.onClick }}" style="height:44px;border:0;border-radius:14px;background:{{ t.bg }};color:{{ t.fg }};font:600 15px/1 var(--font-primary);cursor:pointer">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;height:52px;padding:0 18px;border-bottom:1px solid var(--rez-smoke)">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="search" size="18px" hint-size="18px,18px"></x-import>
+          <input value="{{ projQ }}" onInput="{{ onProjQ }}" placeholder="{{ projPh }}" style="flex:1;min-width:0;border:0;outline:none;font:500 15px/1 var(--font-primary);background:transparent">
+        </label>
+        <div style="max-height:280px;overflow-y:auto">
+          <sc-for list="{{ projResults }}" as="pr" hint-placeholder-count="4">
+            <button onClick="{{ pr.onClick }}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;border:0;border-bottom:1px solid var(--rez-smoke);background:#fff;text-align:left;cursor:pointer" style-hover="background:var(--rez-cloud)">
+              <span style="flex:none;width:40px;height:40px;border-radius:999px;background:var(--rez-cloud);display:flex;align-items:center;justify-content:center;font:700 12px/1 var(--font-primary)">{{ pr.ini }}</span>
+              <span style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0"><b style="font:600 15px/1.2 var(--font-primary)">{{ pr.name }}</b><span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ pr.sub }}</span></span>
+              <span style="font:500 12px/1 var(--font-primary);color:var(--rez-graphite)">{{ pr.tag }}</span>
+            </button>
+          </sc-for>
+          <sc-if value="{{ projNone }}" hint-placeholder-val="{{ false }}"><div style="padding:28px 18px;text-align:center;font:500 14px/1.4 var(--font-primary);color:var(--rez-graphite)">No projects found. Try Google, or enter the address manually below.</div></sc-if>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ hasProj }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px;padding:20px;border:1px solid #000;border-radius:20px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:4px"><b style="font:600 18px/1.2 var(--font-primary)">{{ pj.name }}</b><span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ pj.sub }}</span></div>
+          <button onClick="{{ clearProj }}" style="padding:0;border:0;background:none;font:600 13px/1 var(--font-primary);text-decoration:underline;text-underline-offset:3px;cursor:pointer">Change</button>
+        </div>
+      </div>
+    </sc-if>
+    <label style="display:flex;flex-direction:column;gap:8px">
+      <span style="font:600 13px/1 var(--font-primary)">Property address <span style="color:#B42318">*</span></span>
+      <textarea value="{{ addr }}" onInput="{{ onAddr }}" rows="2" maxlength="250" placeholder="Building, street, landmark" style="padding:14px 18px;border:1px solid var(--rez-smoke);border-radius:16px;outline:none;resize:vertical;font:400 15px/1.45 var(--font-primary)"></textarea>
+    </label>
+    <button onClick="{{ togglePin }}" style="display:flex;align-items:center;gap:16px;padding:16px 18px;border:1px solid {{ pinBorder }};border-radius:16px;background:#fff;text-align:left;cursor:pointer">
+      <span style="flex:none;width:44px;height:44px;border-radius:12px;background:var(--rez-cloud);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="map-pin" size="22px" hint-size="22px,22px"></x-import></span>
+      <span style="flex:1;display:flex;flex-direction:column;gap:4px"><b style="font:600 16px/1.2 var(--font-primary)">{{ pinTitle }}</b><span style="font:400 14px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ pinSub }}</span></span>
+      <span style="display:flex;transform:rotate(180deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="18px" hint-size="18px,18px"></x-import></span>
+    </button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;padding-top:24px;border-top:1px solid var(--rez-smoke)">
+    <h3 style="margin:0;font:600 18px/1.2 var(--font-primary)">Location</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px">
+      <label style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px/1 var(--font-primary)">City</span>
+        <span style="display:flex;align-items:center;justify-content:space-between;height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:var(--rez-cloud);font:600 15px/1 var(--font-primary)"><span>{{ cityLocked }}</span><span style="font:500 12px/1 var(--font-primary);color:var(--rez-graphite)">From step 1</span></span>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Region *</span>
+        <span style="position:relative;display:flex"><select value="{{ regionVal }}" onChange="{{ onRegion }}" style="appearance:none;-webkit-appearance:none;width:100%;height:50px;padding:0 44px 0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;outline:none;font:500 15px/1 var(--font-primary);color:#000;cursor:pointer"><option value="">Select</option><sc-for list="{{ regionOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+        <span style="position:absolute;right:18px;top:17px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span></span></label>
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Sub-region *</span>
+        <span style="position:relative;display:flex"><select value="{{ subVal }}" onChange="{{ onSub }}" style="appearance:none;-webkit-appearance:none;width:100%;height:50px;padding:0 44px 0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;outline:none;font:500 15px/1 var(--font-primary);color:#000;cursor:pointer"><option value="">Select</option><sc-for list="{{ subOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+        <span style="position:absolute;right:18px;top:17px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span></span></label>
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Locality <span style="font-weight:400;color:var(--rez-graphite)">· pick or type</span></span>
+        <span style="position:relative;display:flex"><input list="lp-loc-list" value="{{ locVal }}" onInput="{{ onLoc }}" placeholder="Select or type locality" style="width:100%;height:50px;padding:0 44px 0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);min-width:0;box-sizing:border-box">
+        <span style="position:absolute;right:18px;top:17px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span></span>
+        <datalist id="lp-loc-list"><sc-for list="{{ locOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}"></option></sc-for></datalist>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Pincode</span><input value="{{ pinVal }}" onInput="{{ onPinc }}" inputmode="numeric" maxlength="6" placeholder="4-digit pincode" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);min-width:0"></label>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;padding-top:24px;border-top:1px solid var(--rez-smoke)">
+    <h3 style="margin:0;font:600 18px/1.2 var(--font-primary)">Tower and unit</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px">
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Tower / Wing *</span>
+        <span style="position:relative;display:flex"><select value="{{ towerVal }}" onChange="{{ onTower }}" style="appearance:none;-webkit-appearance:none;width:100%;height:50px;padding:0 44px 0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:{{ selBg }};outline:none;font:500 15px/1 var(--font-primary);color:#000;cursor:pointer"><option value="">Select</option><sc-for list="{{ towerOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+        <span style="position:absolute;right:18px;top:17px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span></span></label>
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Total floors *</span><input value="{{ tfloorsVal }}" onInput="{{ onTfloors }}" placeholder="e.g. 32" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);min-width:0"></label>
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Unit no. *</span>
+        <span style="position:relative;display:flex"><select value="{{ unitVal }}" onChange="{{ onUnit }}" style="appearance:none;-webkit-appearance:none;width:100%;height:50px;padding:0 44px 0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:{{ selBg }};outline:none;font:500 15px/1 var(--font-primary);color:#000;cursor:pointer"><option value="">Select</option><sc-for list="{{ unitOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for></select>
+        <span style="position:absolute;right:18px;top:17px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span></span></label>
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font:600 13px/1 var(--font-primary)">Unit on floor *</span><input value="{{ floorVal }}" onInput="{{ onFloor }}" placeholder="e.g. 17" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);min-width:0"></label>
+    </div>
+  </div>
+  <sc-for list="{{ essGroups }}" as="g" hint-placeholder-count="2">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <span style="font:600 14px/1 var(--font-primary)">{{ g.title }}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="6">
+          <button onClick="{{ it.onClick }}" style="height:42px;padding:0 18px;border:1px solid {{ it.border }};border-radius:999px;background:{{ it.bg }};color:{{ it.fg }};font:500 14px/1 var(--font-primary);cursor:pointer">{{ it.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+  </sc-if>
+</div>
+</sc-if><sc-for list="{{ selGroups }}" as="sg" hint-placeholder-count="0">
+<div style="display:flex;flex-direction:column;gap:16px;padding-top:24px;border-top:{{ sg.border }}">
+  <h3 style="margin:0;font:600 18px/1.2 var(--font-primary)">{{ sg.title }}</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px">
+    <sc-for list="{{ sg.fields }}" as="sf" hint-placeholder-count="4">
+      <label style="display:flex;flex-direction:column;gap:8px;min-width:0">
+        <span style="font:600 13px/1 var(--font-primary)">{{ sf.label }}</span>
+        <sc-if value="{{ sf.isInput }}" hint-placeholder-val="{{ false }}"><input value="{{ sf.value }}" onInput="{{ sf.onInput }}" placeholder="{{ sf.ph }}" inputmode="decimal" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);min-width:0"></sc-if>
+        <sc-if value="{{ sf.isSel }}" hint-placeholder-val="{{ true }}">
+        <span style="position:relative;display:flex">
+          <select value="{{ sf.value }}" onChange="{{ sf.onChange }}" style="appearance:none;-webkit-appearance:none;width:100%;height:50px;padding:0 44px 0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;outline:none;font:500 15px/1 var(--font-primary);color:{{ sf.fg }};cursor:pointer">
+            <option value="">Select</option>
+            <sc-for list="{{ sf.options }}" as="o" hint-placeholder-count="3"><option value="{{ o }}">{{ o }}</option></sc-for>
+          </select>
+          <span style="position:absolute;right:18px;top:17px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span>
+        </span>
+        </sc-if>
+      </label>
+    </sc-for>
+  </div>
+</div>
+</sc-for>
+<sc-if value="{{ isGeneric }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:26px">
+  <sc-if value="{{ hasGFields }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+      <sc-for list="{{ gFields }}" as="lf" hint-placeholder-count="2">
+        <label style="display:flex;flex-direction:column;gap:8px">
+          <span style="font:600 13px/1 var(--font-primary)">{{ lf.label }}</span>
+          <input value="{{ lf.value }}" onInput="{{ lf.onInput }}" placeholder="{{ lf.ph }}" type="{{ lf.type }}" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary);color:#000;box-sizing:border-box" style-focus="border-color:var(--rez-mocaccino);box-shadow:var(--ring-focus)">
+        </label>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-for list="{{ gGroups }}" as="g" hint-placeholder-count="3">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <span style="font:600 14px/1 var(--font-primary)">{{ g.title }}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="5">
+          <button onClick="{{ it.onClick }}" style="display:flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:1px solid {{ it.border }};border-radius:999px;background:{{ it.bg }};color:{{ it.fg }};font:500 14px/1 var(--font-primary);cursor:pointer">{{ it.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+  <sc-if value="{{ hasNote }}" hint-placeholder-val="{{ false }}">
+    <label style="display:flex;flex-direction:column;gap:8px">
+      <span style="font:600 14px/1 var(--font-primary)">{{ noteLabel }}</span>
+      <textarea value="{{ noteVal }}" onInput="{{ onNote }}" rows="4" maxlength="500" placeholder="{{ notePh }}" style="padding:16px 18px;border:1px solid var(--rez-smoke);border-radius:16px;outline:none;resize:vertical;font:400 15px/1.45 var(--font-primary)"></textarea>
+    </label>
+  </sc-if>
+</div>
+</sc-if><sc-if value="{{ s5 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <p style="margin:0;font:400 15px/1.45 var(--font-primary);color:var(--rez-graphite)">Drag photos onto each slot. The first photo becomes the cover. Listings with 8+ photos get up to 3x more enquiries.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+    <sc-for list="{{ photoSlots }}" as="ph" hint-placeholder-count="8">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:var(--rez-cloud)"><image-slot id="{{ ph.id }}" shape="rect" placeholder="{{ ph.label }}"></image-slot></div>
+        <span style="font:500 13px/1 var(--font-primary);color:var(--rez-graphite)">{{ ph.label }}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+<sc-if value="{{ s6 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <p style="margin:0;font:400 15px/1.45 var(--font-primary);color:var(--rez-graphite)">A 60 to 90 second walk-through. Buyers can then request a live video call with you.</p>
+  <div style="position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:var(--rez-cloud)"><image-slot id="lp-video-cover" shape="rect" placeholder="Drop a video cover frame"></image-slot></div>
+  <label style="display:flex;flex-direction:column;gap:8px">
+    <span style="font:600 13px/1 var(--font-primary)">Or paste a YouTube / Drive link</span>
+    <input value="{{ vidLink }}" onInput="{{ onVid }}" placeholder="https://" style="height:50px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;outline:none;font:500 15px/1 var(--font-primary)">
+  </label>
+</div>
+</sc-if>
+<sc-if value="{{ s8 }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:24px">
+  <sc-if value="{{ notHo }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span style="font:600 14px/1 var(--font-primary)">Do you want a realtor to assist you?</span>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{ assistOpts }}" as="m" hint-placeholder-count="2">
+        <button onClick="{{ m.onClick }}" style="height:48px;padding:0 28px;border:1.5px solid {{ m.border }};border-radius:999px;background:{{ m.bg }};color:#000;font:{{ m.weight }} 15px/1 var(--font-primary);cursor:pointer;transition:background 220ms">{{ m.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <sc-if value="{{ wantsAssist }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px">
+        <span style="font:600 16px/1.2 var(--font-primary)">{{ realtorHead }}</span>
+        <span style="font:400 13px/1 var(--font-primary);color:var(--rez-graphite)">Connect up to 3 max.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px">
+        <sc-for list="{{ realtorCards }}" as="rc" hint-placeholder-count="6">
+          <button onClick="{{ rc.onClick }}" style="position:relative;display:flex;align-items:center;gap:14px;padding:16px;border:1.5px solid {{ rc.border }};border-radius:18px;background:#fff;text-align:left;cursor:pointer;box-shadow:{{ rc.shadow }};transition:border-color 140ms">
+            <span role="img" aria-label="{{ rc.name }}" style="flex:none;width:68px;height:68px;border-radius:999px;background:var(--rez-cloud) center/cover no-repeat;background-image:{{ rc.photoBg }}"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+              <b style="font:600 16px/1.2 var(--font-primary);color:#000">{{ rc.name }}</b>
+              <span style="font:400 13px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ rc.agency }}</span>
+              <span style="display:flex;flex-wrap:wrap;gap:4px 10px;font:400 12px/1.3 var(--font-primary);color:var(--rez-graphite)"><span>★ <b style="color:#000;font-weight:600">{{ rc.rating }}</b></span><span><b style="color:#000;font-weight:600">{{ rc.deals }}</b> deals</span><span>RERA registered</span></span>
+              <span style="font:500 12px/1.35 var(--font-primary);color:var(--rez-mocaccino)">{{ rc.match }}</span>
+            </span>
+            <span style="position:absolute;top:12px;right:12px;width:22px;height:22px;box-sizing:border-box;border-radius:999px;border:1.5px solid {{ rc.ringBd }};background:{{ rc.chkBg }};color:var(--rez-full-white);display:flex;align-items:center;justify-content:center"><span style="display:flex;opacity:{{ rc.chk }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="13px" hint-size="13px,13px"></x-import></span></span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  </sc-if>
+  <sc-if value="{{ hoShow }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:10px;padding-top:6px">
+      <span style="font:600 14px/1 var(--font-primary)">How would you like to continue?</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px">
+        <sc-for list="{{ handoverOpts }}" as="h" hint-placeholder-count="2">
+          <button onClick="{{ h.onClick }}" style="display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border:1.5px solid {{ h.border }};border-radius:16px;background:{{ h.bg }};text-align:left;cursor:pointer;transition:border-color 140ms">
+            <span style="flex:none;width:20px;height:20px;margin-top:1px;box-sizing:border-box;border-radius:999px;border:{{ h.ring }}"></span>
+            <span style="display:flex;flex-direction:column;gap:4px"><b style="font:600 15px/1.2 var(--font-primary);color:#000">{{ h.t }}</b><span style="font:400 13px/1.4 var(--font-primary);color:var(--rez-graphite)">{{ h.d }}</span></span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ submitted }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:16px;background:#15302B;color:var(--rez-full-white);font:500 15px/1.4 var(--font-primary)">
+  <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check-circle" size="22px" hint-size="22px,22px"></x-import>
+  <span>{{ submittedMsg }}</span>
+</div>
+</sc-if>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:12px">
+        <button onClick="{{ back }}" style="height:52px;padding:0 32px;border:1px solid #000;border-radius:999px;background:#fff;font:600 15px/1 var(--font-primary);cursor:pointer;visibility:{{ backVis }}">Back</button>
+        <button onClick="{{ next }}" style="height:52px;padding:0 36px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer" style-active="transform:scale(.98)">{{ nextLabel }}</button>
+      </div>
+    </section>
+<sc-if value="{{ showPreview }}" hint-placeholder-val="{{ true }}">
+    <aside style="position:{{ pvPos }};top:24px;background:#fff;border-radius:20px;overflow:hidden;display:flex;flex-direction:column">
+      <div style="position:relative;aspect-ratio:4/3;background:var(--rez-cloud)"><image-slot id="lp-photo-0" shape="rect" placeholder="Cover photo appears here"></image-slot></div>
+      <div style="display:flex;flex-direction:column;gap:14px;padding:20px 22px 24px">
+        <span style="font:400 10px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">LIVE PREVIEW</span>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font:700 24px/1 var(--font-primary)">{{ pvPrice }}</span>
+          <span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ pvRate }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font:600 16px/1.25 var(--font-primary)">{{ pvTitle }}</span>
+          <span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ pvLoc }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 4px;padding:12px 6px;border-radius:14px;background:var(--rez-cloud);text-align:center">
+          <sc-for list="{{ pvSpecs }}" as="sp" hint-placeholder-count="6">
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font:600 14px/1.1 var(--font-primary)">{{ sp.v }}</span><span style="font:400 11px/1 var(--font-primary);color:var(--rez-graphite)">{{ sp.l }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+</sc-if>
+  </div>
+  </div>
+  </div>
+</main>
+</sc-if>
+<sc-if value="{{ trxOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ trxClose }}" style="position:fixed;inset:0;z-index:300;background:rgba(2,17,12,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px">
+  <div onClick="{{ trxStop }}" style="width:min(100%,780px);max-height:88vh;display:flex;flex-direction:column;background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 24px;border-bottom:1px solid var(--rez-smoke)">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">REGISTERED TRANSACTIONS</span><h3 style="margin:0;font:600 22px/1.2 var(--font-primary)">{{ trxTitle }}</h3><span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ trxSub }}</span></div>
+      <button onClick="{{ trxClose }}" aria-label="Close" style="flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="x" size="16px" hint-size="16px,16px"></x-import></button>
+    </div>
+    <div style="overflow:auto">
+      <div style="display:grid;grid-template-columns:1fr 1.4fr .8fr 1fr 1fr 1.2fr;gap:8px;min-width:640px;padding:12px 24px;background:var(--rez-cloud);font:600 11px/1 var(--font-primary);letter-spacing:.06em;color:var(--rez-graphite);text-transform:uppercase"><span>Date</span><span>Unit</span><span>Config</span><span>Area</span><span>Price</span><span>Rate</span></div>
+      <sc-for list="{{ trxRows }}" as="t" hint-placeholder-count="8">
+        <div style="display:grid;grid-template-columns:1fr 1.4fr .8fr 1fr 1fr 1.2fr;gap:8px;min-width:640px;padding:14px 24px;border-top:1px solid var(--rez-smoke);font:400 14px/1.3 var(--font-primary)"><span style="color:var(--rez-graphite)">{{ t.date }}</span><span style="font-weight:600">{{ t.unit }}</span><span>{{ t.cfg }}</span><span>{{ t.area }}</span><span style="font-weight:700">{{ t.price }}</span><span style="color:var(--rez-graphite)">{{ t.rate }}</span></div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+<sc-if value="{{ paOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div onClick="{{ closePa }}" style="position:absolute;inset:0;background:rgba(2,17,12,.55);backdrop-filter:blur(4px)"></div>
+  <div role="dialog" style="position:relative;width:min(640px,100%);max-height:calc(100vh - 48px);overflow-y:auto;background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:26px 28px 18px;border-bottom:1px solid var(--rez-smoke)">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-mocaccino)">PRICE ANALYSIS</span>
+        <h2 style="margin:0;font:600 24px/1.15 var(--font-primary)">{{ paTitle }}</h2>
+        <span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ paSub }}</span>
+      </div>
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="x" label="Close" tone="ghost" size="md" onClick="{{ closePa }}" hint-size="40px,40px"></x-import>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px;padding:20px 28px 28px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <sc-for list="{{ paTabs }}" as="t" hint-placeholder-count="2">
+          <button onClick="{{ t.onClick }}" style="height:42px;padding:0 18px;border:1px solid #000;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};font:600 14px/1 var(--font-primary);cursor:pointer">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <p style="margin:0;padding:16px 18px;border-radius:16px;border:1px solid var(--rez-smoke);font:400 15px/1.55 var(--font-primary)">{{ paSummary }} Your {{ paYou }} is <b>{{ paWithin }}</b> the recorded range.</p>
+      <div style="display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:16px;border:1px solid var(--rez-smoke)">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline">
+          <b style="font:600 15px/1.3 var(--font-primary)">{{ paCardTitle }}</b>
+          <span style="font:600 13px/1 var(--font-primary);color:{{ paDeltaFg }}">You · {{ paYou }} · {{ paDelta }} vs median</span>
+        </div>
+        <div style="position:relative;height:12px;margin:8px 10px;border-radius:999px;background:var(--rez-cloud);border:1px solid var(--rez-smoke)">
+          <span style="position:absolute;top:-6px;left:{{ paMedPos }};width:2px;height:24px;background:var(--rez-graphite)"></span>
+          <span style="position:absolute;top:50%;left:{{ paPos }};width:22px;height:22px;margin:-11px 0 0 -11px;box-sizing:border-box;border-radius:999px;background:{{ paDeltaFg }};border:4px solid #fff;box-shadow:0 0 0 1.5px {{ paDeltaFg }}"></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+          <sc-for list="{{ paTiles }}" as="st" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:var(--rez-cloud)"><span style="font:400 12px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ st.l }}</span><span style="font:700 16px/1.1 var(--font-primary)">{{ st.v }}</span></div>
+          </sc-for>
+        </div>
+        <span style="font:400 12px/1.45 var(--font-primary);color:var(--rez-graphite)">{{ paFoot }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button onClick="{{ changePrice }}" style="height:52px;border:1px solid #000;border-radius:999px;background:#fff;color:#000;font:600 15px/1 var(--font-primary);cursor:pointer">Change Price</button>
+        <button onClick="{{ closePa }}" style="height:52px;border:0;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 15px/1 var(--font-primary);cursor:pointer">Carry On</button>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;loggedIn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;User&quot;}}">
+const CATS=[
+ ['home','Home','map-pin',['Studio','Apartment','Duplex','Penthouse','Jodi','Independent Floor','Independent House','Villa','Holiday Home','Row/Town House']],
+ ['office','Office','file-text',['Office Space','Co-working']],
+ ['industrial','Industrial','settings',['Warehouse','Factory','Industrial Shed','Cold Storage','Logistics Park']],
+ ['retail','Retail','bag',['Shop','Showroom']],
+ ['land','Land','compass',['Residential Plot','Commercial Plot','Industrial Plot','Agricultural Land','Farmhouse Land']]];
+const REZ_PROJ=[['Lodha Park','Lodha Group','Worli'],['Oberoi Three Sixty West','Oberoi Realty','Worli'],['Raheja Vivarea','K Raheja Corp','Mahalaxmi'],['Omkar 1973','Omkar Realtors','Worli'],['Hiranandani Gardens','Hiranandani','Powai'],['Godrej Platinum','Godrej Properties','Vikhroli'],['Runwal Greens','Runwal Group','Mulund West'],['Kalpataru Radiance','Kalpataru','Goregaon West']];
+const GOO_PROJ=[['Sea Breeze Apartments','','Bandra West'],['Shanti Niketan CHS','','Andheri East'],['Sunrise Tower','','Chembur'],['Gokul Dham Society','','Goregaon East']];
+const GEO={Mumbai:{'Western Suburbs':{'Andheri West':['Lokhandwala','Versova','Four Bungalows'],'Andheri East':['Marol','Chakala','JB Nagar'],'Goregaon East':['Yashodham','Oberoi Garden City','Gokuldham'],'Bandra West':['Pali Hill','Carter Road','Bandstand'],'Borivali West':['IC Colony','Gorai','Shimpoli']},'Eastern Suburbs':{'Powai':['Hiranandani Gardens','Chandivali','IIT Area'],'Chembur':['Diamond Garden','Tilak Nagar','Golf Course'],'Mulund West':['Sambhaji Nagar','Nahur','Veena Nagar'],'Vikhroli':['Kannamwar Nagar','Godrej Colony']},'South Mumbai':{'Worli':['Worli Naka','Worli Sea Face','Century Bazaar'],'Lower Parel':['Kamala Mills','Phoenix'],'Mahalaxmi':['Racecourse','Haji Ali'],'Colaba':['Cuffe Parade','Navy Nagar']},'Thane':{'Thane West':['Ghodbunder Road','Majiwada','Pokhran Road'],'Thane East':['Kopri','Chendani']}},
+ _:{'Central':{'Central Zone':['City Centre']},'North':{'North Zone':['North Extension']},'South':{'South Zone':['South Extension']}}};
+const pill=on=>({bg:on?'#000':'#fff',fg:on?'var(--rez-full-white)':'#000',border:on?'#000':'var(--rez-smoke)'});
+const STEPS=['Profile','Property Type','Property','Unit Details','Commercials','Key Features','Photos','Video','Furniture & Fixtures','Realtor Assist'];
+const ORDER=[1,2,3,5,10,4,6,7,8,9];
+const REALTORS=[['Rukmani Iyer','Prime Estates','4.9','212','Worli'],['Arjun Mehta','Skyline Realty','4.8','168','Worli'],['Sana Qureshi','Urban Nest','4.8','143','Mahalaxmi'],['Vikram Rao','Keystone Advisors','4.7','127','Powai'],['Neha Kapoor','Networth Realty','4.7','119','Bandra West'],['Karan Malhotra','Buildstone','4.6','98','Goregaon West']];
+class Component extends DCLogic {
+  state = (()=>{let c=null;try{const add=localStorage.getItem('rz_add')==='1';localStorage.removeItem('rz_add');if(add)c=JSON.parse(localStorage.getItem('rz_cust')||'null');}catch(e){}return { phase:c?'wizard':'phone', cust:!!c, phone:(c&&c.phone)||'', otp:'', step:1 };})();
+  wiz(s,set){
+    const n=s.step, done=s.done||1, pos=ORDER.indexOf(n)+1;
+    const go=id=>{set({step:id,submitted:false,done:Math.max(done,ORDER.indexOf(id)+1)});window.scrollTo({top:0});};
+    const handover=s.assist==='yes'&&s.handover==='realtor';
+    const full=s.assist==='no'||(s.assist==='yes'&&s.hoStep&&s.handover==='self'), TOT=full?10:5, VIS=ORDER.slice(0,TOT);
+    const w=s.w??1280;
+    return {
+      cols:w>=1000?'minmax(0,1fr) 360px':'minmax(0,1fr)',
+      showPreview:true, pvPos:w>=1000?'sticky':'static',
+      pct:Math.round((pos-1)/TOT*100)+'%', stepN:String(pos), stepTot:String(TOT), stepCols:'repeat('+TOT+',minmax(0,1fr))', stepTitle:STEPS[n-1],
+      steps:VIS.map((id,i)=>{const t=STEPS[id-1],k=i+1,cur=id===n,ok=k<done||k<pos;return {n:String(k),title:t,onClick:()=>k<=done&&go(id),cursor:k<=done?'pointer':'default',
+        bg:cur||ok?'#000':'#fff',fg:'#fff',ring:'#fff',ringBorder:cur?'#000':'var(--rez-smoke)',chk:ok&&!cur?1:0,lblShow:(w>=1240||cur)?'block':'none',border:'transparent',weight:cur?700:500,label:k<=done?'#000':'var(--rez-graphite)',line:ok?'var(--rez-mocaccino)':'var(--rez-smoke)',lineShow:k<TOT?'block':'none',titleShow:cur?'inline':'none',flex:(cur||k===TOT)?'0 0 auto':'1 1 0'};}),
+      submitted:(s.submitted===true&&pos===10)||(s.submitted==='handover'&&n===10&&handover),
+      submittedMsg:s.submitted==='handover'?'Submitted. Your listing is now with your realtor, who will call you shortly to complete it.':'Listing submitted. A Rezide expert will verify it within 24 hours.',
+      barW:((pos-1)/(TOT-1)*(100-100/TOT))+'%', barL:(50/TOT)+'%',
+      back:()=>{if(n===10&&s.hoStep){set({hoStep:false,submitted:false});return;} pos>1&&go(ORDER[pos-2]);}, backVis:pos>1?'visible':'hidden',
+      next:()=>{if(n===10){if(!s.assist)return; if(s.assist==='yes'){if(!s.hoStep){if((s.rsel||[]).length)set({hoStep:true});window.scrollTo({top:0});return;} if(!s.handover)return; if(handover){set({submitted:'handover'});return;}}} pos<TOT?go(ORDER[pos]):set({submitted:true});},
+      nextLabel:n===10&&!s.assist?'Choose an Option':n===10&&s.assist==='yes'&&!s.hoStep?((s.rsel||[]).length?'Next':'Pick a Realtor First'):n===10&&s.assist==='yes'&&!s.handover?'Choose an Option':n===10&&handover?'Submit to Realtor':pos<TOT?'Continue':'Submit Listing',
+      hoShow:n===10&&s.assist==='yes'&&!!s.hoStep, notHo:!(n===10&&s.assist==='yes'&&s.hoStep),
+      s23:n===3||n===5, tProfile:n===1, s1:n===2, s2:n===3, s3:n===5, s5:n===7, s6:n===8, s8:n===10,
+      ...(()=>{let c={};try{c=JSON.parse(localStorage.getItem('rz_cust')||'{}')||{};}catch(e){}
+        const fnm=c.fname||s.fn||s.fname||'Viraj', lnm=c.lname||s.ln||s.lname||'Bhatia', role=s.sideRole||'owner';
+        const ACC='#account';
+        const owner=[['My Listings','file-text',4,1],['Visits','map-pin',5],['Offers','bag',2],['Profile','user'],['Settings','settings'],['Logout','arrow-right',0,0,1]];
+        const seeker=[['Viewed','compass',4],['Shared','share',2],['Shortlisted','star',3],['Visits','map-pin',3],['Offers','bag',2],['Rejected','x',1],['Profile','user'],['Settings','settings'],['Logout','arrow-right',0,0,1]];
+        return {sideName:fnm+' '+lnm, sideIni:(fnm[0]+lnm[0]).toUpperCase(), sideRoleLbl:role==='owner'?'Property owner':'Property seeker', sidePhone:c.phone?'+91 '+c.phone.slice(0,5)+' '+c.phone.slice(5):'Verified member',
+          sideRoles:[['seeker','Seeker'],['owner','Owner']].map(([id,label])=>({label,bg:role===id?'#000':'transparent',fg:role===id?'var(--rez-full-white)':'var(--rez-graphite)',onClick:()=>{try{localStorage.setItem('rz_cust',JSON.stringify({...c,fname:fnm,lname:lnm,role:id}));}catch(e){} if(id==='seeker'){window.location.href=ACC;return;} set({sideRole:id});}})),
+          sideMenu:(role==='owner'?owner:seeker).map(([label,icon,count,on,out])=>({label,icon,count:count?String(count):'',href:ACC,bg:on?'var(--rez-cloud)':'transparent',cBg:on?'var(--rez-mocaccino)':'var(--rez-cloud)',weight:on?700:500,onClick:()=>{try{if(out)localStorage.removeItem('rz_cust');else localStorage.setItem('rz_tab',label==='My Listings'?'mylistings':label.toLowerCase());}catch(e){}}}))};})(),
+      ...this.form(s,set)
+    };
+  }
+  form(s,set){
+    const cat=s.cat||'home', cdef=CATS.find(c=>c[0]===cat);
+    return {
+      unitHead:cdef[1]+' unit type',
+      unitPills:cdef[3].map(u=>({label:u,...pill(s.unit===u),onClick:()=>set({cat,unit:u})})),
+      cats:CATS.map(([id,label,icon,units])=>{const open=false, sel=cat===id;return {pick:()=>set({cat:id,unit:id===cat?s.unit:undefined}),...pill(sel),label,icon,sub:units.length+' unit-types',open,rot:open?'90deg':'-90deg',
+        iconBg:sel||open?'#000':'var(--rez-cloud)',iconFg:sel||open?'var(--rez-full-white)':'#000',toggle:()=>set({openCat:open?null:id}),
+        units:units.map(u=>({label:u,...pill(sel&&s.unit===u),onClick:()=>set({cat:id,unit:u})}))};}),
+      ...this.form2(s,set)
+    };
+  }
+  form2(s,set){
+    const rent=s.intent==='rent', p=s.price||'', num=Number(p)||0, f=s.f||{};
+    const words=num>=1e7?(num/1e7).toFixed(2).replace(/\.?0+$/,'')+' Cr':num>=1e5?(num/1e5).toFixed(2).replace(/\.?0+$/,'')+' L':num?(num/1e3).toFixed(1).replace(/\.0$/,'')+'k':'';
+    const tog=(k,v,multi)=>{const cur=s[k]; if(multi){const a=cur||[];set({[k]:a.includes(v)?a.filter(x=>x!==v):[...a,v]});} else set({[k]:cur===v?undefined:v});};
+    const chips=(k,list,multi)=>list.map(v=>({label:v,...pill(multi?(s[k]||[]).includes(v):s[k]===v),onClick:()=>tog(k,v,multi)}));
+    const isHome=(s.cat||'home')==='home', isLand=s.cat==='land';
+    const fld=(k,label,ph,span)=>({label,ph,value:f[k]||'',span:span||'auto',onInput:e=>set({f:{...f,[k]:e.target.value}})});
+    return {
+      intents:[['sell','To Sell'],['rent','To Rent Out']].map(([id,label])=>({label,bg:s.intent===id?'var(--rez-mocaccino)':'transparent',weight:s.intent===id?700:500,onClick:()=>set({intent:id})})),
+      priceLabel:rent?'Monthly rent':'Sale price',
+      priceFmt:num?num.toLocaleString('en-IN'):'', hasPrice:!!num, priceWords:'₹ '+words+(rent?' / mo':''),
+      onPrice:e=>set({price:e.target.value.replace(/\D/g,'').slice(0,11)}),
+      priceTypes:[].map(v=>({label:v,...pill(s.ptype===v),onClick:()=>set({ptype:v})})),
+      showTrx:!!s.intent&&num>0&&(s.cat||'home')==='home'&&!!(s.pj&&s.pj.src==='rezide'), trxCount:String(rent?24:38),
+      openPa:()=>set({pa:true}), trxPills:[['unit','Similar Units · Trx (same area)'],['cfg','Similar Config · Trx (same BHK)']].map(([id,label])=>({label,onClick:()=>set({trx:id})})),
+      trxOpen:!!s.trx, trxClose:()=>set({trx:null}), trxStop:e=>e.stopPropagation(),
+      trxTitle:s.trx==='cfg'?'Similar configuration transactions':'Similar unit transactions',
+      trxSub:(s.trx==='cfg'?'Same BHK':'Same carpet area')+' · '+((s.pj&&s.pj.name)||'nearby')+' · last 24 months',
+      trxRows:Array.from({length:8},(_,i)=>{const h=(i*7919+(s.trx==='cfg'?13:3))%97;const area=(s.trx==='cfg'?820+h*6:880+h%40);const rate=24000+h*180;const tw=String.fromCharCode(65+h%4);
+        return {date:['Sep 2026','Aug 2026','Jun 2026','May 2026','Mar 2026','Jan 2026','Nov 2025','Sep 2025'][i],unit:'Tower '+tw+' · '+(2+h%30)+'0'+(1+h%8),area:area.toLocaleString('en-IN')+' sq ft',price:'₹ '+(area*rate/1e7).toFixed(2)+' Cr',rate:'₹ '+rate.toLocaleString('en-IN')+' / sq ft',cfg:(2+h%3)+' BHK'};}),
+      advGroup:[].concat([]),_adv:[{title:'Price advantages',items:chips('adv',rent?['Negotiable','Immediate Possession','No Brokerage','Best Price in Locality']:['Affordable Price','Urgent Sale','Below Market Value','Negotiable Price','Best Price in Locality','Quick Deal Preferred'],true)}],
+      essGroups:[].concat([],[]),_eg:[
+        ...(isHome?[{title:'BHK *',items:chips('bhk',['Studio','1 RK','1 BHK','1.5 BHK','2 BHK','2.5 BHK','3 BHK','3.5 BHK','4 BHK','5 BHK','5+ BHK'])},
+          {title:'Additional spaces',items:chips('extra',['Prayer Room','Servant Room','Study Room','Store Room','Basement','Private Garden','Private Pool','Terrace'],true)}]:[])
+      ],
+      locFields:[
+        ...(isLand?[fld('survey','Survey / Plot No.','e.g. 112/4')]:[fld('tower','Tower / Wing','e.g. Tower B'),fld('unitno','Unit No.','e.g. 1702'),fld('floor','Floor','e.g. 17 of 32')]),
+        ],
+      ...this.proj(s,set,f),
+      ...this.realtor(s,set,f),
+      ...this.sel(s,set,f),
+      ...this.pa2(s,set,f),
+      ...this.form3(s,set,{chips,num,words,rent,isHome,isLand,f})
+    };
+  }
+  proj(s,set,f){
+    const src=s.src||'rezide', q=(s.projQ||'').toLowerCase(), pj=s.pj;
+    const list=(src==='rezide'?REZ_PROJ:GOO_PROJ).filter(p=>!q||(p[0]+' '+p[1]+' '+p[2]).toLowerCase().includes(q));
+    const pick=p=>set({pj:{name:p[0],dev:p[1],loc:p[2],src},tower:undefined,unitSel:undefined,pinned:src==='rezide',f:{...f,tower:'',unitno:'',floor:'',loc:p[2],city:f.city||'Mumbai',addr:src==='rezide'?p[0]+', '+p[2]+', '+(f.city||'Mumbai'):(f.addr||'')}});
+    const towers=pj?(pj.src==='rezide'?['Tower A','Tower B','Tower C','Tower D']:['Wing A','Wing B']):[];
+    const floorUnits=[];for(let fl=24;fl>=19;fl--)for(let u=1;u<=4;u++)floorUnits.push(fl+'0'+u);
+    return {
+      noProj:!pj, hasProj:!!pj,
+      srcTabs:[['rezide','Rezide'],['google','Google']].map(([id,label])=>({label,bg:src===id?'#000':'transparent',fg:src===id?'var(--rez-full-white)':'#000',onClick:()=>set({src:id})})),
+      projQ:s.projQ||'', onProjQ:e=>set({projQ:e.target.value}),
+      projPh:src==='rezide'?'Search Rezide projects':'Search Google for building or address',
+      projResults:list.map(p=>({name:p[0],sub:p[1]+' · '+p[2],ini:p[0].split(' ').map(w=>w[0]).join('').slice(0,2),tag:src==='rezide'?'Verified':'Google',onClick:()=>pick(p)})),
+      projNone:list.length===0,
+      pj:pj?{name:pj.name,sub:(pj.dev?pj.dev+' · ':'')+pj.loc+', Mumbai',facts:pj.src==='rezide'?[{l:'Status',v:'Ready to Move'},{l:'Towers',v:'4 towers · 32 floors'},{l:'Configurations',v:'2, 3 & 4 BHK'},{l:'RERA',v:'P5190002'+String(pj.name.length).padStart(4,'0')}]:[{l:'Source',v:'Google Maps'},{l:'Type',v:'Residential building'}]}:{name:'',sub:'',facts:[]},
+      clearProj:()=>set({pj:undefined,tower:undefined,unitSel:undefined,f:{...f,tower:'',unitno:'',floor:''}}),
+      towers:towers.map(t=>({label:t,...pill(s.tower===t),onClick:()=>set({tower:t,unitSel:undefined,f:{...f,tower:t}})})),
+      hasTower:!!s.tower,
+      towerOpts:pj?towers:['Tower A','Tower B','Tower C','Wing A','Wing B'], towerVal:s.tower||'', selBg:'#fff',
+      onTower:e=>set({tower:e.target.value||undefined,unitSel:undefined,f:{...f,tower:e.target.value,unitno:'',floor:''}}),
+      unitOpts:s.tower?floorUnits:[], unitVal:s.unitSel||'',
+      onUnit:e=>{const u=e.target.value;set({unitSel:u||undefined,f:{...f,unitno:u,floor:u?u.slice(0,-2):''}});},
+      tfloorsVal:f.tfloors||'', onTfloors:e=>set({f:{...f,tfloors:e.target.value.replace(/\D/g,'')}}), unitNoVal:f.unitno||'', onUnitNo:e=>set({f:{...f,unitno:e.target.value}}),
+      floorVal:f.floor||'', onFloor:e=>set({f:{...f,floor:e.target.value.replace(/\D/g,'')}}),
+      units:floorUnits.map(u=>({label:u,...pill(s.unitSel===u),onClick:()=>set({unitSel:u,f:{...f,unitno:u,floor:u.slice(0,-2)+' of 32'}})}))
+    };
+  }
+  pa2(s,set,f){
+    const num=Number(s.price)||0, area=Number(String(f.area||'').replace(/\D/g,''))||1020, cfg=f.config||'2.5 BHK', tab=s.paTab||'unit';
+    const fmt=n=>n>=1e7?'₹'+(n/1e7).toFixed(2).replace(/\.?0+$/,'')+' Cr':n>=1e5?'₹'+(n/1e5).toFixed(2).replace(/\.?0+$/,'')+' L':'₹'+n.toLocaleString('en-IN');
+    const D=tab==='unit'?{cnt:9,lo:4.15e7,med:5.35e7,hi:6e7,loN:'Floor 2 · Dec 2025',hiN:'Floor 18 · Jan 2026'}:{cnt:21,lo:3.91e7,med:4.95e7,hi:6.5e7,loN:'Floor 4 · Nov 2025',hiN:'Floor 27 · Jul 2026'};
+    const you=num||D.med, span=D.hi-D.lo, pos=Math.max(3,Math.min(97,(you-D.lo)/span*100)), mpos=(D.med-D.lo)/span*100;
+    const within=you>=D.lo&&you<=D.hi, delta=((you-D.med)/D.med*100);
+    const unitLine=area.toLocaleString('en-IN')+' sqft';
+    return {
+      paTabs:[['unit','Similar Units · Trx (same area)'],['cfg','Similar Config · Trx (same BHK)']].map(([id,label])=>({label,bg:tab===id?'#000':'#fff',fg:tab===id?'var(--rez-full-white)':'#000',onClick:()=>set({paTab:id})})),
+      paSummary:'There are '+D.cnt+' sales of '+(tab==='unit'?unitLine+' (same area)':cfg+' units (same configuration)')+' in '+((s.pj&&s.pj.name)||'this project')+' over the last 12 months, '+fmt(D.lo)+' to '+fmt(D.hi)+' (median '+fmt(D.med)+').',
+      paYou:fmt(you), paWithin:within?'within':(you<D.lo?'below':'above'),
+      paCardTitle:'Sale price · '+cfg+' · '+unitLine+' units, last 12 months',
+      paDelta:(delta>=0?'+':'')+delta.toFixed(1)+'%', paDeltaFg:within?'#15302B':'#380516',
+      paPos:pos+'%', paMedPos:mpos+'%',
+      paTiles:[{l:'Low · '+D.loN,v:fmt(D.lo)},{l:'Median',v:fmt(D.med)},{l:'High · '+D.hiN,v:fmt(D.hi)}],
+      paFoot:D.cnt+' sales of similar units · '+cfg+' · ~'+unitLine+' · Dec 2025 to Aug 2026 · ₹'+Math.round(D.med/area).toLocaleString('en-IN')+'/sqft',
+      changePrice:()=>set({pa:false,price:''})
+    };
+  }
+  sel(s,set,f){
+    const n=s.step, isHome=(s.cat||'home')==='home', isLand=s.cat==='land', rent=s.intent==='rent';
+    const F=(k,label,options)=>({label,options,value:f[k]||'',fg:f[k]?'#000':'var(--rez-graphite)',onChange:e=>set({f:{...f,[k]:e.target.value}})});
+    const nums=(a,b)=>Array.from({length:b-a+1},(_,i)=>String(a+i));
+    const dir=['North','South','East','West','North-East','North-West','South-East','South-West'];
+    let g=[];
+    if(n===3&&!isLand) g=[{title:'Building details',border:'1px solid var(--rez-smoke)',fields:[F('pstatus','Project status *',['Ready to Move','Under Construction','New Launch']),
+      ...(f.pstatus==='Under Construction'?[F('poss','Possession timeline',['<1 Year','1 – 2 Years','2 – 3 Years','3+ Years'])]:[F('age','Age of property',['<1 Year','1 – 3 Years','3 – 5 Years','5 – 10 Years','10 – 20 Years','20+ Years'])]),
+      F('btype','Property type *',['Gated Amenities','Gated No Amenities','Standalone','Standalone No Amenities']),F('plotarea','Plot area',['Under 1 acre','1 – 2 acres','2 – 5 acres','5 – 10 acres','10 – 25 acres','25+ acres']),
+      F('plifts','Passenger lifts',nums(0,12)),F('slifts','Service lifts',nums(0,6))]}];
+    if(n===5) g=[{title:'Visit',border:'1px solid var(--rez-smoke)',fields:[F('vdays','Visit days',['Everyday','Weekdays','Weekends','By appointment']),
+      F('vfrom','From',['08:00','09:00','10:00','11:00','12:00','14:00','16:00']),F('vto','To',['14:00','16:00','18:00','19:00','20:00','21:00']),
+      F('notice','Notice needed',['Same day','2 hours','1 day','2 days']),F('keys',rent?'Keys / occupancy':'Keys / occupancy',['Vacant · Keys with owner','Vacant · Keys with broker','Owner Occupied','Tenant Occupied'])]}];
+    if(n===4) g=[{title:'Unit details',border:'0',fields:isLand?[F('ptype2','Plot type *',['Residential','Commercial','Industrial','Agricultural']),{label:'Plot area *',isInput:true,ph:'e.g. 2,400',value:f.area||'',onInput:e=>set({f:{...f,area:e.target.value.replace(/[^0-9.]/g,'')}})},F('aunit','Unit *',['sq.ft.','sq.yd.','acres']),F('facing','Facing',dir),F('road','Road width',['20 ft','30 ft','40 ft','60 ft+'])]:[
+      ...(isHome?[F('config','Configuration *',['Studio','1 RK','1 BHK','1.5 BHK','2 BHK','2.5 BHK','3 BHK','3.5 BHK','4 BHK','5 BHK','5+ BHK'])]:[]),
+      {label:'Area *',isInput:true,ph:'e.g. 1,250',value:f.area||'',onInput:e=>set({f:{...f,area:e.target.value.replace(/[^0-9.]/g,'')}})},
+      F('atype','Type *',['Carpet','Usable Carpet','Built-up','Super Built-up']),F('aunit','Unit *',['sq.ft.','sq.m.','sq.yd.']),
+      F('bath','Bath *',nums(1,6)),F('balc','Balcony',nums(0,5)),F('furn','Furnishing *',['Fully Furnished','Semi Furnished','Unfurnished']),
+      F('flooring','Flooring',['Vitrified Tile','Marble','Italian Marble','Wooden','Granite']),F('hft','Height ft',['8 Ft','9 Ft','10 Ft','11 Ft','12 Ft+']),F('hin','Inch',['0 Inch','3 Inch','6 Inch','9 Inch']),
+      F('door','Main door exit *',dir),F('vastu','Vastu',['Excellent','Good','Average','Not compliant']),
+      F('view','View type',['Sea','City Skyline','Garden','Clubhouse','Pool','Road','Internal']),F('ufacing','Unit facing',dir),
+      F('vent','Ventilation',['Excellent','Good','Moderate','Poor']),F('light','Natural light',['Bright','Good','Moderate','Dim']),
+      F('ptype3','Parking type',['Covered','Open','Stilt','Podium','Mechanical','None']),F('park','Parking',nums(0,4))]}];
+    const role=s.role;
+    const city=f.city||'Mumbai';
+    g=g.map(x=>({...x,fields:x.fields.map(fl=>({isSel:!fl.isInput,isInput:!!fl.isInput,options:[],fg:'#000',...fl}))}));
+    const gf=(k,label,ph)=>({label,ph,value:f[k]||'',onInput:e=>set({f:{...f,[k]:e.target.value}})});
+    return { selGroups:g, cityLocked:city,
+      ...(()=>{const G=GEO[city]||GEO._, rg=f.region||'', subs=rg?(G[rg]||{}):{}, sr=f.subregion||'';
+        return {regionOpts:Object.keys(G), regionVal:rg, onRegion:e=>set({f:{...f,region:e.target.value,subregion:'',loc:''}}),
+          subOpts:Object.keys(subs), subVal:sr, onSub:e=>set({f:{...f,subregion:e.target.value,loc:''}}),
+          locOpts:sr?(subs[sr]||[]):[], locVal:f.loc||'', onLoc:e=>set({f:{...f,loc:e.target.value}}),
+          pinVal:f.pin||'', onPinc:e=>set({f:{...f,pin:e.target.value.replace(/\D/g,'').slice(0,4)}})};})(),
+      addr:f.addr||'', onAddr:e=>set({f:{...f,addr:e.target.value}}),
+      togglePin:()=>set({pinned:!s.pinned}), pinBorder:s.pinned?'#000':'var(--rez-smoke)',
+      pinTitle:s.pinned?'Location pinned on map':'Pinpoint exact location on map', pinSub:s.pinned?(s.pj&&s.pj.src==='rezide'?'Pre-filled from Rezide project · 19.0176° N, 72.8162° E':'19.1663° N, 72.8526° E · Tap to adjust'):'Accurate placement helps buyers find your property faster.',
+      cityPills:['Mumbai','Pune','Bengaluru','Hyderabad','Gurugram','Noida','Chennai','Ahmedabad'].map(c=>({label:c,...pill(city===c),onClick:()=>set({f:{...f,city:c}})})),
+      roles:['Property Owner','Contact Person','POA Holder'].map(v=>({label:v,...pill(role===v),onClick:()=>set({role:v})})),
+      isPoa:role==='POA Holder',
+      profFields:[...(role&&role!=='Property Owner'?[{label:'Owner name *',ph:'Registered owner',k:'oname'},{label:'Owner mobile',ph:'+91',k:'omob'}]:[])].map(x=>({...x,value:f[x.k]||'',onInput:e=>set({f:{...f,[x.k]:e.target.value}})}))
+    };
+  }
+  realtor(s,set,f){
+    const yes=s.assist==='yes', sel=s.rsel||[], loc=(s.pj&&s.pj.loc)||f.loc||'';
+    const ranked=[...REALTORS].sort((a,b)=>(b[4]===loc)-(a[4]===loc));
+    const unit=s.unit||'property';
+    return {
+      assistOpts:[['yes','Yes, assist me'],['no','No, I will manage']].map(([id,label])=>({label,bg:s.assist===id?'var(--rez-mocaccino)':'#fff',border:s.assist===id?'var(--rez-mocaccino)':'var(--rez-smoke)',weight:s.assist===id?700:500,onClick:()=>set({assist:id,submitted:false})})),
+      realtorPros:[{t:'Close up to 2x faster',d:'Realtors bring their own buyer and tenant network.'},{t:'Right price',d:'Negotiation backed by local deal data.'},{t:'Screened visits',d:'Only serious, pre-qualified people visit.'},{t:'Paperwork handled',d:'Agreement, registration and loan help.'}],
+      wantsAssist:yes,
+      handoverOpts:[['self','Continue listing myself','Finish the remaining steps now. Your realtor joins once it goes live.'],['realtor','Hand over to my realtor','Your selected realtor completes the details, photos and video for you.']].map(([id,t,d])=>{const on=s.handover===id;return {t,d,bg:on?'var(--rez-cloud)':'#fff',border:on?'#000':'var(--rez-smoke)',ring:on?'6px solid #000':'1.5px solid var(--rez-steel)',onClick:()=>set({handover:id,submitted:false})};}), realtorHead:'Realtors matched to your listing'+(s.unit?' for '+s.unit:'')+(loc?' in '+loc:' near you')+'.',
+      realtorCards:ranked.map(([name,agency,rating,deals,area],i)=>{const on=sel.includes(name);const LBG=['#000','#15302B','#2F4842','#380516','#000','#15302B'];return {name,agency,rating,deals,area,rera:'A518000'+String(4146+i*1733).padStart(5,'0'),since:String(1994+i*4),firmIni:agency.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),logoBg:LBG[i%6],match:(area===loc?'Active in '+area:'Covers '+area)+' · '+(s.unit||'Apartment')+' specialist · '+(s.intent==='rent'?'Rentals':'Resale'),
+        photoBg:'url(https://images.unsplash.com/'+['photo-1573497019940-1c28c88b4f3e','photo-1560250097-0b93528c311a','photo-1600878459138-e1123b37cb30','photo-1573496359142-b8d87734a5a2','photo-1642257859842-c95f9fa8121d','photo-1585240975858-7264fd020798'][i%6]+'?fm=jpg&q=70&w=200&h=200&auto=format&fit=crop&crop=faces)',ringBd:on?'#000':'var(--rez-steel)',border:on?'#000':'var(--rez-smoke)',shadow:on?'var(--shadow-sm)':'none',chkBg:on?'#000':'#fff',chk:on?1:0,
+        onClick:()=>set({submitted:false,rsel:on?sel.filter(x=>x!==name):(sel.length<3?[...sel,name]:sel)})};})
+    };
+  }
+  form3(s,set,x){
+    const {chips,isHome,isLand,f,rent}=x, n=s.step;
+    const fld=(k,label,ph,type)=>({label,ph,type:type||'text',value:f[k]||'',onInput:e=>set({f:{...f,[k]:e.target.value}})});
+    let groups=[],fields=[],note=null;
+    if(n===-1){
+      fields=[fld('from','Available from','', 'date'),...(isLand?[]:[fld('age','Age of property (years)','e.g. 4')])];
+      groups=[{title:'Availability',items:chips('avail',['Ready to Move','Under Construction'])},
+        {title:'Listing visibility',items:chips('vis',['Public Listing','Private Listing'])},
+        ...(isLand?[{title:'Approvals',items:chips('appr',['NA Approved','RERA Approved','Clear Title'],true)}]:[
+        {title:'Facing',items:chips('facing',['East','West','North','South','North-East','North-West'])},
+        {title:'Parking',items:chips('park',['None','1','2','3','4+'])},
+        {title:'Bathrooms',items:chips('bath',['1','2','3','4','5+'])},
+        {title:'Furnishing',items:chips('furn',['Fully Furnished','Semi Furnished','Unfurnished'])}]),
+        ...(rent?[{title:'Preferred tenants',items:chips('ten',['Family','Bachelors','Company Lease','Any'],true)}]:[])];
+    } else if(n===6){
+      groups=[{title:'Key features',items:chips('usp',isLand?['Corner Plot','Road Facing','Gated Layout','Near Highway','Clear Title','Water Connection']:['Sea View','Corner Unit','High Floor','Vastu Compliant','Natural Light','Cross Ventilation','Modular Kitchen','Gated Community','Near Metro','Pet Friendly'],true)},
+        ...(isLand?[]:[{title:'Building amenities',items:chips('amen',['Lift','Power Backup','Security','Clubhouse','Swimming Pool','Gym','Garden','Kids Play Area'],true)}])];
+      note={label:'What makes this property special',ph:'Two or three sentences buyers should know.',k:'usp_note'};
+    } else if(n===9){
+      groups=[{title:'Furniture',items:chips('furni',['Sofa','Bed','Wardrobe','Dining Table','TV Unit','Study Table','Shoe Rack','Curtains'],true)},
+        {title:'Appliances',items:chips('appl',['AC','Refrigerator','Washing Machine','Microwave','Geyser','Water Purifier','Chimney','TV'],true)},
+        {title:'Fixtures',items:chips('fix',['Modular Kitchen','False Ceiling','Wooden Flooring','Light Fittings','Fans','Smart Locks'],true)}];
+    }
+    return { isGeneric:[6,9].includes(n), gGroups:groups, gFields:fields, hasGFields:fields.length>0,
+      hasNote:!!note, noteLabel:note?note.label:'', notePh:note?note.ph:'', noteVal:note?(f[note.k]||''):'', onNote:e=>note&&set({f:{...f,[note.k]:e.target.value}}),
+      ...this.form4(s,set,x) };
+  }
+  form4(s,set,x){
+    const {f,isLand}=x;
+    const lbl=isLand?['Cover','Plot View','Road Access','Boundary','Surroundings','Approach Road','Landmark','Site Plan']:['Cover','Living Room','Kitchen','Bedroom','Bathroom','Balcony / View','Building Exterior','Floor Plan'];
+    return { photoSlots:lbl.map((l,i)=>({id:'lp-photo-'+i,label:l})),
+      vidLink:f.vid||'', onVid:e=>set({f:{...f,vid:e.target.value}}),
+      ...this.form5(s,set,x) };
+  }
+  form5(s,set,x){
+    const {f,num,rent,isLand}=x;
+    const area=Number(String(f.area||'').replace(/\D/g,''))||(isLand?2400:1250);
+    const loc=f.loc||'Worli', city=f.city||'Mumbai';
+    const med=rent?Math.round(95):Math.round(41500), lo=Math.round(med*0.78), hi=Math.round(med*1.25);
+    const rate=num?Math.round(num/area):0;
+    const pos=rate?Math.max(4,Math.min(96,(rate-lo)/(hi-lo)*100)):50;
+    const v=!rate?['Enter a price','var(--rez-cloud)','#000']:rate<med*0.95?['Below market','#DCE7E3','#15302B']:rate>med*1.08?['Above market','#E9D3D3','#380516']:['In line with market','#EDE3D6','#000'];
+    const fmt=n=>n>=1e7?'₹ '+(n/1e7).toFixed(2)+' Cr':n>=1e5?'₹ '+(n/1e5).toFixed(2)+' L':'₹ '+n.toLocaleString('en-IN');
+    const r=n=>'₹ '+n.toLocaleString('en-IN')+(rent?' / sq ft / mo':' / sq ft');
+    const NAMES=['Lodha Park','Omkar 1973','Indiabulls Blu','Oberoi Three Sixty West','Raheja Vivarea'];
+    const MON=['Sep 2026','Aug 2026','Jul 2026','Jun 2026','May 2026'];
+    const rows=NAMES.map((nm,i)=>{const a=Math.round(area*(0.85+i*0.08)),rt=Math.round(med*(0.9+((i*7)%5)*0.06));return {name:nm,date:MON[i],area:a.toLocaleString('en-IN')+' sq ft',price:fmt(a*rt)+(rent?' / mo':''),rate:r(rt)};});
+    const titleUnit=s.unit||'Apartment', bhk=s.bhk?s.bhk+' ':'';
+    return {
+      paOpen:!!s.pa, closePa:()=>set({pa:false}),
+      paTitle:(rent?'Rents':'Prices')+' in '+loc+', '+city+'.', paSub:x.rent?'24 rental agreements, last 12 months':'38 sale registrations, last 12 months',
+      paStats:[{l:'Median rate',v:r(med).replace(' / sq ft','').replace(' / mo','')},{l:'Your rate',v:rate?('₹ '+rate.toLocaleString('en-IN')):'—'},{l:'Your area',v:area.toLocaleString('en-IN')+' sq ft'}],
+      paPos:pos+'%', paLow:r(lo), paHigh:r(hi), paMed:r(med), paVerdict:v[0], paVerdictBg:v[1], paVerdictFg:v[2], paRows:rows,
+      pvPrice:num?fmt(num)+(rent?' / mo':''):'₹ —', pvRate:rate?r(rate):'Rate per sq ft appears here',
+      pvTitle:(f.config?f.config+' ':bhk)+titleUnit+((s.pj&&s.pj.name)?' in '+s.pj.name:''), pvLoc:[f.tower,f.unitno?'Unit '+f.unitno:'',f.loc||f.subregion||'Locality',city].filter(Boolean).join(', '),
+      pvSpecs:[{v:f.config||s.bhk||'—',l:'Config'},{v:f.area?area.toLocaleString('en-IN'):'—',l:'Sq ft'},{v:f.floor?(f.floor+(f.tfloors?' / '+f.tfloors:'')):'—',l:'Floor'},{v:f.facing||'—',l:'Facing'},{v:s.furn?s.furn.split(' ')[0]:'—',l:'Furnishing'},{v:s.intent==='rent'?'Rent':s.intent?'Sale':'—',l:'For'}]
+    };
+  }
+  componentDidMount(){ this._rs=()=>this.setState({w:window.innerWidth}); window.addEventListener('resize',this._rs); this._rs(); }
+  componentWillUnmount(){ window.removeEventListener('resize',this._rs); }
+  renderVals(){
+    const s=this.state, set=o=>this.setState(o);
+    const ff=s.f||{}, guest=!this.props.loggedIn;
+    const okP=guest?(s.phone.length===10&&!!(ff.fname||'').trim()&&!!(ff.lname||'').trim()):true, okO=s.otp.length===4;
+    return { isCust:!!s.cust, notCust:!s.cust, formTitle:s.cust?'Add listing':'List your property.', toMyListings:()=>{try{localStorage.setItem('rz_tab','mylistings');}catch(e){}}, hdrName:(()=>{try{return (JSON.parse(localStorage.getItem('rz_cust')||'{}')||{}).fname||'Viraj';}catch(e){return 'Viraj';}})(), isPhone:s.phase==='phone', isOtp:s.phase==='otp', isWizard:s.phase==='wizard', notWizard:s.phase!=='wizard',
+      phone:s.phone, otp:s.otp,
+      vTitle:s.phase==='otp'?'Enter the OTP.':guest?'List your property. Free.':'Add a new listing.',
+      vSub:s.phase==='otp'?'Enter the 4-digit code sent to +91 '+s.phone+'.':guest?'Takes less than 2 minutes to start.':'Welcome back. Choose sell or rent out, then add your listing.',
+      onPhone:e=>set({phone:e.target.value.replace(/\D/g,'').slice(0,10)}),
+      onOtp:e=>set({otp:e.target.value.replace(/\D/g,'').slice(0,4)}),
+      editPhone:()=>set({phase:'phone',otp:''}),
+      guest, fname:ff.fname||'', lname:ff.lname||'',
+      onFname:e=>set({f:{...ff,fname:e.target.value,pname:(e.target.value+' '+(ff.lname||'')).trim()}}),
+      onLname:e=>set({f:{...ff,lname:e.target.value,pname:((ff.fname||'')+' '+e.target.value).trim()}}),
+      vBtn:s.phase==='otp'?'Verify and Continue':guest?'Submit':'Add Listing',
+      vBtnBg:(s.phase==='otp'?okO:okP)?'#000':'var(--rez-steel)',
+      vAction:()=>{ if(s.phase==='phone'&&!guest){set({phase:'wizard',intent:s.intent||'sell',phone:s.phone||'98200 12345'});return;} if(s.phase==='phone'&&okP) set({phase:'otp'}); else if(s.phase==='otp'&&okO) set({phase:'wizard',intent:s.intent||'sell'}); },
+      heroIntents:[['sell','Sell'],['rent','Rent / Lease']].map(([id,label])=>({label,bg:(s.intent||'sell')===id?'var(--rez-mocaccino)':'transparent',weight:(s.intent||'sell')===id?700:500,onClick:()=>set({intent:id})})),
+      heroCity:(s.f||{}).city||'', onHeroCity:e=>set({f:{...(s.f||{}),city:e.target.value}}),
+      heroPoints:['Unlimited free listings, zero hidden fees','Direct WhatsApp and call with buyers','Price analysis from registered transactions'],
+      heroStats:[{v:'₹ 8.4K Cr',l:'Deals closed'},{v:'3.8K+',l:'Realtors'},{v:'1L+',l:'Active listings'},{v:'80L+',l:'Monthly users'}],
+      landSteps:[['Profile','Owner, contact person or POA. Verify with OTP'],['Property type','Home, office, retail, industrial or land'],['Property','Project, address, tower, unit and floor'],['Commercials','Sell or rent out, and your price'],['Realtor assist','Optional. Pick up to 3 realtors, or list it yourself']].map(([t,d],i)=>({n:String(i+1),t,d})),
+      freeList:['100% free listing','Verified buyer and tenant leads','Direct WhatsApp and call connect','Price analysis on your listing','Add or edit anytime','Performance analytics'],
+      valFeats:[{t:'Market valuation',d:'Fair value for your exact unit'},{t:'Comparables',d:'Recent deals in your society and locality'},{t:'Rental yield',d:'Expected monthly rent and yield'},{t:'Govt. benchmark',d:'Ready reckoner cross-check'}],
+      toTop:()=>window.scrollTo({top:0,behavior:'smooth'}),
+      ...this.wiz(s,set) };
+  }
+}
+</script>
+</body>
+</html>

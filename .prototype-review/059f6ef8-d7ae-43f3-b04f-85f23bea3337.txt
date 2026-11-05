@@ -1,0 +1,1744 @@
+/* @ds-bundle: {"format":4,"namespace":"RezideDesignSystem_37386e","components":[{"name":"Badge","sourcePath":"components/core/Badge.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"Card","sourcePath":"components/core/Card.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Logo","sourcePath":"components/core/Logo.jsx"},{"name":"Tag","sourcePath":"components/core/Tag.jsx"},{"name":"CalloutBanner","sourcePath":"components/feedback/CalloutBanner.jsx"},{"name":"Dialog","sourcePath":"components/feedback/Dialog.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"Tooltip","sourcePath":"components/feedback/Tooltip.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Field","sourcePath":"components/forms/Field.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Radio","sourcePath":"components/forms/Radio.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"}],"sourceHashes":{"components/core/Badge.jsx":"ba545ea26dc6","components/core/Button.jsx":"1a0acb7f7ad2","components/core/Card.jsx":"6095f049028e","components/core/Icon.jsx":"6b375fbc3f28","components/core/IconButton.jsx":"aaa312819a6e","components/core/Logo.jsx":"2c3f6bb18358","components/core/Tag.jsx":"a233a16633a3","components/feedback/CalloutBanner.jsx":"48b1d90cc495","components/feedback/Dialog.jsx":"d7f5dd0dd194","components/feedback/Toast.jsx":"48802ab18bbc","components/feedback/Tooltip.jsx":"a5736c2ad3c0","components/forms/Checkbox.jsx":"921c1140e103","components/forms/Field.jsx":"eacb1bd65ab2","components/forms/Input.jsx":"8e65a368e2bb","components/forms/Radio.jsx":"5f877f97d5c7","components/forms/Select.jsx":"c0d271a73f77","components/forms/Switch.jsx":"e038abbb3148","components/forms/Textarea.jsx":"546630fafeba","components/navigation/Tabs.jsx":"2e2a3842db6d","ui_kits/marketing/HomeScreen.jsx":"6b6f7b2ffc05","ui_kits/marketing/SiteFooter.jsx":"20615afc609c","ui_kits/marketing/SiteHeader.jsx":"9eef0ceb9b44"},"inlinedExternals":[],"unexposedExports":[{"name":"assetBase","sourcePath":"components/core/Logo.jsx"},{"name":"iconBase","sourcePath":"components/core/Icon.jsx"},{"name":"useSvgMarkup","sourcePath":"components/core/Icon.jsx"}]} */
+
+(() => {
+
+const __ds_ns = (window.RezideDesignSystem_37386e = window.RezideDesignSystem_37386e || {});
+
+const __ds_scope = {};
+
+(__ds_ns.__errors = __ds_ns.__errors || []);
+
+// components/core/Card.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+const CARD_TONES = {
+  light: {
+    bg: 'var(--surface-card)',
+    fg: 'var(--text-primary)',
+    bd: 'var(--border-subtle)'
+  },
+  ink: {
+    bg: 'var(--rez-forest-ink)',
+    fg: 'var(--rez-full-white)',
+    bd: 'rgba(224,224,224,.14)'
+  },
+  feature: {
+    bg: 'var(--accent-feature)',
+    fg: 'var(--rez-full-white)',
+    bd: 'transparent'
+  },
+  announce: {
+    bg: 'var(--accent-announce)',
+    fg: 'var(--rez-full-white)',
+    bd: 'transparent'
+  },
+  warm: {
+    bg: 'var(--accent-warm)',
+    fg: 'var(--rez-black)',
+    bd: 'transparent'
+  },
+  cream: {
+    bg: 'var(--rez-cream)',
+    fg: 'var(--rez-black)',
+    bd: 'transparent'
+  }
+};
+function Card({
+  tone = 'light',
+  eyebrow,
+  title,
+  children,
+  footer,
+  elevated,
+  padding = 'var(--space-6)',
+  style,
+  ...rest
+}) {
+  const t = CARD_TONES[tone] || CARD_TONES.light;
+  return /*#__PURE__*/React.createElement("div", _extends({}, rest, {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--space-3)',
+      padding,
+      background: t.bg,
+      color: t.fg,
+      border: `1px solid ${t.bd}`,
+      borderRadius: 'var(--radius-card)',
+      boxShadow: elevated ? 'var(--shadow-md)' : 'none',
+      ...style
+    }
+  }), eyebrow && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: 'var(--type-eyebrow)',
+      letterSpacing: 'var(--tracking-eyebrow)',
+      textTransform: 'uppercase',
+      opacity: .72
+    }
+  }, eyebrow), title && /*#__PURE__*/React.createElement("h3", {
+    style: {
+      margin: 0,
+      font: 'var(--type-heading)',
+      letterSpacing: 'var(--tracking-display)'
+    }
+  }, title), children, footer && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 'var(--space-2)'
+    }
+  }, footer));
+}
+Object.assign(__ds_scope, { Card });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Card.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/Icon.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+/** Resolve where icon SVGs live. Override globally with window.REZIDE_ICON_BASE. */
+function iconBase(basePath) {
+  if (basePath) return basePath;
+  if (typeof window !== 'undefined' && window.REZIDE_ICON_BASE) return window.REZIDE_ICON_BASE;
+  return 'assets/icons';
+}
+const CACHE = new Map();
+function normalise(text) {
+  return text.replace(/<metadata>[\s\S]*?<\/metadata>/, '').replace(/<svg /, '<svg width="100%" height="100%" style="display:block" ').replace(/width="\d+" height="\d+" width="100%"/, 'width="100%"');
+}
+/** Fetch-and-inject SVG markup so fill="currentColor" inherits the parent colour. */
+function useSvgMarkup(url) {
+  const [markup, setMarkup] = React.useState(() => CACHE.get(url) && typeof CACHE.get(url) === 'string' ? CACHE.get(url) : '');
+  React.useEffect(() => {
+    let live = true;
+    const hit = CACHE.get(url);
+    if (typeof hit === 'string') {
+      setMarkup(hit);
+      return;
+    }
+    const p = hit || fetch(url).then(r => r.ok ? r.text() : '').then(t => {
+      const n = normalise(t);
+      CACHE.set(url, n);
+      return n;
+    }).catch(() => '');
+    CACHE.set(url, p);
+    p.then(t => {
+      if (live) setMarkup(t);
+    });
+    return () => {
+      live = false;
+    };
+  }, [url]);
+  return markup;
+}
+function Icon({
+  name,
+  size = 'var(--icon-lg)',
+  basePath,
+  title,
+  style,
+  ...rest
+}) {
+  const markup = useSvgMarkup(`${iconBase(basePath)}/${name}.svg`);
+  return /*#__PURE__*/React.createElement("span", _extends({
+    role: title ? 'img' : 'presentation',
+    "aria-label": title,
+    "aria-hidden": title ? undefined : true
+  }, rest, {
+    style: {
+      display: 'inline-block',
+      flex: 'none',
+      width: size,
+      height: size,
+      color: 'currentColor',
+      ...style
+    },
+    dangerouslySetInnerHTML: {
+      __html: markup
+    }
+  }));
+}
+Object.assign(__ds_scope, { iconBase, useSvgMarkup, Icon });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Icon.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/Badge.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+const BADGE_TONES = {
+  neutral: {
+    bg: 'var(--rez-cloud)',
+    fg: 'var(--rez-arsenic)'
+  },
+  ink: {
+    bg: 'var(--rez-black)',
+    fg: 'var(--rez-full-white)'
+  },
+  announce: {
+    bg: 'var(--accent-announce)',
+    fg: 'var(--rez-full-white)'
+  },
+  feature: {
+    bg: 'var(--accent-feature)',
+    fg: 'var(--rez-full-white)'
+  },
+  warm: {
+    bg: 'var(--accent-warm)',
+    fg: 'var(--rez-black)'
+  },
+  outline: {
+    bg: 'transparent',
+    fg: 'var(--text-primary)',
+    bd: 'var(--border-subtle)'
+  }
+};
+function Badge({
+  tone = 'neutral',
+  icon,
+  children,
+  style,
+  ...rest
+}) {
+  const t = BADGE_TONES[tone] || BADGE_TONES.neutral;
+  return /*#__PURE__*/React.createElement("span", _extends({}, rest, {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      height: '24px',
+      padding: '0 10px',
+      background: t.bg,
+      color: t.fg,
+      border: `1px solid ${t.bd || 'transparent'}`,
+      borderRadius: 'var(--radius-pill)',
+      font: `var(--weight-semibold) var(--text-micro)/1 var(--font-primary)`,
+      letterSpacing: '.06em',
+      textTransform: 'uppercase',
+      ...style
+    }
+  }), icon && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: icon,
+    size: "12px"
+  }), children);
+}
+Object.assign(__ds_scope, { Badge });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Badge.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/Button.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+const TONES = {
+  primary: {
+    bg: 'var(--rez-black)',
+    fg: 'var(--rez-full-white)',
+    bd: 'var(--rez-black)',
+    hover: 'var(--rez-arsenic)'
+  },
+  announce: {
+    bg: 'var(--accent-announce)',
+    fg: 'var(--rez-full-white)',
+    bd: 'var(--accent-announce)',
+    hover: '#4B0A20'
+  },
+  feature: {
+    bg: 'var(--accent-feature)',
+    fg: 'var(--rez-full-white)',
+    bd: 'var(--accent-feature)',
+    hover: 'var(--rez-timber-green-tint)'
+  },
+  warm: {
+    bg: 'var(--accent-warm)',
+    fg: 'var(--rez-black)',
+    bd: 'var(--accent-warm)',
+    hover: '#B79470'
+  },
+  secondary: {
+    bg: 'transparent',
+    fg: 'var(--text-primary)',
+    bd: 'var(--border-strong)',
+    hover: 'rgba(0,0,0,.06)'
+  },
+  ghost: {
+    bg: 'transparent',
+    fg: 'var(--text-primary)',
+    bd: 'transparent',
+    hover: 'rgba(0,0,0,.06)'
+  },
+  inverse: {
+    bg: 'var(--rez-full-white)',
+    fg: 'var(--rez-black)',
+    bd: 'var(--rez-full-white)',
+    hover: 'var(--rez-white)'
+  }
+};
+const SIZES = {
+  sm: {
+    h: 'var(--control-sm)',
+    px: 'var(--space-4)',
+    fs: 'var(--text-caption)',
+    gap: '6px',
+    icon: 'var(--icon-sm)'
+  },
+  md: {
+    h: 'var(--control-md)',
+    px: 'var(--space-5)',
+    fs: 'var(--text-body-sm)',
+    gap: '8px',
+    icon: 'var(--icon-md)'
+  },
+  lg: {
+    h: 'var(--control-lg)',
+    px: 'var(--space-6)',
+    fs: 'var(--text-body)',
+    gap: '10px',
+    icon: 'var(--icon-lg)'
+  }
+};
+function Button({
+  tone = 'primary',
+  size = 'md',
+  iconLeft,
+  iconRight,
+  fullWidth,
+  disabled,
+  children,
+  style,
+  ...rest
+}) {
+  const t = TONES[tone] || TONES.primary,
+    s = SIZES[size] || SIZES.md;
+  const [h, setH] = React.useState(false),
+    [p, setP] = React.useState(false);
+  return /*#__PURE__*/React.createElement("button", _extends({
+    type: "button",
+    disabled: disabled
+  }, rest, {
+    onMouseEnter: e => {
+      setH(true);
+      rest.onMouseEnter && rest.onMouseEnter(e);
+    },
+    onMouseLeave: e => {
+      setH(false);
+      setP(false);
+      rest.onMouseLeave && rest.onMouseLeave(e);
+    },
+    onMouseDown: () => setP(true),
+    onMouseUp: () => setP(false),
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s.gap,
+      width: fullWidth ? '100%' : undefined,
+      height: s.h,
+      padding: `0 ${s.px}`,
+      font: `var(--weight-semibold) ${s.fs}/1 var(--font-primary)`,
+      letterSpacing: '.01em',
+      color: t.fg,
+      background: h && !disabled ? t.hover : t.bg,
+      border: `1px solid ${t.bd}`,
+      borderRadius: 'var(--radius-control)',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? .4 : 1,
+      transform: p && !disabled ? 'scale(var(--press-scale))' : 'none',
+      transition: 'var(--transition-control)',
+      whiteSpace: 'nowrap',
+      ...style
+    }
+  }), iconLeft && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: iconLeft,
+    size: s.icon
+  }), children, iconRight && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: iconRight,
+    size: s.icon
+  }));
+}
+Object.assign(__ds_scope, { Button });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Button.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/IconButton.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+const IB_SIZES = {
+  sm: {
+    box: 'var(--control-sm)',
+    icon: 'var(--icon-sm)'
+  },
+  md: {
+    box: 'var(--control-md)',
+    icon: 'var(--icon-md)'
+  },
+  lg: {
+    box: 'var(--control-lg)',
+    icon: 'var(--icon-lg)'
+  }
+};
+const IB_TONES = {
+  solid: {
+    bg: 'var(--rez-black)',
+    fg: 'var(--rez-full-white)',
+    bd: 'var(--rez-black)',
+    hover: 'var(--rez-arsenic)'
+  },
+  outline: {
+    bg: 'transparent',
+    fg: 'var(--text-primary)',
+    bd: 'var(--border-strong)',
+    hover: 'rgba(0,0,0,.06)'
+  },
+  ghost: {
+    bg: 'transparent',
+    fg: 'var(--text-primary)',
+    bd: 'transparent',
+    hover: 'rgba(0,0,0,.06)'
+  },
+  inverse: {
+    bg: 'var(--rez-full-white)',
+    fg: 'var(--rez-black)',
+    bd: 'var(--rez-full-white)',
+    hover: 'var(--rez-white)'
+  }
+};
+function IconButton({
+  icon,
+  label,
+  tone = 'outline',
+  size = 'md',
+  disabled,
+  style,
+  ...rest
+}) {
+  const s = IB_SIZES[size] || IB_SIZES.md,
+    t = IB_TONES[tone] || IB_TONES.outline;
+  const [h, setH] = React.useState(false);
+  return /*#__PURE__*/React.createElement("button", _extends({
+    type: "button",
+    "aria-label": label,
+    disabled: disabled
+  }, rest, {
+    onMouseEnter: () => setH(true),
+    onMouseLeave: () => setH(false),
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: s.box,
+      height: s.box,
+      color: t.fg,
+      background: h && !disabled ? t.hover : t.bg,
+      border: `1px solid ${t.bd}`,
+      borderRadius: 'var(--radius-pill)',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? .4 : 1,
+      transition: 'var(--transition-control)',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: icon,
+    size: s.icon
+  }));
+}
+Object.assign(__ds_scope, { IconButton });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/IconButton.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/Logo.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function assetBase(basePath) {
+  if (basePath) return basePath;
+  if (typeof window !== 'undefined' && window.REZIDE_ASSET_BASE) return window.REZIDE_ASSET_BASE;
+  return 'assets';
+}
+const TAGLINE = "Powering India's Leading Realtors";
+function Art({
+  file,
+  base,
+  width,
+  height
+}) {
+  const markup = __ds_scope.useSvgMarkup(`${base}/${file}`);
+  return /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true",
+    style: {
+      display: 'block',
+      width,
+      height,
+      color: 'currentColor'
+    },
+    dangerouslySetInnerHTML: {
+      __html: markup
+    }
+  });
+}
+function Logo({
+  variant = 'horizontal',
+  height = 32,
+  tagline,
+  basePath,
+  style,
+  ...rest
+}) {
+  const base = assetBase(basePath),
+    h = typeof height === 'number' ? height : parseFloat(height) || 32;
+  const showTag = tagline === undefined ? variant === 'horizontal' || variant === 'vertical' : tagline;
+  const label = `Rezide — ${TAGLINE}`;
+  if (variant === 'mark') return /*#__PURE__*/React.createElement("span", _extends({
+    role: "img",
+    "aria-label": "Rezide"
+  }, rest, {
+    style: {
+      display: 'inline-block',
+      color: 'currentColor',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement(Art, {
+    file: "rezide-mark.svg",
+    base: base,
+    width: h * 1.4,
+    height: h
+  }));
+  if (variant === 'wordmark') return /*#__PURE__*/React.createElement("span", _extends({
+    role: "img",
+    "aria-label": "Rezide"
+  }, rest, {
+    style: {
+      display: 'inline-block',
+      color: 'currentColor',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement(Art, {
+    file: "rezide-wordmark.svg",
+    base: base,
+    width: h * 6.93,
+    height: h
+  }));
+  if (variant === 'vertical') return /*#__PURE__*/React.createElement("span", _extends({
+    role: "img",
+    "aria-label": label
+  }, rest, {
+    style: {
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: h * 0.34,
+      color: 'currentColor',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement(Art, {
+    file: "rezide-mark.svg",
+    base: base,
+    width: h * 1.4,
+    height: h
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: h * 0.16
+    }
+  }, /*#__PURE__*/React.createElement(Art, {
+    file: "rezide-wordmark.svg",
+    base: base,
+    width: h * 4.5,
+    height: h * 0.65
+  }), showTag && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: `var(--weight-regular) ${Math.max(7, h * 0.2)}px/1.2 var(--font-eyebrow)`,
+      letterSpacing: 'var(--tracking-wide)',
+      whiteSpace: 'nowrap'
+    }
+  }, TAGLINE)));
+  return /*#__PURE__*/React.createElement("span", _extends({
+    role: "img",
+    "aria-label": label
+  }, rest, {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: h * 0.42,
+      color: 'currentColor',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement(Art, {
+    file: "rezide-mark.svg",
+    base: base,
+    width: h * 1.4,
+    height: h
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: h * 0.14
+    }
+  }, /*#__PURE__*/React.createElement(Art, {
+    file: "rezide-wordmark.svg",
+    base: base,
+    width: h * 4.5,
+    height: h * 0.65
+  }), showTag && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: `var(--weight-regular) ${Math.max(7, h * 0.2)}px/1.2 var(--font-eyebrow)`,
+      letterSpacing: 'var(--tracking-wide)',
+      whiteSpace: 'nowrap'
+    }
+  }, TAGLINE)));
+}
+Object.assign(__ds_scope, { assetBase, Logo });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Logo.jsx", error: String((e && e.message) || e) }); }
+
+// components/core/Tag.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Tag({
+  children,
+  onRemove,
+  selected,
+  style,
+  ...rest
+}) {
+  return /*#__PURE__*/React.createElement("span", _extends({}, rest, {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      height: '32px',
+      padding: '0 12px',
+      background: selected ? 'var(--rez-black)' : 'transparent',
+      color: selected ? 'var(--rez-full-white)' : 'var(--text-primary)',
+      border: `1px solid ${selected ? 'var(--rez-black)' : 'var(--border-subtle)'}`,
+      borderRadius: 'var(--radius-tag)',
+      font: 'var(--type-label)',
+      transition: 'var(--transition-control)',
+      ...style
+    }
+  }), children, onRemove && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-label": "Remove",
+    onClick: onRemove,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      border: 0,
+      background: 'none',
+      padding: 0,
+      color: 'inherit',
+      cursor: 'pointer'
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "x",
+    size: "12px"
+  })));
+}
+Object.assign(__ds_scope, { Tag });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Tag.jsx", error: String((e && e.message) || e) }); }
+
+// components/feedback/CalloutBanner.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+const CB = {
+  announce: {
+    bg: 'var(--accent-announce)',
+    fg: 'var(--rez-full-white)',
+    icon: 'bell'
+  },
+  feature: {
+    bg: 'var(--accent-feature)',
+    fg: 'var(--rez-full-white)',
+    icon: 'badge-star'
+  }
+};
+function CalloutBanner({
+  tone = 'announce',
+  eyebrow,
+  children,
+  action,
+  onDismiss,
+  icon,
+  style,
+  ...rest
+}) {
+  const t = CB[tone] || CB.announce;
+  return /*#__PURE__*/React.createElement("div", _extends({
+    role: "status"
+  }, rest, {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'var(--space-4)',
+      padding: 'var(--space-4) var(--space-5)',
+      background: t.bg,
+      color: t.fg,
+      borderRadius: 'var(--radius-lg)',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: icon || t.icon,
+    size: "var(--icon-lg)"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '2px'
+    }
+  }, eyebrow && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: 'var(--type-eyebrow)',
+      letterSpacing: 'var(--tracking-eyebrow)',
+      textTransform: 'uppercase',
+      opacity: .8
+    }
+  }, eyebrow), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: 'var(--type-body)'
+    }
+  }, children)), action, onDismiss && /*#__PURE__*/React.createElement(__ds_scope.IconButton, {
+    icon: "x",
+    label: "Dismiss",
+    tone: "ghost",
+    size: "sm",
+    onClick: onDismiss,
+    style: {
+      color: t.fg
+    }
+  }));
+}
+Object.assign(__ds_scope, { CalloutBanner });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/feedback/CalloutBanner.jsx", error: String((e && e.message) || e) }); }
+
+// components/feedback/Dialog.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Dialog({
+  open = true,
+  title,
+  eyebrow,
+  children,
+  footer,
+  onClose,
+  width = 480,
+  style,
+  ...rest
+}) {
+  if (!open) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    role: "presentation",
+    style: {
+      position: 'absolute',
+      inset: 0,
+      display: 'grid',
+      placeItems: 'center',
+      background: 'rgba(2,17,12,.55)',
+      backdropFilter: 'var(--blur-glass)',
+      padding: 'var(--space-6)'
+    }
+  }, /*#__PURE__*/React.createElement("div", _extends({
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-label": typeof title === 'string' ? title : undefined
+  }, rest, {
+    style: {
+      width: '100%',
+      maxWidth: width,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--space-4)',
+      padding: 'var(--space-6)',
+      background: 'var(--surface-card)',
+      color: 'var(--text-primary)',
+      borderRadius: 'var(--radius-card)',
+      boxShadow: 'var(--shadow-lg)',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 'var(--space-4)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px'
+    }
+  }, eyebrow && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: 'var(--type-eyebrow)',
+      letterSpacing: 'var(--tracking-eyebrow)',
+      textTransform: 'uppercase',
+      color: 'var(--text-warm)'
+    }
+  }, eyebrow), title && /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      font: 'var(--type-heading)',
+      letterSpacing: 'var(--tracking-display)'
+    }
+  }, title)), onClose && /*#__PURE__*/React.createElement(__ds_scope.IconButton, {
+    icon: "x",
+    label: "Close",
+    tone: "ghost",
+    size: "sm",
+    onClick: onClose
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: 'var(--type-body)',
+      color: 'var(--text-secondary)'
+    }
+  }, children), footer && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: 'var(--space-3)'
+    }
+  }, footer)));
+}
+Object.assign(__ds_scope, { Dialog });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/feedback/Dialog.jsx", error: String((e && e.message) || e) }); }
+
+// components/feedback/Toast.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+const TOAST = {
+  success: {
+    icon: 'check-circle',
+    fg: 'var(--rez-full-white)'
+  },
+  error: {
+    icon: 'alert-circle',
+    fg: 'var(--rez-full-white)'
+  },
+  info: {
+    icon: 'message',
+    fg: 'var(--rez-full-white)'
+  }
+};
+function Toast({
+  tone = 'info',
+  children,
+  onDismiss,
+  style,
+  ...rest
+}) {
+  const t = TOAST[tone] || TOAST.info;
+  const bg = tone === 'error' ? 'var(--accent-announce)' : tone === 'success' ? 'var(--accent-feature)' : 'var(--rez-black)';
+  return /*#__PURE__*/React.createElement("div", _extends({
+    role: "status"
+  }, rest, {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 'var(--space-3)',
+      padding: 'var(--space-3) var(--space-4)',
+      background: bg,
+      color: t.fg,
+      borderRadius: 'var(--radius-pill)',
+      boxShadow: 'var(--shadow-md)',
+      font: 'var(--type-label)',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: t.icon,
+    size: "var(--icon-md)"
+  }), /*#__PURE__*/React.createElement("span", null, children), onDismiss && /*#__PURE__*/React.createElement(__ds_scope.IconButton, {
+    icon: "x",
+    label: "Dismiss",
+    tone: "ghost",
+    size: "sm",
+    onClick: onDismiss,
+    style: {
+      color: t.fg
+    }
+  }));
+}
+Object.assign(__ds_scope, { Toast });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/feedback/Toast.jsx", error: String((e && e.message) || e) }); }
+
+// components/feedback/Tooltip.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Tooltip({
+  label,
+  placement = 'top',
+  children,
+  style,
+  ...rest
+}) {
+  const [open, setOpen] = React.useState(false);
+  const pos = placement === 'bottom' ? {
+    top: 'calc(100% + 8px)'
+  } : placement === 'left' ? {
+    right: 'calc(100% + 8px)',
+    top: '50%',
+    transform: 'translateY(-50%)'
+  } : placement === 'right' ? {
+    left: 'calc(100% + 8px)',
+    top: '50%',
+    transform: 'translateY(-50%)'
+  } : {
+    bottom: 'calc(100% + 8px)'
+  };
+  return /*#__PURE__*/React.createElement("span", _extends({}, rest, {
+    onMouseEnter: () => setOpen(true),
+    onMouseLeave: () => setOpen(false),
+    onFocus: () => setOpen(true),
+    onBlur: () => setOpen(false),
+    style: {
+      position: 'relative',
+      display: 'inline-flex',
+      ...style
+    }
+  }), children, /*#__PURE__*/React.createElement("span", {
+    role: "tooltip",
+    style: {
+      position: 'absolute',
+      ...pos,
+      left: pos.left ?? (placement === 'top' || placement === 'bottom' ? '50%' : undefined),
+      transform: placement === 'top' || placement === 'bottom' ? 'translateX(-50%)' : pos.transform,
+      padding: '6px 10px',
+      background: 'var(--rez-forest-ink)',
+      color: 'var(--rez-full-white)',
+      borderRadius: 'var(--radius-sm)',
+      font: `var(--weight-medium) var(--text-caption)/1.2 var(--font-primary)`,
+      whiteSpace: 'nowrap',
+      pointerEvents: 'none',
+      opacity: open ? 1 : 0,
+      transition: `opacity var(--duration-fast) var(--ease-standard)`,
+      zIndex: 5
+    }
+  }, label));
+}
+Object.assign(__ds_scope, { Tooltip });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/feedback/Tooltip.jsx", error: String((e && e.message) || e) }); }
+
+// components/forms/Checkbox.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Checkbox({
+  checked,
+  onChange,
+  label,
+  disabled,
+  style,
+  ...rest
+}) {
+  return /*#__PURE__*/React.createElement("label", _extends({}, rest, {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 'var(--space-3)',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? .45 : 1,
+      font: 'var(--type-body)',
+      color: 'var(--text-primary)',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: !!checked,
+    onChange: onChange,
+    disabled: disabled,
+    style: {
+      position: 'absolute',
+      opacity: 0,
+      width: 0,
+      height: 0
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '20px',
+      height: '20px',
+      background: checked ? 'var(--rez-black)' : 'transparent',
+      color: 'var(--rez-full-white)',
+      border: `1px solid ${checked ? 'var(--rez-black)' : 'var(--border-strong)'}`,
+      borderRadius: 'var(--radius-xs)',
+      transition: 'var(--transition-control)'
+    }
+  }, checked && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "check",
+    size: "12px"
+  })), label);
+}
+Object.assign(__ds_scope, { Checkbox });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Checkbox.jsx", error: String((e && e.message) || e) }); }
+
+// components/forms/Field.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Field({
+  label,
+  hint,
+  error,
+  required,
+  htmlFor,
+  children,
+  style,
+  ...rest
+}) {
+  return /*#__PURE__*/React.createElement("div", _extends({}, rest, {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--space-2)',
+      ...style
+    }
+  }), label && /*#__PURE__*/React.createElement("label", {
+    htmlFor: htmlFor,
+    style: {
+      font: 'var(--type-label)',
+      color: 'var(--text-primary)'
+    }
+  }, label, required && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--accent-announce)'
+    }
+  }, " *")), children, (error || hint) && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: `var(--weight-regular) var(--text-caption)/1.4 var(--font-primary)`,
+      color: error ? 'var(--accent-announce)' : 'var(--text-secondary)'
+    }
+  }, error || hint));
+}
+Object.assign(__ds_scope, { Field });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Field.jsx", error: String((e && e.message) || e) }); }
+
+// components/forms/Input.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+const INPUT_H = {
+  sm: 'var(--control-sm)',
+  md: 'var(--control-md)',
+  lg: 'var(--control-lg)'
+};
+function Input({
+  size = 'md',
+  icon,
+  trailing,
+  invalid,
+  tone = 'light',
+  style,
+  ...rest
+}) {
+  const [focus, setFocus] = React.useState(false);
+  const dark = tone === 'dark';
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'var(--space-2)',
+      height: INPUT_H[size] || INPUT_H.md,
+      padding: '0 var(--space-4)',
+      background: dark ? 'rgba(224,224,224,.08)' : 'var(--rez-white)',
+      border: `1px solid ${invalid ? 'var(--accent-announce)' : focus ? 'var(--focus-ring)' : dark ? 'var(--border-inverse)' : 'var(--border-subtle)'}`,
+      borderRadius: 'var(--radius-field)',
+      boxShadow: focus ? 'var(--ring-focus)' : 'none',
+      color: dark ? 'var(--rez-full-white)' : 'var(--text-primary)',
+      transition: 'var(--transition-control)'
+    }
+  }, icon && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: icon,
+    size: "var(--icon-md)",
+    style: {
+      opacity: .6
+    }
+  }), /*#__PURE__*/React.createElement("input", _extends({}, rest, {
+    onFocus: e => {
+      setFocus(true);
+      rest.onFocus && rest.onFocus(e);
+    },
+    onBlur: e => {
+      setFocus(false);
+      rest.onBlur && rest.onBlur(e);
+    },
+    style: {
+      flex: 1,
+      minWidth: 0,
+      border: 0,
+      outline: 'none',
+      background: 'transparent',
+      color: 'inherit',
+      font: `var(--weight-regular) var(--text-body-sm)/1 var(--font-primary)`,
+      ...style
+    }
+  })), trailing);
+}
+Object.assign(__ds_scope, { Input });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Input.jsx", error: String((e && e.message) || e) }); }
+
+// components/forms/Radio.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Radio({
+  checked,
+  onChange,
+  label,
+  name,
+  value,
+  disabled,
+  style,
+  ...rest
+}) {
+  return /*#__PURE__*/React.createElement("label", _extends({}, rest, {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 'var(--space-3)',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? .45 : 1,
+      font: 'var(--type-body)',
+      color: 'var(--text-primary)',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: name,
+    value: value,
+    checked: !!checked,
+    onChange: onChange,
+    disabled: disabled,
+    style: {
+      position: 'absolute',
+      opacity: 0,
+      width: 0,
+      height: 0
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '20px',
+      height: '20px',
+      border: `1px solid ${checked ? 'var(--rez-black)' : 'var(--border-strong)'}`,
+      borderRadius: 'var(--radius-pill)',
+      transition: 'var(--transition-control)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '10px',
+      height: '10px',
+      borderRadius: 'var(--radius-pill)',
+      background: checked ? 'var(--rez-black)' : 'transparent'
+    }
+  })), label);
+}
+Object.assign(__ds_scope, { Radio });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Radio.jsx", error: String((e && e.message) || e) }); }
+
+// components/forms/Select.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Select({
+  size = 'md',
+  options = [],
+  placeholder,
+  style,
+  ...rest
+}) {
+  const [focus, setFocus] = React.useState(false);
+  const h = size === 'lg' ? 'var(--control-lg)' : size === 'sm' ? 'var(--control-sm)' : 'var(--control-md)';
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'relative',
+      display: 'inline-flex',
+      alignItems: 'center',
+      width: '100%',
+      height: h,
+      padding: '0 var(--space-4)',
+      background: 'var(--rez-white)',
+      border: `1px solid ${focus ? 'var(--focus-ring)' : 'var(--border-subtle)'}`,
+      borderRadius: 'var(--radius-field)',
+      boxShadow: focus ? 'var(--ring-focus)' : 'none',
+      transition: 'var(--transition-control)'
+    }
+  }, /*#__PURE__*/React.createElement("select", _extends({}, rest, {
+    onFocus: () => setFocus(true),
+    onBlur: () => setFocus(false),
+    style: {
+      flex: 1,
+      minWidth: 0,
+      appearance: 'none',
+      border: 0,
+      outline: 'none',
+      background: 'transparent',
+      color: 'var(--text-primary)',
+      font: `var(--weight-regular) var(--text-body-sm)/1 var(--font-primary)`,
+      cursor: 'pointer',
+      ...style
+    }
+  }), placeholder && /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, placeholder), options.map(o => typeof o === 'string' ? /*#__PURE__*/React.createElement("option", {
+    key: o,
+    value: o
+  }, o) : /*#__PURE__*/React.createElement("option", {
+    key: o.value,
+    value: o.value
+  }, o.label))), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "chevron-left",
+    size: "var(--icon-sm)",
+    style: {
+      transform: 'rotate(-90deg)',
+      opacity: .55
+    }
+  }));
+}
+Object.assign(__ds_scope, { Select });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Select.jsx", error: String((e && e.message) || e) }); }
+
+// components/forms/Switch.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Switch({
+  checked,
+  onChange,
+  label,
+  disabled,
+  style,
+  ...rest
+}) {
+  return /*#__PURE__*/React.createElement("label", _extends({}, rest, {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 'var(--space-3)',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? .45 : 1,
+      font: 'var(--type-body)',
+      color: 'var(--text-primary)',
+      ...style
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    role: "switch",
+    checked: !!checked,
+    disabled: disabled,
+    onChange: e => onChange && onChange(e),
+    style: {
+      position: 'absolute',
+      opacity: 0,
+      width: 0,
+      height: 0
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'relative',
+      width: '44px',
+      height: '24px',
+      borderRadius: 'var(--radius-pill)',
+      background: checked ? 'var(--accent-feature)' : 'var(--rez-smoke)',
+      transition: 'background-color var(--duration-base) var(--ease-standard)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      top: '3px',
+      left: checked ? '23px' : '3px',
+      width: '18px',
+      height: '18px',
+      borderRadius: 'var(--radius-pill)',
+      background: 'var(--rez-white)',
+      boxShadow: 'var(--shadow-sm)',
+      transition: 'left var(--duration-base) var(--ease-out)'
+    }
+  })), label);
+}
+Object.assign(__ds_scope, { Switch });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Switch.jsx", error: String((e && e.message) || e) }); }
+
+// components/forms/Textarea.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Textarea({
+  invalid,
+  rows = 4,
+  style,
+  ...rest
+}) {
+  const [focus, setFocus] = React.useState(false);
+  return /*#__PURE__*/React.createElement("textarea", _extends({
+    rows: rows
+  }, rest, {
+    onFocus: e => {
+      setFocus(true);
+      rest.onFocus && rest.onFocus(e);
+    },
+    onBlur: e => {
+      setFocus(false);
+      rest.onBlur && rest.onBlur(e);
+    },
+    style: {
+      width: '100%',
+      padding: 'var(--space-3) var(--space-4)',
+      resize: 'vertical',
+      background: 'var(--rez-white)',
+      color: 'var(--text-primary)',
+      border: `1px solid ${invalid ? 'var(--accent-announce)' : focus ? 'var(--focus-ring)' : 'var(--border-subtle)'}`,
+      borderRadius: 'var(--radius-lg)',
+      boxShadow: focus ? 'var(--ring-focus)' : 'none',
+      outline: 'none',
+      font: 'var(--type-body)',
+      transition: 'var(--transition-control)',
+      ...style
+    }
+  }));
+}
+Object.assign(__ds_scope, { Textarea });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/forms/Textarea.jsx", error: String((e && e.message) || e) }); }
+
+// components/navigation/Tabs.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+function Tabs({
+  items = [],
+  value,
+  onChange,
+  tone = 'light',
+  style,
+  ...rest
+}) {
+  const dark = tone === 'dark';
+  return /*#__PURE__*/React.createElement("div", _extends({
+    role: "tablist"
+  }, rest, {
+    style: {
+      display: 'flex',
+      gap: 'var(--space-2)',
+      borderBottom: `1px solid ${dark ? 'var(--border-inverse)' : 'var(--border-subtle)'}`,
+      ...style
+    }
+  }), items.map(it => {
+    const id = it.value ?? it,
+      label = it.label ?? it,
+      active = value === id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: id,
+      role: "tab",
+      "aria-selected": active,
+      type: "button",
+      onClick: () => onChange && onChange(id),
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: 'var(--space-3) var(--space-4)',
+        border: 0,
+        background: 'none',
+        cursor: 'pointer',
+        color: active ? dark ? 'var(--rez-full-white)' : 'var(--text-primary)' : dark ? 'var(--rez-steel)' : 'var(--text-secondary)',
+        font: `${active ? 'var(--weight-semibold)' : 'var(--weight-medium)'} var(--text-body-sm)/1 var(--font-primary)`,
+        boxShadow: active ? `inset 0 -2px 0 0 ${dark ? 'var(--rez-mocaccino)' : 'var(--rez-black)'}` : 'none',
+        transition: 'var(--transition-control)'
+      }
+    }, it.icon && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+      name: it.icon,
+      size: "var(--icon-md)"
+    }), label, it.count !== undefined && /*#__PURE__*/React.createElement("span", {
+      style: {
+        opacity: .55,
+        font: 'inherit'
+      }
+    }, it.count));
+  }));
+}
+Object.assign(__ds_scope, { Tabs });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/navigation/Tabs.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/marketing/HomeScreen.jsx
+try { (() => {
+(() => {
+  const {
+    Card,
+    Button,
+    Input,
+    IconButton,
+    Icon,
+    Badge,
+    CalloutBanner,
+    Toast
+  } = window.RezideDesignSystem_37386e;
+  function NewsletterRow({
+    onSubmit
+  }) {
+    const [email, setEmail] = React.useState('');
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-2)',
+        height: 'var(--control-lg)',
+        padding: '0 6px 0 var(--space-3)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-pill)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 34,
+        height: 34,
+        borderRadius: 'var(--radius-pill)',
+        background: 'var(--rez-black)',
+        color: 'var(--rez-full-white)'
+      }
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "mail",
+      size: "var(--icon-md)"
+    })), /*#__PURE__*/React.createElement("input", {
+      value: email,
+      onChange: e => setEmail(e.target.value),
+      placeholder: "Rukmani@rezide.in",
+      style: {
+        flex: 1,
+        minWidth: 0,
+        border: 0,
+        outline: 'none',
+        background: 'transparent',
+        font: 'var(--weight-regular) var(--text-body-sm)/1 var(--font-primary)',
+        color: 'var(--text-primary)'
+      }
+    }), /*#__PURE__*/React.createElement(IconButton, {
+      icon: "arrow-right",
+      label: "Subscribe",
+      tone: "solid",
+      onClick: () => onSubmit(email)
+    }));
+  }
+  function HomeScreen({
+    onSubscribe,
+    subscribed,
+    onDismiss
+  }) {
+    return /*#__PURE__*/React.createElement("main", {
+      style: {
+        padding: '40px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-5)'
+      }
+    }, /*#__PURE__*/React.createElement(CalloutBanner, {
+      tone: "feature",
+      eyebrow: "New feature",
+      action: /*#__PURE__*/React.createElement(Button, {
+        tone: "inverse",
+        size: "sm"
+      }, "See what\u2019s new")
+    }, "Guided one-way video sessions are live for every listing."), /*#__PURE__*/React.createElement("section", {
+      style: {
+        background: 'var(--accent-feature)',
+        borderRadius: 'var(--radius-card)',
+        padding: '72px var(--space-10)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 'var(--space-5)',
+        textAlign: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("h1", {
+      style: {
+        margin: 0,
+        maxWidth: 900,
+        color: 'var(--rez-full-white)',
+        font: 'var(--weight-semibold) var(--text-display-2)/var(--leading-tight) var(--font-primary)',
+        letterSpacing: 'var(--tracking-display)'
+      }
+    }, "The Next Generation."), /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: 0,
+        maxWidth: 620,
+        color: 'var(--rez-steel)',
+        font: 'var(--type-body)'
+      }
+    }, "Empowering businesses and individuals with cutting-edge technology solutions."), /*#__PURE__*/React.createElement(Button, {
+      tone: "announce",
+      size: "lg"
+    }, "Join Here")), /*#__PURE__*/React.createElement("section", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 'var(--space-5)'
+      }
+    }, /*#__PURE__*/React.createElement(Card, {
+      tone: "announce",
+      eyebrow: "Products",
+      padding: "var(--space-8)",
+      title: /*#__PURE__*/React.createElement("span", {
+        style: {
+          font: 'var(--weight-semibold) var(--text-h2)/var(--leading-snug) var(--font-primary)'
+        }
+      }, "Talk with an expert", /*#__PURE__*/React.createElement("br", null), "over video.")
+    }, /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: 0,
+        maxWidth: 360,
+        color: 'var(--rez-steel)',
+        font: 'var(--type-body)'
+      }
+    }, "Choose your next product in a guided, one-way video session.")), /*#__PURE__*/React.createElement(Card, {
+      tone: "light",
+      eyebrow: "Newsletter",
+      padding: "var(--space-8)",
+      title: /*#__PURE__*/React.createElement("span", {
+        style: {
+          font: 'var(--weight-semibold) var(--text-h2)/var(--leading-snug) var(--font-primary)'
+        }
+      }, "Stay updated in the", /*#__PURE__*/React.createElement("br", null), "loop, once a week."),
+      footer: /*#__PURE__*/React.createElement(NewsletterRow, {
+        onSubmit: onSubscribe
+      })
+    })), /*#__PURE__*/React.createElement("section", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3,1fr)',
+        gap: 'var(--space-5)'
+      }
+    }, [['map-pin', '14 cities', 'Mumbai to Kochi, with local desks.'], ['bar-chart', '₹4,200 Cr', 'Inventory moved through Rezide pipelines.'], ['shield-check', 'RERA-first', 'Every listing verified before it goes live.']].map(([icon, stat, copy]) => /*#__PURE__*/React.createElement(Card, {
+      key: stat,
+      tone: "ink",
+      padding: "var(--space-6)"
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: 'var(--rez-mocaccino)'
+      }
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: icon,
+      size: "var(--icon-xl)"
+    })), /*#__PURE__*/React.createElement("span", {
+      style: {
+        font: 'var(--weight-semibold) var(--text-h3)/1.1 var(--font-primary)',
+        letterSpacing: 'var(--tracking-display)'
+      }
+    }, stat), /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: 0,
+        color: 'var(--rez-steel)',
+        font: 'var(--weight-regular) var(--text-body-sm)/1.5 var(--font-primary)'
+      }
+    }, copy)))), /*#__PURE__*/React.createElement("section", {
+      style: {
+        background: 'var(--accent-warm)',
+        borderRadius: 'var(--radius-card)',
+        padding: 'var(--space-8)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-6)'
+      }
+    }, /*#__PURE__*/React.createElement(Badge, {
+      tone: "ink"
+    }, "Secondary combination"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1,
+        color: 'var(--rez-black)',
+        font: 'var(--weight-regular) var(--text-h3)/1.25 var(--font-secondary)'
+      }
+    }, "Choose your next product."), /*#__PURE__*/React.createElement(Button, {
+      tone: "primary"
+    }, "Browse products")), subscribed && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'fixed',
+        left: '50%',
+        bottom: 24,
+        transform: 'translateX(-50%)',
+        zIndex: 10
+      }
+    }, /*#__PURE__*/React.createElement(Toast, {
+      tone: "success",
+      onDismiss: onDismiss
+    }, subscribed, " is on the list")));
+  }
+  Object.assign(window, {
+    HomeScreen,
+    NewsletterRow
+  });
+})();
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/marketing/HomeScreen.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/marketing/SiteFooter.jsx
+try { (() => {
+(() => {
+  const {
+    Logo,
+    Icon
+  } = window.RezideDesignSystem_37386e;
+  function SiteFooter() {
+    const cols = [['Product', ['Listings', 'Pipeline', 'Video sessions', 'Pricing']], ['Company', ['About', 'Newsroom', 'Careers', 'Contact']], ['Legal', ['Terms', 'Privacy', 'RERA disclosures']]];
+    return /*#__PURE__*/React.createElement("footer", {
+      style: {
+        padding: '40px',
+        borderTop: '1px solid rgba(224,224,224,.12)',
+        display: 'flex',
+        gap: 'var(--space-16)',
+        alignItems: 'flex-start'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-4)',
+        color: 'var(--rez-full-white)'
+      }
+    }, /*#__PURE__*/React.createElement(Logo, {
+      variant: "vertical",
+      height: 28
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginLeft: 'auto',
+        display: 'flex',
+        gap: 'var(--space-16)'
+      }
+    }, cols.map(([head, items]) => /*#__PURE__*/React.createElement("div", {
+      key: head,
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-3)'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        font: 'var(--type-eyebrow)',
+        letterSpacing: 'var(--tracking-eyebrow)',
+        textTransform: 'uppercase',
+        color: 'var(--rez-mocaccino)'
+      }
+    }, head), items.map(i => /*#__PURE__*/React.createElement("a", {
+      key: i,
+      href: "#",
+      onClick: e => e.preventDefault(),
+      style: {
+        textDecoration: 'none',
+        color: 'var(--rez-steel)',
+        font: 'var(--weight-regular) var(--text-body-sm)/1 var(--font-primary)'
+      }
+    }, i)))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 'var(--space-3)',
+        color: 'var(--rez-steel)'
+      }
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "mail",
+      size: "var(--icon-md)"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "share",
+      size: "var(--icon-md)"
+    }), /*#__PURE__*/React.createElement(Icon, {
+      name: "headset",
+      size: "var(--icon-md)"
+    }))));
+  }
+  Object.assign(window, {
+    SiteFooter
+  });
+})();
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/marketing/SiteFooter.jsx", error: String((e && e.message) || e) }); }
+
+// ui_kits/marketing/SiteHeader.jsx
+try { (() => {
+(() => {
+  const {
+    Logo,
+    Button,
+    IconButton
+  } = window.RezideDesignSystem_37386e;
+  function SiteHeader({
+    onCta
+  }) {
+    const links = ['Products', 'For Realtors', 'Pricing', 'Newsroom'];
+    return /*#__PURE__*/React.createElement("header", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-8)',
+        padding: '20px 40px',
+        borderBottom: '1px solid rgba(224,224,224,.12)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: 'var(--rez-full-white)'
+      }
+    }, /*#__PURE__*/React.createElement(Logo, {
+      variant: "horizontal",
+      height: 26
+    })), /*#__PURE__*/React.createElement("nav", {
+      style: {
+        display: 'flex',
+        gap: 'var(--space-6)',
+        marginLeft: 'auto'
+      }
+    }, links.map((l, i) => /*#__PURE__*/React.createElement("a", {
+      key: l,
+      href: "#",
+      onClick: e => e.preventDefault(),
+      style: {
+        textDecoration: 'none',
+        color: i === 0 ? 'var(--rez-full-white)' : 'var(--rez-steel)',
+        font: 'var(--weight-medium) var(--text-body-sm)/1 var(--font-primary)'
+      }
+    }, l))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-3)'
+      }
+    }, /*#__PURE__*/React.createElement(IconButton, {
+      icon: "search",
+      label: "Search",
+      tone: "ghost",
+      size: "sm",
+      style: {
+        color: 'var(--rez-full-white)'
+      }
+    }), /*#__PURE__*/React.createElement(Button, {
+      tone: "inverse",
+      size: "sm",
+      onClick: onCta
+    }, "Book a demo")));
+  }
+  Object.assign(window, {
+    SiteHeader
+  });
+})();
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/marketing/SiteHeader.jsx", error: String((e && e.message) || e) }); }
+
+__ds_ns.Badge = __ds_scope.Badge;
+
+__ds_ns.Button = __ds_scope.Button;
+
+__ds_ns.Card = __ds_scope.Card;
+
+__ds_ns.Icon = __ds_scope.Icon;
+
+__ds_ns.IconButton = __ds_scope.IconButton;
+
+__ds_ns.Logo = __ds_scope.Logo;
+
+__ds_ns.Tag = __ds_scope.Tag;
+
+__ds_ns.CalloutBanner = __ds_scope.CalloutBanner;
+
+__ds_ns.Dialog = __ds_scope.Dialog;
+
+__ds_ns.Toast = __ds_scope.Toast;
+
+__ds_ns.Tooltip = __ds_scope.Tooltip;
+
+__ds_ns.Checkbox = __ds_scope.Checkbox;
+
+__ds_ns.Field = __ds_scope.Field;
+
+__ds_ns.Input = __ds_scope.Input;
+
+__ds_ns.Radio = __ds_scope.Radio;
+
+__ds_ns.Select = __ds_scope.Select;
+
+__ds_ns.Switch = __ds_scope.Switch;
+
+__ds_ns.Textarea = __ds_scope.Textarea;
+
+__ds_ns.Tabs = __ds_scope.Tabs;
+
+})();

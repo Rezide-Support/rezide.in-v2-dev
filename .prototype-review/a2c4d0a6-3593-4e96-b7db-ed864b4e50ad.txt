@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style id="rez-mobile">@media (max-width:760px){
+html,body{overflow-x:hidden}
+header>div[style]{flex-wrap:wrap!important;height:auto!important;padding:10px 16px 0!important;gap:4px 12px!important;justify-content:space-between!important}
+header nav[style]{order:3;flex:1 1 100%!important;justify-content:flex-start!important;overflow-x:auto!important;scrollbar-width:none;margin:0 -16px!important;padding:0 8px!important}
+header nav::-webkit-scrollbar{display:none}
+[style*="padding: 88px 32px"],[style*="padding: 80px 32px"],[style*="padding: 72px 32px"]{padding:48px 16px!important}
+[style*="padding: 88px 32px 0px"]{padding-bottom:0!important}
+[style*="padding: 32px 32px 8px"],[style*="padding: 20px 32px 96px"],[style*="padding: 24px 32px 96px"],[style*="padding: 40px 32px"],[style*="padding: 28px 32px"]{padding-left:16px!important;padding-right:16px!important}
+:not(header>*)[style*="max-width: 1280px"][style*="padding: 0px 32px"]{padding-left:0!important;padding-right:0!important}
+footer[style]{padding:40px 16px 24px!important}
+[style*="min-height: 560px"]{min-height:0!important}
+[data-m="heroinner"]{gap:20px!important}
+h1[style*="clamp(48px"],h1[style*="clamp(44px"],h1[style*="clamp(40px"]{font-size:36px!important;line-height:1.06!important}
+h1[style*="white-space: nowrap"]{white-space:normal!important;font-size:26px!important}
+h2[style*="font: 600 44px"],h2[style*="font: 600 40px"],h3[style*="font: 600 40px"]{font-size:28px!important}
+[data-m="railcard"]{flex-basis:80%!important}
+[role="tablist"]{max-width:100%;overflow-x:auto;flex-wrap:nowrap!important;scrollbar-width:none}
+[style*="height: 44px; padding: 0px 24px"]{height:38px!important;padding:0 14px!important}
+[data-m="stack"]{grid-template-columns:1fr!important}
+[data-m="stack"]>:first-child{min-height:240px}
+[data-m="phone"]{order:0!important}
+[data-m="sep"]{display:none!important}
+input,select,textarea{font-size:16px!important}
+}</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>@keyframes rezKenBurns{0%{scale:1.02;translate:0 0}50%{scale:1.1;translate:-1.5% -1%}100%{scale:1.06;translate:1.5% .5%}}
+image-slot[data-motion="on"]::part(image){animation:rezKenBurns 24s ease-in-out infinite alternate;will-change:scale,translate}
+#rz-map .leaflet-tile-pane{filter:grayscale(1) contrast(.92) brightness(1.04)}
+@media (prefers-reduced-motion:reduce){image-slot::part(image){animation:none}}</style>
+<style>body{margin:0;background:#fff;color:#000;font-family:var(--font-primary);-webkit-font-smoothing:antialiased}a{color:#000;text-decoration:none}a:hover{color:var(--rez-mocaccino)}select{font-family:inherit}</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+<header style="position:relative;z-index:20;background:#fff;border-bottom:1px solid var(--rez-smoke)">
+  <div style="max-width:1280px;margin:0 auto;padding:0 32px;height:76px;display:flex;align-items:center;gap:28px">
+    <div onClick="{{ goHome }}" style="color:#000;display:flex;align-items:center;cursor:pointer">
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="{{ logoH }}" hint-size="140px,24px"></x-import>
+    </div>
+    <div style="position:relative;flex:none;display:flex;align-items:center;gap:20px;margin-left:-20px">
+        <button onClick="{{ toggleHeaderCity }}" style="display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:0;border-radius:999px;background:transparent;cursor:pointer;font:700 14px/1 var(--font-primary);color:#000" style-hover="background:var(--rez-cloud)">
+          <span>{{ city }}</span>
+          <span style="display:flex;transform:rotate(-90deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="12px" hint-size="12px,12px"></x-import></span>
+        </button>
+        <span data-m="sep" style="width:1px;height:24px;background:var(--rez-smoke)"></span>
+        <sc-if value="{{ headerCityOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:48px;left:0;z-index:40;width:min(440px,calc(100vw - 32px));max-height:min(560px,72vh);overflow:auto;background:#fff;border:1px solid var(--rez-smoke);border-radius:20px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+            <div style="position:sticky;top:0;z-index:1;background:var(--rez-cloud);padding:12px">
+              <label style="display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-radius:999px;background:#fff">
+                <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="search" size="18px" hint-size="18px,18px"></x-import>
+                <input value="{{ cityQ }}" onInput="{{ onCityQ }}" placeholder="Select or type your city" style="flex:1;min-width:0;border:0;outline:none;background:transparent;font:500 15px/1 var(--font-primary);color:#000">
+              </label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--rez-smoke)">
+              <button onClick="{{ detectCity }}" style="display:flex;align-items:center;gap:10px;padding:0;border:0;background:none;font:600 14px/1 var(--font-primary);color:#000;cursor:pointer"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="compass" size="18px" hint-size="18px,18px"></x-import>Detect my location</button>
+              <button onClick="{{ resetCity }}" style="padding:0;border:0;background:none;font:500 13px/1 var(--font-primary);color:var(--rez-graphite);cursor:pointer" style-hover="color:#000">Reset City</button>
+            </div>
+            <sc-if value="{{ showTopCities }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:12px 18px 8px;font:700 13px/1 var(--font-primary);color:#000;background:var(--rez-cloud)">Top Cities</div>
+              <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--rez-smoke)">
+                <sc-for list="{{ topCities }}" as="c" hint-placeholder-count="12">
+                  <button onClick="{{ c.onPick }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:84px;padding:10px 4px;border:0;border-right:1px solid var(--rez-smoke);border-bottom:1px solid var(--rez-smoke);background:{{ c.bg }};cursor:pointer;font:{{ c.weight }} 13px/1.15 var(--font-primary);color:#000;text-align:center" style-hover="background:var(--rez-cloud)">
+                    <span style="width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:{{ c.icBg }};color:{{ c.icFg }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="map-pin" size="16px" hint-size="16px,16px"></x-import></span>
+                    <span>{{ c.name }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="padding:12px 18px 8px;font:700 13px/1 var(--font-primary);color:#000;background:var(--rez-cloud)">{{ otherHead }}</div>
+            <sc-for list="{{ otherCities }}" as="c" hint-placeholder-count="8">
+              <button onClick="{{ c.onPick }}" style="display:block;width:100%;padding:14px 18px;border:0;border-bottom:1px solid var(--rez-smoke);background:#fff;text-align:left;font:{{ c.weight }} 15px/1 var(--font-primary);color:#000;cursor:pointer" style-hover="background:var(--rez-cloud)">{{ c.name }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    <nav style="flex:1;min-width:0;display:flex;justify-content:center;align-items:center">
+      <div style="display:flex;align-items:center;gap:{{ navGap }};padding:{{ navPad }};background:{{ navTrack }};border-radius:999px;white-space:nowrap">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+          <sc-if value="{{ n.sep }}" hint-placeholder-val="{{ false }}"><span style="width:1px;height:18px;margin:0 6px;background:var(--rez-smoke)"></span></sc-if>
+          <button onClick="{{ n.onClick }}" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;height:{{ navH }};padding:0 18px;border:1px solid {{ n.border }};border-radius:999px;background:{{ n.bg }};box-shadow:{{ n.shadow }};font:{{ n.weight }} 13px/1 var(--font-primary);letter-spacing:.06em;color:{{ n.fg }};cursor:pointer;transition:background 220ms cubic-bezier(.2,.8,.2,1), color 140ms, border-color 140ms" style-hover="color:#000">
+            <span>{{ n.label }}</span>
+            <span style="position:absolute;bottom:-2px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:999px;background:var(--rez-mocaccino);opacity:{{ n.dot }};transition:opacity 220ms"></span>
+            <span style="position:absolute;left:18px;right:18px;bottom:0;height:3px;border-radius:3px;background:var(--rez-mocaccino);transform:scaleX({{ n.bar }});transform-origin:center;transition:transform 260ms cubic-bezier(.2,.8,.2,1)"></span>
+          </button>
+        </sc-for>
+      </div>
+    </nav>
+    <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+      <div style="position:relative;flex:none">
+        <button onClick="{{ toggleMenu }}" style="height:40px;padding:0 18px;border-radius:999px;border:1px solid #000;background:#fff;font:600 13px/1 var(--font-primary);letter-spacing:.06em;cursor:pointer">MENU</button>
+        <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:48px;right:0;width:220px;background:#fff;border:1px solid var(--rez-smoke);border-radius:20px;box-shadow:var(--shadow-md);padding:8px;display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="3">
+              <button onClick="{{ m.onClick }}" style="height:40px;padding:0 16px;border:0;border-radius:999px;background:{{ m.bg }};color:#000;text-align:left;font:{{ m.weight }} 13px/1 var(--font-primary);letter-spacing:.06em;cursor:pointer" style-hover="background:var(--rez-cloud)">{{ m.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+    <a href="#login" aria-label="Customer login" style="display:flex;color:#000"><x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="user" label="Customer login" tone="outline" size="md" hint-size="40px,40px"></x-import></a>
+  </div>
+</header>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<section style="position:relative;background:{{ heroBg }};transition:background 360ms cubic-bezier(.2,.8,.2,1);min-height:560px;display:flex;align-items:center;justify-content:center;padding:88px 32px 80px;box-sizing:border-box">
+  <sc-if value="{{ heroPhoto }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0">
+      <sc-for list="{{ heroSlots }}" as="h" hint-placeholder-count="1">
+        <div style="position:absolute;inset:0;opacity:{{ h.opacity }};pointer-events:{{ h.pe }};transition:opacity 360ms cubic-bezier(.2,.8,.2,1)">
+          <image-slot data-motion="{{ heroMotion }}" id="{{ h.id }}" shape="rect" placeholder="{{ h.ph }}" src="{{ h.src }}" credit="{{ h.credit }}" credit-href="{{ h.href }}"></image-slot>
+        </div>
+      </sc-for>
+    </div>
+    <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(2,17,12,.12) 0%,rgba(2,17,12,.28) 45%,rgba(2,17,12,.42) 85%, rgba(2,17,12,.05) 100%)"></div>
+  </sc-if>
+  <div data-m="heroinner" style="position:relative;width:100%;max-width:1040px;display:flex;flex-direction:column;align-items:center;gap:36px;pointer-events:none">
+    <h1 style="margin:0;font:600 clamp(48px,6vw,88px)/1.02 var(--font-primary);letter-spacing:-0.025em;color:{{ heroFg }};text-align:center;text-wrap:balance;text-shadow:0 2px 24px rgba(2,17,12,.45)">{{ headline }}</h1>
+
+    <div style="pointer-events:auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px">
+    <sc-if value="{{ hasSearch }}" hint-placeholder-val="{{ true }}">
+    <div style="width:100%;background:#fff;border-radius:28px;padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-lg)">
+      <sc-if value="{{ isProperties }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 4px">
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            <sc-for list="{{ typeTabs }}" as="t" hint-placeholder-count="5">
+              <button onClick="{{ t.onClick }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }};font:500 14px/1 var(--font-primary);cursor:pointer;transition:background 140ms" style-hover="border-color:#000">{{ t.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isProjects }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 4px">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--rez-cloud);border-radius:999px">
+            <sc-for list="{{ statusTabs }}" as="m" hint-placeholder-count="3">
+              <button onClick="{{ m.onClick }}" style="height:36px;padding:0 20px;border:0;border-radius:999px;background:{{ m.bg }};color:{{ m.fg }};font:600 14px/1 var(--font-primary);cursor:pointer;transition:background 140ms">{{ m.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--rez-smoke);border-radius:999px;padding:6px;min-height:64px;box-sizing:border-box">
+        <sc-if value="{{ isProperties }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:2px;padding:4px;background:var(--rez-cloud);border-radius:999px">
+            <sc-for list="{{ modeSeg }}" as="m" hint-placeholder-count="2">
+              <button onClick="{{ m.onClick }}" style="height:44px;min-width:76px;padding:0 20px;border:0;border-radius:999px;background:{{ m.bg }};box-shadow:{{ m.shadow }};color:{{ m.fg }};font:{{ m.weight }} 14px/1 var(--font-primary);cursor:pointer;transition:background 220ms cubic-bezier(.2,.8,.2,1)">{{ m.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <span style="display:flex;padding-left:12px;color:var(--rez-graphite)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="search" size="18px" hint-size="18px,18px"></x-import></span>
+        <input value="{{ locality }}" onChange="{{ onLocality }}" placeholder="{{ localityPlaceholder }}" style="flex:1 1 220px;min-width:0;height:48px;border:0;outline:none;padding:0 16px;font:400 15px/1 var(--font-primary);color:#000;background:transparent">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;border-left:1px solid var(--rez-smoke);height:36px;padding:0 4px 0 12px;position:relative">
+            <select aria-label="{{ f.label }}" style="appearance:none;-webkit-appearance:none;border:0;background:transparent;font:500 14px/1 var(--font-primary);color:#000;padding:0 28px 0 4px;height:36px;cursor:pointer;outline:none">
+              <option>{{ f.label }}</option>
+              <sc-for list="{{ f.options }}" as="o"><option>{{ o }}</option></sc-for>
+            </select>
+            <span style="position:absolute;right:10px;top:11px;display:flex;transform:rotate(-90deg);pointer-events:none"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span>
+          </div>
+        </sc-for>
+        <div style="margin-left:8px">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="lg" icon-left="search" onClick="{{ onSearch }}" hint-size="128px,48px">Search</x-import>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ noSearch }}" hint-placeholder-val="{{ false }}">
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="inverse" size="lg" icon-right="arrow-right" hint-size="180px,48px">{{ otherCta }}</x-import>
+    </sc-if>
+    </div>
+  </div>
+</section>
+
+<sc-if value="{{ showRails }}" hint-placeholder-val="{{ true }}">
+<div id="properties" style="padding:88px 32px 0">
+  <div style="max-width:1280px;margin:0 auto;padding:0 32px;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px">
+    <h2 style="margin:0;font:600 40px/1.1 var(--font-primary);letter-spacing:-0.02em;text-wrap:pretty"><span style="color:#000;font-weight:800">{{ city }}</span> <sc-if value="{{ railsIntent }}" hint-placeholder-val="{{ false }}"><span style="color:var(--rez-mocaccino);font-weight:800">{{ railsIntent }}</span> </sc-if>{{ railsMid }}<sc-if value="{{ railsSub }}" hint-placeholder-val="{{ true }}"> for <span style="color:var(--rez-mocaccino);font-weight:800">{{ railsSub }}</span></sc-if>.</h2>
+    <div role="tablist" style="display:flex;flex-wrap:wrap;gap:4px;padding:5px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;box-shadow:var(--shadow-sm)">
+      <sc-for list="{{ railTabs }}" as="t" hint-placeholder-count="4">
+        <button role="tab" onClick="{{ t.onClick }}" style="height:44px;padding:0 24px;border:0;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};cursor:pointer;font:{{ t.weight }} 15px/1 var(--font-primary);white-space:nowrap;transition:background 220ms cubic-bezier(.2,.8,.2,1), color 140ms" style-hover="color:{{ t.hoverFg }}" style-active="transform:scale(.98)">{{ t.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+<sc-for list="{{ rails }}" as="r" hint-placeholder-count="1">
+<section style="padding:32px 32px 8px">
+  <div style="max-width:1280px;margin:0 auto;padding:0 32px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:20px">
+      <sc-for list="{{ r.cards }}" as="c" hint-placeholder-count="6">
+        <div onClick="{{ c.onClick }}" style="position:relative;aspect-ratio:3/2;border-radius:20px;overflow:hidden;cursor:pointer;background:var(--rez-cloud);transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+          <image-slot id="{{ c.slot }}" shape="rect" placeholder="{{ c.ph }}" src="{{ c.src }}"></image-slot>
+          <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(2,17,12,0) 45%,rgba(2,17,12,.82) 100%)"></div>
+          <div style="position:absolute;left:24px;right:24px;bottom:22px;pointer-events:none;display:flex;flex-direction:column;gap:6px;color:var(--rez-full-white)">
+            <span style="font:400 15px/1.2 var(--font-primary)">{{ c.count }}</span>
+            <span style="font:700 22px/1.15 var(--font-primary);letter-spacing:-0.01em;text-wrap:balance">{{ c.label }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;justify-content:center">
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="secondary" size="md" icon-right="arrow-right" onClick="{{ r.viewAll }}" hint-size="140px,44px">View All</x-import>
+    </div>
+  </div>
+</section>
+</sc-for>
+<div style="height:88px"></div>
+</sc-if>
+
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}">
+<section style="padding:88px 32px">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+      <div style="font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);color:var(--rez-graphite)">LIST PROPERTY</div>
+      <h2 style="margin:0;font:600 44px/1.1 var(--font-primary);letter-spacing:-0.02em">From listing to deal.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:32px;border:1px solid var(--rez-smoke);border-radius:20px">
+        <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-mocaccino)">STEP 01</span>
+        <h3 style="margin:0;font:600 22px/1.2 var(--font-primary)">Add your property.</h3>
+        <p style="margin:0;font:400 15px/1.45 var(--font-primary);color:var(--rez-graphite)">Type, location, price and photos. Ten minutes, start to finish.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:32px;border:1px solid var(--rez-smoke);border-radius:20px">
+        <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-mocaccino)">STEP 02</span>
+        <h3 style="margin:0;font:600 22px/1.2 var(--font-primary)">Get it verified.</h3>
+        <p style="margin:0;font:400 15px/1.45 var(--font-primary);color:var(--rez-graphite)">A Rezide expert checks documents and RERA details before it goes live.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:32px;border:1px solid var(--rez-smoke);border-radius:20px">
+        <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-mocaccino)">STEP 03</span>
+        <h3 style="margin:0;font:600 22px/1.2 var(--font-primary)">Meet serious buyers.</h3>
+        <p style="margin:0;font:400 15px/1.45 var(--font-primary);color:var(--rez-graphite)">Show the space over video and close with a realtor beside you.</p>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center">
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="lg" icon-right="arrow-right" hint-size="180px,48px">Start Listing</x-import>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isRealtor }}" hint-placeholder-val="{{ false }}">
+<section style="padding:88px 32px">
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:32px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+      <div style="font:var(--type-eyebrow);letter-spacing:var(--tracking-eyebrow);color:var(--rez-graphite)">REALTORS</div>
+      <h2 style="margin:0;font:600 44px/1.1 var(--font-primary);letter-spacing:-0.02em"><span style="font-weight:800">{{ city }}</span> Realtors.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px">
+      <sc-for list="{{ realtors }}" as="r" hint-placeholder-count="8">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 20px;border:1px solid var(--rez-smoke);border-radius:20px;text-align:center;cursor:pointer;transition:box-shadow 220ms" style-hover="box-shadow:var(--shadow-md)">
+          <div style="width:88px;height:88px"><image-slot id="{{ r.slot }}" shape="circle" placeholder="Photo"></image-slot></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font:600 17px/1.2 var(--font-primary)">{{ r.name }}</span>
+            <span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ r.agency }}</span>
+            <span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ r.areas }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font:500 12px/1 var(--font-primary);color:var(--rez-graphite)">
+            <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="16px" hint-size="16px,16px"></x-import>
+            <span>RERA registered agent</span>
+          </div>
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="secondary" size="sm" icon-left="play-circle" hint-size="140px,36px">Video Call</x-import>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isCorner }}" hint-placeholder-val="{{ false }}">
+<section style="padding:88px 32px">
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+    <div style="display:flex;flex-direction:column;gap:14px;padding:40px;border-radius:20px;background:#000;color:var(--rez-full-white)">
+      <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;opacity:.72">FOR REALTORS</span>
+      <h3 style="margin:0;font:600 32px/1.1 var(--font-primary);letter-spacing:-0.02em">From leads to deals.</h3>
+      <p style="margin:0;font:400 16px/1.45 var(--font-primary);opacity:.85">Verified leads, video tours and deal tracking in one place.</p>
+      <div style="margin-top:8px"><x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="inverse" size="md" hint-size="140px,44px">Join Here</x-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;padding:40px;border-radius:20px;border:1px solid var(--rez-smoke)">
+      <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">NEWSLETTER</span>
+      <h3 style="margin:0;font:600 32px/1.1 var(--font-primary);letter-spacing:-0.02em">Stay updated in the loop, once a week.</h3>
+      <p style="margin:0;font:400 16px/1.45 var(--font-primary);color:var(--rez-graphite)">Market moves, new launches and RERA updates for your city.</p>
+      <div style="margin-top:8px"><x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="md" hint-size="140px,44px">Subscribe</x-import></div>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+
+
+</sc-if>
+
+<sc-if value="{{ isListings }}" hint-placeholder-val="{{ false }}">
+<main style="flex:1;padding:20px 32px 96px;background:#fff">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+    <sc-if value="{{ notPmode }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+      <h1 style="margin:0;font:600 32px/1.1 var(--font-primary);letter-spacing:-0.02em;white-space:nowrap"><span style="font-weight:800">{{ city }}</span> Properties.</h1>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+        <div style="position:relative">
+          <button onClick="{{ togglePtype }}" aria-label="Property type" style="display:flex;align-items:center;gap:10px;height:48px;padding:0 16px 0 22px;border:1px solid #000;border-radius:999px;background:#fff;cursor:pointer;text-align:left">
+            <span style="font:700 15px/1 var(--font-primary);color:#000;white-space:nowrap">{{ ptypeLabel }}</span>
+            <span style="display:flex;transform:rotate(-90deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span>
+          </button>
+          <sc-if value="{{ ptypeOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:56px;left:0;z-index:30;min-width:220px;max-height:340px;overflow-y:auto;background:#fff;border:1px solid var(--rez-smoke);border-radius:20px;box-shadow:var(--shadow-md);padding:6px;display:flex;flex-direction:column;gap:2px">
+              <sc-for list="{{ ptypeItems }}" as="o" hint-placeholder-count="5">
+                <button onClick="{{ o.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:40px;padding:0 16px;border:0;border-radius:999px;background:{{ o.bg }};color:#000;text-align:left;font:{{ o.weight }} 14px/1 var(--font-primary);cursor:pointer;white-space:nowrap" style-hover="background:var(--rez-cloud)">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <div style="position:relative">
+          <button onClick="{{ toggleIntent }}" aria-label="Intent" style="display:flex;align-items:center;gap:10px;height:48px;padding:0 16px 0 22px;border:1px solid #000;border-radius:999px;background:#fff;cursor:pointer;text-align:left">
+            <span style="font:700 15px/1 var(--font-primary);color:#000;white-space:nowrap">{{ intentLabel }}</span>
+            <span style="display:flex;transform:rotate(-90deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span>
+          </button>
+          <sc-if value="{{ intentOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:56px;left:0;z-index:30;min-width:220px;max-height:340px;overflow-y:auto;background:#fff;border:1px solid var(--rez-smoke);border-radius:20px;box-shadow:var(--shadow-md);padding:6px;display:flex;flex-direction:column;gap:2px">
+              <sc-for list="{{ intentItems }}" as="o" hint-placeholder-count="5">
+                <button onClick="{{ o.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:40px;padding:0 16px;border:0;border-radius:999px;background:{{ o.bg }};color:#000;text-align:left;font:{{ o.weight }} 14px/1 var(--font-primary);cursor:pointer;white-space:nowrap" style-hover="background:var(--rez-cloud)">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <span style="width:1px;height:28px;margin:0 4px;background:var(--rez-smoke)"></span>
+        <div style="display:flex;align-items:center;gap:10px">
+        <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">VIEW</span>
+        <div style="display:flex;gap:2px;padding:4px;border-radius:999px;background:var(--rez-cloud)">
+          <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="3">
+            <button onClick="{{ v.onClick }}" title="{{ v.title }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 14px;border:0;border-radius:999px;background:{{ v.bg }};color:{{ v.fg }};box-shadow:{{ v.shadow }};font:{{ v.weight }} 13px/1 var(--font-primary);cursor:{{ v.cursor }};transition:background 220ms cubic-bezier(.2,.8,.2,1)">
+              <span>{{ v.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    </sc-if>
+    <sc-if value="{{ pmodeOn }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+        <h1 style="margin:0;font:600 32px/1.1 var(--font-primary);letter-spacing:-0.02em;white-space:nowrap"><span style="font-weight:800">{{ city }}</span> Projects.</h1>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+        <sc-for list="{{ projFilters }}" as="pf" hint-placeholder-count="4">
+          <div style="position:relative">
+            <button onClick="{{ pf.toggle }}" style="display:flex;align-items:center;gap:10px;height:48px;padding:0 16px 0 22px;border:1px solid {{ pf.border }};border-radius:999px;background:{{ pf.bg }};cursor:pointer;text-align:left" style-hover="border-color:#000">
+              <span style="font:{{ pf.weight }} 15px/1 var(--font-primary);color:#000;white-space:nowrap">{{ pf.text }}</span>
+              <span style="display:flex;transform:rotate(-90deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="chevron-left" size="14px" hint-size="14px,14px"></x-import></span>
+            </button>
+            <sc-if value="{{ pf.open }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:56px;left:0;z-index:30;min-width:240px;max-height:340px;overflow-y:auto;background:#fff;border:1px solid var(--rez-smoke);border-radius:20px;box-shadow:var(--shadow-md);padding:6px;display:flex;flex-direction:column;gap:2px">
+                <sc-for list="{{ pf.items }}" as="o" hint-placeholder-count="5">
+                  <button onClick="{{ o.onClick }}" style="height:40px;padding:0 16px;border:0;border-radius:999px;background:{{ o.bg }};color:#000;text-align:left;font:{{ o.weight }} 14px/1 var(--font-primary);cursor:pointer;white-space:nowrap" style-hover="background:var(--rez-cloud)">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ hasPf }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ clearPf }}" style="padding:0 6px;border:0;background:none;font:600 13px/1 var(--font-primary);color:var(--rez-mocaccino);cursor:pointer;text-decoration:underline;text-underline-offset:3px">Clear</button>
+        </sc-if>
+      </div>
+      </div>
+    </sc-if>
+    <div style="display:flex;align-items:center;gap:12px">
+    <div style="flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:0;border:1px solid var(--rez-smoke);border-radius:32px;background:#fff;box-shadow:var(--shadow-sm);padding:6px 6px 6px 14px">
+      <input value="{{ locality }}" onInput="{{ onLocality }}" placeholder="{{ lstPlaceholder }}" style="flex:1 1 240px;min-width:0;min-height:52px;border:0;outline:none;padding:0 18px;font:400 15px/1 var(--font-primary);color:#000;background:transparent">
+      <div style="display:flex;align-items:center;padding-left:8px">
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="lg" icon-left="search" hint-size="128px,48px">Search</x-import>
+      </div>
+    </div>
+    <button onClick="{{ openDrawer }}" aria-label="Filters" style="position:relative;flex:none;width:62px;height:62px;display:flex;align-items:center;justify-content:center;border:1px solid {{ filterBorder }};border-radius:999px;background:#fff;box-shadow:var(--shadow-sm);color:#000;cursor:pointer" style-hover="border-color:#000">
+      <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="sliders" size="22px" hint-size="22px,22px"></x-import>
+      <sc-if value="{{ hasFilterCount }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-2px;right:-2px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:var(--rez-mocaccino);color:#000;font:700 12px/1 var(--font-primary)">{{ filterCount }}</span></sc-if>
+    </button>
+    </div>
+
+    <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+        <sc-for list="{{ chips }}" as="ch" hint-placeholder-count="2">
+          <button onClick="{{ ch.onRemove }}" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px 0 14px;border:1px solid #000;border-radius:999px;background:#fff;font:500 13px/1 var(--font-primary);color:#000;cursor:pointer" style-hover="background:rgba(2,17,12,.06)">
+            <span>{{ ch.label }}</span>
+            <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="x" size="12px" hint-size="12px,12px"></x-import>
+          </button>
+        </sc-for>
+        <button onClick="{{ clearChips }}" style="padding:0 6px;border:0;background:none;font:600 13px/1 var(--font-primary);color:var(--rez-mocaccino);cursor:pointer;text-decoration:underline;text-underline-offset:3px">Clear all</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDrilled }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+        <button onClick="{{ drillBack }}" style="display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 10px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:600 13px/1 var(--font-primary);color:#000;cursor:pointer" style-hover="border-color:#000">
+          <span style="display:flex;transform:rotate(180deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="arrow-right" size="16px" hint-size="16px,16px"></x-import></span>
+          <span>{{ drillKind }}</span>
+        </button>
+        <h2 style="margin:0;font:600 26px/1.15 var(--font-primary);letter-spacing:-0.01em">{{ drillName }}</h2>
+        <span style="font:500 14px/1 var(--font-primary);color:var(--rez-graphite)">{{ drillTotal }} listings</span>
+      </div>
+    </sc-if>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-top:8px;border-top:1px solid var(--rez-smoke)">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+        <span style="font:400 15px/1.4 var(--font-primary);color:var(--rez-graphite)">Showing <b style="color:#000">{{ showRange }}</b> of <b style="color:#000">{{ showTotal }}</b> {{ showNoun }}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+      <label style="display:flex;align-items:center;gap:10px;font:500 14px/1 var(--font-primary);color:var(--rez-graphite)">
+        <span>Per page</span>
+        <select value="{{ perPage }}" onChange="{{ onPerPage }}" style="height:40px;padding:0 14px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:600 14px/1 var(--font-primary);color:#000;cursor:pointer;outline:none">
+          <sc-for list="{{ ppOptions }}" as="o" hint-placeholder-count="4"><option value="{{ o }}">{{ o }}</option></sc-for>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;font:500 14px/1 var(--font-primary);color:var(--rez-graphite);visibility:{{ sortVis }}">
+        <span>Sort by</span>
+        <select value="{{ sort }}" onChange="{{ onSort }}" style="height:40px;padding:0 16px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:600 14px/1 var(--font-primary);color:#000;cursor:pointer;outline:none">
+          <option value="latest">Latest</option>
+          <option value="low">Price: low to high</option>
+          <option value="high">Price: high to low</option>
+          <option value="area">Largest area</option>
+        </select>
+      </label>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:{{ splitCols }};grid-template-rows:{{ splitRows }};gap:{{ splitGap }};align-items:{{ splitAlign }};position:{{ mapPos }};top:77px;left:0;right:0;bottom:0;z-index:{{ mapZ }};background:#fff">
+    <div style="order:2;min-width:0;max-height:{{ listMaxH }};overflow-y:{{ listOverflow }};padding:{{ listPad }};box-sizing:border-box;border-left:{{ listBorder }}">
+    <sc-if value="{{ isMap }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 2px 16px">
+        <span style="font:400 14px/1.4 var(--font-primary);color:var(--rez-graphite)">Showing <b style="color:#000">{{ showRange }}</b> of <b style="color:#000">{{ showTotal }}</b> {{ showNoun }}</span>
+        <div style="display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--rez-cloud)">
+          <sc-for list="{{ cardOpts }}" as="co" hint-placeholder-count="3">
+            <button onClick="{{ co.onClick }}" title="{{ co.title }}" style="height:28px;padding:0 12px;border:0;border-radius:999px;background:{{ co.bg }};color:{{ co.fg }};font:600 12px/1 var(--font-primary);cursor:pointer;transition:background 140ms">{{ co.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isListView }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;grid-template-columns:{{ gridCols }};gap:24px">
+      <sc-for list="{{ listings }}" as="p" hint-placeholder-count="6">
+        <sc-if value="{{ cardCompact }}" hint-placeholder-val="{{ false }}">
+        <article style="display:grid;grid-template-columns:132px minmax(0,1fr);border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;cursor:pointer;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+          <div style="position:relative;min-height:132px;background:var(--rez-cloud)"><image-slot id="{{ p.slot }}" shape="rect" placeholder=""></image-slot></div>
+          <div style="display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px 16px;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span style="font:700 19px/1 var(--font-primary);letter-spacing:-0.01em">{{ p.price }}</span>
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="star" size="18px" hint-size="18px,18px"></x-import>
+            </div>
+            <span style="font:600 14px/1.25 var(--font-primary);color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }}</span>
+            <span style="font:400 13px/1.25 var(--font-primary);color:var(--rez-graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.loc }}</span>
+            <span style="font:500 13px/1.25 var(--font-primary);color:#000">{{ p.keyline }}</span>
+          </div>
+        </article>
+        </sc-if>
+        <sc-if value="{{ cardPhoto }}" hint-placeholder-val="{{ false }}">
+        <article style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;cursor:pointer;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+          <div style="position:relative;aspect-ratio:16/9;background:var(--rez-cloud)">
+            <image-slot id="{{ p.slot }}" shape="rect" placeholder="{{ p.ph }}"></image-slot>
+            <span style="position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 11px/1 var(--font-primary);pointer-events:none">
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="13px" hint-size="13px,13px"></x-import>
+              <span>{{ p.badge }}</span>
+            </span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:14px 18px 16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <span style="font:700 21px/1 var(--font-primary);letter-spacing:-0.01em">{{ p.price }}</span>
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="star" size="20px" hint-size="20px,20px"></x-import>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font:500 14px/1.2 var(--font-primary);color:#000">
+              <span>{{ p.k1 }}</span><span style="width:1px;height:14px;background:var(--rez-smoke)"></span><span>{{ p.k2 }}</span><span style="width:1px;height:14px;background:var(--rez-smoke)"></span><span>{{ p.areaShort }}</span>
+            </div>
+            <span style="font:400 13px/1.3 var(--font-primary);color:var(--rez-graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }} · {{ p.loc }}</span>
+          </div>
+        </article>
+        </sc-if>
+        <sc-if value="{{ cardFull }}" hint-placeholder-val="{{ true }}">
+        <article style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;cursor:pointer;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+          <div style="position:relative;aspect-ratio:4/3;background:var(--rez-cloud)">
+            <image-slot id="{{ p.slot }}" shape="rect" placeholder="{{ p.ph }}"></image-slot>
+            <span style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 12px/1 var(--font-primary);pointer-events:none">
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="14px" hint-size="14px,14px"></x-import>
+              <span>{{ p.badge }}</span>
+            </span>
+            <div style="position:absolute;top:12px;right:12px;display:flex;gap:8px">
+              <button aria-label="Save" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#000;cursor:pointer" style-hover="background:#fff">
+                <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="star" size="18px" hint-size="18px,18px"></x-import>
+              </button>
+              <button aria-label="Share" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#000;cursor:pointer" style-hover="background:#fff">
+                <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="share" size="18px" hint-size="18px,18px"></x-import>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px;padding:20px 22px 22px">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <h3 style="margin:0;font:600 19px/1.25 var(--font-primary);letter-spacing:-0.01em">{{ p.title }}</h3>
+              <span style="font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ p.loc }}</span>
+            </div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font:700 24px/1 var(--font-primary);letter-spacing:-0.01em">{{ p.price }}</span>
+                <span style="font:400 13px/1 var(--font-primary);color:var(--rez-graphite)">{{ p.rate }}</span>
+              </div>
+              <span style="padding:7px 10px;border-radius:8px;background:var(--rez-cloud);font:600 13px/1 var(--font-primary);white-space:nowrap">{{ p.area }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:14px 8px;border-radius:16px;background:var(--rez-cloud)">
+              <sc-for list="{{ p.specs }}" as="sp" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;min-width:0">
+                  <span style="font:600 14px/1.2 var(--font-primary);color:#000">{{ sp.v }}</span>
+                  <span style="font:400 11px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ sp.l }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px;font:400 12px/1.35 var(--font-primary);color:var(--rez-graphite)">
+              <div style="display:flex;flex-direction:column;gap:3px;min-width:0"><span>Listing realtor</span><span style="font:600 13px/1.3 var(--font-primary);color:#000">{{ p.realtor }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:3px;text-align:right"><span>Last updated</span><span style="font:600 13px/1.3 var(--font-primary);color:#000;white-space:nowrap">{{ p.updated }}</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px">
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="secondary" size="md" icon-left="message-dots" hint-size="100%,44px">WhatsApp</x-import>
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="md" icon-left="phone-outgoing" hint-size="100%,44px">Contact</x-import>
+            </div>
+          </div>
+        </article>
+        </sc-if>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ isLocView }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;grid-template-columns:{{ locCols }};gap:20px">
+      <sc-for list="{{ locCards }}" as="lc" hint-placeholder-count="8">
+        <article onClick="{{ lc.onClick }}" style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;cursor:pointer;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+          <div style="position:relative;aspect-ratio:16/10;background:var(--rez-cloud)"><image-slot id="{{ lc.slot }}" shape="rect" placeholder="{{ lc.ph }}"></image-slot></div>
+          <div style="display:flex;flex-direction:column;gap:14px;padding:18px 20px 20px">
+            <h3 style="margin:0;font:600 19px/1.2 var(--font-primary);letter-spacing:-0.01em">{{ lc.name }}</h3>
+            <div style="display:flex;justify-content:space-between;gap:12px;font:400 13px/1 var(--font-primary);color:var(--rez-graphite)">
+              <sc-for list="{{ lc.stats }}" as="st" hint-placeholder-count="2">
+                <span>{{ st.l }} <b style="margin-left:6px;font:700 16px/1 var(--font-primary);color:#000">{{ st.v }}</b></span>
+              </sc-for>
+            </div>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ projEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:64px 24px;border:1px dashed var(--rez-smoke);border-radius:20px;text-align:center;font:500 16px/1.4 var(--font-primary);color:var(--rez-graphite)">No projects match these filters.</div>
+    </sc-if>
+    <sc-if value="{{ isProjWide }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <sc-for list="{{ projCards }}" as="pc" hint-placeholder-count="3">
+        <article style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+          <div style="display:grid;grid-template-columns:{{ wideCols }};gap:24px;padding:20px">
+            <div style="position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:var(--rez-cloud)">
+              <image-slot id="{{ pc.slot }}" shape="rect" placeholder="{{ pc.ph }}"></image-slot>
+              <span style="position:absolute;top:12px;left:12px;width:44px;height:44px;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center;font:700 13px/1 var(--font-primary);color:#000;pointer-events:none">{{ pc.initials }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                  <h3 style="margin:0;font:600 24px/1.15 var(--font-primary);letter-spacing:-0.01em">{{ pc.name }}</h3>
+                  <span style="font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ pc.dev }} · {{ pc.loc }}</span>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="star" label="Save" tone="outline" size="sm" hint-size="36px,36px"></x-import>
+                  <x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="share" label="Share" tone="outline" size="sm" hint-size="36px,36px"></x-import>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column">
+                <div style="display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--rez-smoke)">
+                  <span style="font:400 12px/1 var(--font-primary);color:var(--rez-graphite)">Project size</span>
+                  <span style="font:500 16px/1.3 var(--font-primary)">{{ pc.size }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--rez-smoke)">
+                  <span style="font:400 12px/1 var(--font-primary);color:var(--rez-graphite)">Configurations</span>
+                  <span style="font:500 16px/1.3 var(--font-primary)">{{ pc.config }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--rez-smoke)">
+                  <span style="font:400 12px/1 var(--font-primary);color:var(--rez-graphite)">Amenities</span>
+                  <span style="font:500 16px/1.3 var(--font-primary)">{{ pc.amen }}</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:center;gap:16px;padding:20px;border-radius:16px;background:var(--rez-cloud);text-align:center">
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font:400 12px/1 var(--font-primary);color:var(--rez-graphite)">Area range</span><span style="font:700 17px/1.2 var(--font-primary)">{{ pc.areaRange }}</span></div>
+              <sc-for list="{{ pc.ranges }}" as="rg" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:6px"><span style="font:400 12px/1 var(--font-primary);color:var(--rez-graphite)">{{ rg.l }}</span><span style="font:700 17px/1.2 var(--font-primary)">{{ rg.v }}</span><sc-if value="{{ rg.sub }}" hint-placeholder-val="{{ false }}"><span style="font:400 12px/1 var(--font-primary);color:var(--rez-graphite)">{{ rg.sub }}</span></sc-if></div>
+              </sc-for>
+              <button onClick="{{ pc.onClick }}" style="align-self:center;padding:4px 0;border:0;background:none;font:700 13px/1 var(--font-primary);letter-spacing:.08em;color:#000;text-decoration:underline;text-underline-offset:4px;cursor:pointer">VIEW LISTINGS</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--rez-cloud);border-top:1px solid var(--rez-smoke)">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+              <span style="height:30px;padding:0 14px;display:flex;align-items:center;border-radius:999px;background:{{ pc.statusBg }};color:{{ pc.statusFg }};font:600 13px/1 var(--font-primary)">{{ pc.status }}</span>
+              <span style="height:30px;padding:0 14px;display:flex;align-items:center;border-radius:999px;border:1px solid #000;font:600 13px/1 var(--font-primary)">{{ pc.possession }}</span>
+              <span style="display:flex;align-items:center;gap:6px;font:600 13px/1 var(--font-primary)">
+                <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="shield-check" size="16px" hint-size="16px,16px"></x-import>
+                <span>RERA registered</span>
+              </span>
+            </div>
+            <div style="display:flex;gap:10px">
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="secondary" size="md" icon-left="file-download" hint-size="140px,44px">Brochure</x-import>
+              <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="md" icon-left="phone-outgoing" hint-size="140px,44px">Contact</x-import>
+            </div>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ isProjGrid }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;grid-template-columns:{{ gridCols }};gap:24px">
+      <sc-for list="{{ projCards }}" as="pc" hint-placeholder-count="6">
+        <article onClick="{{ pc.onClick }}" style="display:flex;flex-direction:column;border:1px solid var(--rez-smoke);border-radius:20px;overflow:hidden;background:#fff;cursor:pointer;transition:box-shadow 220ms cubic-bezier(.2,.8,.2,1)" style-hover="box-shadow:var(--shadow-md)">
+          <div style="position:relative;aspect-ratio:16/10;background:var(--rez-cloud)">
+            <image-slot id="{{ pc.slot }}" shape="rect" placeholder="{{ pc.ph }}"></image-slot>
+            <span style="position:absolute;top:14px;left:14px;height:28px;padding:0 12px;display:flex;align-items:center;border-radius:999px;background:#000;color:var(--rez-full-white);font:600 12px/1 var(--font-primary);pointer-events:none">{{ pc.status }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;padding:18px 22px 22px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <h3 style="margin:0;font:600 19px/1.2 var(--font-primary);letter-spacing:-0.01em">{{ pc.name }}</h3>
+                <span style="font:400 14px/1.3 var(--font-primary);color:var(--rez-graphite)">{{ pc.loc }} · {{ pc.dev }}</span>
+              </div>
+              <span style="flex:none;width:44px;height:44px;border-radius:999px;border:1px solid var(--rez-smoke);display:flex;align-items:center;justify-content:center;font:700 14px/1 var(--font-primary);color:#000">{{ pc.initials }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat({{ pc.statCols }},minmax(0,1fr));gap:4px;padding:12px 8px;border-radius:16px;background:var(--rez-cloud);text-align:center">
+              <sc-for list="{{ pc.stats }}" as="st" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:5px;min-width:0"><span style="font:700 15px/1.1 var(--font-primary);color:#000">{{ st.v }}</span><span style="font:400 11px/1.2 var(--font-primary);color:var(--rez-graphite)">{{ st.l }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ hasPages }}" hint-placeholder-val="{{ false }}">
+      <nav style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:36px 0 8px">
+        <button onClick="{{ prevPage }}" aria-label="Previous page" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;cursor:pointer;opacity:{{ prevOp }}"><span style="display:flex;transform:rotate(180deg)"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="arrow-right" size="16px" hint-size="16px,16px"></x-import></span></button>
+        <sc-for list="{{ pageItems }}" as="pg" hint-placeholder-count="5">
+          <button onClick="{{ pg.onClick }}" style="min-width:40px;height:40px;padding:0 6px;border:1px solid {{ pg.border }};border-radius:999px;background:{{ pg.bg }};color:{{ pg.fg }};font:600 14px/1 var(--font-primary);cursor:pointer">{{ pg.label }}</button>
+        </sc-for>
+        <button onClick="{{ nextPage }}" aria-label="Next page" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;cursor:pointer;opacity:{{ nextOp }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="arrow-right" size="16px" hint-size="16px,16px"></x-import></button>
+      </nav>
+    </sc-if>
+    </div>
+    <sc-if value="{{ isMap }}" hint-placeholder-val="{{ false }}">
+      <div style="order:1;position:relative;height:100%;min-height:0;overflow:hidden;background:var(--rez-cloud)">
+        <div id="rz-map" style="position:absolute;inset:0"></div>
+        <div style="position:absolute;top:16px;left:16px;right:16px;z-index:500;display:flex;flex-wrap:wrap;align-items:center;gap:10px;pointer-events:none">
+          <div style="pointer-events:auto;flex:1 1 280px;max-width:520px;display:flex;align-items:center;gap:4px;height:52px;padding:0 6px 0 18px;box-sizing:border-box;background:#fff;border-radius:999px;box-shadow:var(--shadow-md)">
+            <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="search" size="18px" hint-size="18px,18px"></x-import>
+            <input value="{{ locality }}" onInput="{{ onLocality }}" placeholder="{{ lstPlaceholder }}" style="flex:1;min-width:0;height:100%;border:0;outline:none;padding:0 10px;font:400 15px/1 var(--font-primary);color:#000;background:transparent">
+          </div>
+          <button onClick="{{ openDrawer }}" style="pointer-events:auto;position:relative;display:flex;align-items:center;gap:8px;height:52px;padding:0 20px;border:0;border-radius:999px;background:#fff;box-shadow:var(--shadow-md);font:600 14px/1 var(--font-primary);color:#000;cursor:pointer" style-hover="background:var(--rez-cloud)">
+            <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="sliders" size="18px" hint-size="18px,18px"></x-import>
+            <span>Filters</span>
+            <sc-if value="{{ hasFilterCount }}" hint-placeholder-val="{{ false }}"><span style="min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:999px;background:var(--rez-mocaccino);color:#000;font:700 12px/1 var(--font-primary)">{{ filterCount }}</span></sc-if>
+          </button>
+          <button onClick="{{ toListView }}" style="pointer-events:auto;display:flex;align-items:center;gap:8px;height:52px;padding:0 20px;border:0;border-radius:999px;background:#000;box-shadow:var(--shadow-md);font:600 14px/1 var(--font-primary);color:var(--rez-full-white);cursor:pointer" style-hover="background:#1a1a1a">
+            <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="file-text" size="18px" hint-size="18px,18px"></x-import>
+            <span>List View</span>
+          </button>
+        </div>
+      </div>
+    </sc-if>
+    </div>
+  </div>
+</main>
+<sc-if value="{{ mselOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:110;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div onClick="{{ mselClose }}" style="position:absolute;inset:0;background:rgba(2,17,12,.55);backdrop-filter:blur(4px)"></div>
+    <div role="dialog" style="position:relative;width:min(560px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px 28px 18px;border-bottom:1px solid var(--rez-smoke)">
+        <h2 style="margin:0;font:600 26px/1.1 var(--font-primary);letter-spacing:-0.01em">{{ mselTitle }}</h2>
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="x" label="Close" tone="ghost" size="md" onClick="{{ mselClose }}" hint-size="40px,40px"></x-import>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;padding:20px 28px 0">
+        <div style="display:flex;align-items:center;gap:10px;height:48px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="search" size="18px" hint-size="18px,18px"></x-import>
+          <input value="{{ mselQ }}" onInput="{{ onMselQ }}" placeholder="Search" style="flex:1;min-width:0;height:100%;border:0;outline:none;font:400 15px/1 var(--font-primary);color:#000;background:transparent">
+        </div>
+        <sc-if value="{{ mselNoTabs }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--rez-smoke)">
+            <sc-for list="{{ mselTabs }}" as="t" hint-placeholder-count="4">
+              <button onClick="{{ t.onClick }}" style="position:relative;flex:none;height:44px;padding:0 14px;border:0;background:none;cursor:pointer;font:{{ t.weight }} 15px/1 var(--font-primary);color:{{ t.fg }};white-space:nowrap" style-hover="color:#000">
+                <span>{{ t.label }}</span>
+                <span style="position:absolute;left:14px;right:14px;bottom:-1px;height:3px;border-radius:3px;background:var(--rez-mocaccino);transform:scaleX({{ t.bar }});transition:transform 260ms cubic-bezier(.2,.8,.2,1)"></span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:4px 28px 8px">
+        <sc-for list="{{ mselItems }}" as="it" hint-placeholder-count="5">
+          <button onClick="{{ it.onClick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;height:56px;padding:0;border:0;border-bottom:1px solid var(--rez-smoke);background:none;cursor:pointer;text-align:left;font:500 16px/1 var(--font-primary);color:#000">
+            <span>{{ it.label }}</span>
+            <span style="width:22px;height:22px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:1.5px solid {{ it.boxBorder }};border-radius:4px;background:{{ it.boxBg }};color:var(--rez-full-white);transition:background 140ms">
+              <span style="display:flex;opacity:{{ it.chk }}"><x-import component-from-global-scope="RezideDesignSystem_37386e.Icon" name="check" size="16px" hint-size="16px,16px"></x-import></span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 28px 24px;border-top:1px solid var(--rez-smoke)">
+        <sc-if value="{{ mselHasSel }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ mselClear }}" style="flex:none;height:52px;padding:0 20px;border:1px solid #000;border-radius:999px;background:#fff;font:600 15px/1 var(--font-primary);color:#000;cursor:pointer">Clear</button>
+        </sc-if>
+        <button onClick="{{ onMselApply }}" style="flex:1;height:52px;border:0;border-radius:999px;background:#000;font:600 16px/1 var(--font-primary);color:var(--rez-full-white);cursor:pointer" style-hover="background:#1a1a1a" style-active="transform:scale(.98)">{{ mselApply }}</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:100;display:flex;justify-content:flex-end">
+    <div onClick="{{ closeDrawer }}" style="position:absolute;inset:0;background:rgba(2,17,12,.55);backdrop-filter:blur(4px)"></div>
+    <aside style="position:relative;width:min(480px,100%);height:100%;background:#fff;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px 28px;border-bottom:1px solid var(--rez-smoke)">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font:400 11px/1 var(--font-eyebrow);letter-spacing:.16em;color:var(--rez-graphite)">{{ drawerEyebrow }}</span>
+          <h2 style="margin:0;font:600 24px/1.15 var(--font-primary);letter-spacing:-0.01em">{{ drawerTitle }}</h2>
+        </div>
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.IconButton" icon="x" label="Close" tone="ghost" size="md" onClick="{{ closeDrawer }}" hint-size="40px,40px"></x-import>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:8px 28px 24px;display:flex;flex-direction:column">
+        <sc-for list="{{ drawerGroups }}" as="g" hint-placeholder-count="4">
+          <section style="display:flex;flex-direction:column;gap:14px;padding:22px 0;border-bottom:1px solid var(--rez-smoke)">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <h3 style="margin:0;font:400 12px/1 var(--font-eyebrow);letter-spacing:.16em;color:#000">{{ g.label }}</h3>
+              <sc-if value="{{ g.hint }}" hint-placeholder-val="{{ false }}"><span style="font:400 13px/1.35 var(--font-primary);color:var(--rez-graphite)">{{ g.hint }}</span></sc-if>
+            </div>
+            <sc-if value="{{ g.isChips }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="4">
+                  <button onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 16px;border:1px solid {{ o.border }};border-radius:999px;background:{{ o.bg }};color:{{ o.fg }};font:500 14px/1 var(--font-primary);cursor:pointer;transition:background 140ms, color 140ms" style-active="transform:scale(.98)">
+                    <span>{{ o.label }}</span>
+                    <span style="font:600 11px/1 var(--font-primary);color:{{ o.countFg }}">{{ o.count }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ g.isBudget }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <select value="{{ bmin }}" onChange="{{ onBmin }}" style="height:48px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:500 14px/1 var(--font-primary);color:#000;cursor:pointer;outline:none">
+                  <option value="">Min budget</option>
+                  <sc-for list="{{ budgetPoints }}" as="b" hint-placeholder-count="6"><option value="{{ b }}">{{ b }}</option></sc-for>
+                </select>
+                <select value="{{ bmax }}" onChange="{{ onBmax }}" style="height:48px;padding:0 18px;border:1px solid var(--rez-smoke);border-radius:999px;background:#fff;font:500 14px/1 var(--font-primary);color:#000;cursor:pointer;outline:none">
+                  <option value="">Max budget</option>
+                  <sc-for list="{{ budgetPoints }}" as="b" hint-placeholder-count="6"><option value="{{ b }}">{{ b }}</option></sc-for>
+                </select>
+              </div>
+            </sc-if>
+          </section>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 28px;border-top:1px solid var(--rez-smoke)">
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="secondary" size="lg" onClick="{{ clearChips }}" hint-size="110px,48px">Reset</x-import>
+        <x-import component-from-global-scope="RezideDesignSystem_37386e.Button" tone="primary" size="lg" onClick="{{ closeDrawer }}" hint-size="180px,48px">{{ applyLabel }}</x-import>
+      </div>
+    </aside>
+  </div>
+</sc-if>
+</sc-if>
+
+<footer style="background:#000;color:var(--rez-full-white);padding:56px 32px 32px">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:48px">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px">
+      <div style="display:flex;flex-direction:column;gap:28px;max-width:340px">
+        <div onClick="{{ goHome }}" style="color:var(--rez-full-white);cursor:pointer;display:flex">
+          <x-import component-from-global-scope="RezideDesignSystem_37386e.Logo" variant="wordmark" height="30" hint-size="170px,30px"></x-import>
+        </div>
+        <p style="margin:0;font:400 17px/1.5 var(--font-primary);color:var(--rez-steel);text-wrap:pretty">The only place for you to browse 100% trusted and authentic properties.</p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:40px 96px">
+      <div style="display:flex;flex-direction:column;gap:22px;min-width:150px">
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Explore</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Features</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Pricing</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Newsletter</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:22px;min-width:150px">
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">About Us</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Careers</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Blog</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Help Centre</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:22px;min-width:150px">
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Support</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Privacy Policy</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Terms Of Use</a>
+        <a href="#" style="font:500 16px/1 var(--font-primary);color:var(--rez-full-white);text-decoration:none" style-hover="color:var(--rez-mocaccino)">Cookies Policy</a>
+      </div>
+      </div>
+    </div>
+    <div style="text-align:center;font:400 14px/1 var(--font-primary);color:var(--rez-steel)">© 2026 Rezide. All rights reserved.</div>
+  </div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;navStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;underline&quot;,&quot;dot&quot;,&quot;outline&quot;,&quot;segmented&quot;],&quot;default&quot;:&quot;underline&quot;,&quot;tsType&quot;:&quot;'underline'|'dot'|'outline'|'segmented'&quot;,&quot;section&quot;:&quot;Header&quot;},&quot;heroStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;photo&quot;,&quot;flat&quot;],&quot;default&quot;:&quot;photo&quot;,&quot;tsType&quot;:&quot;'photo'|'flat'&quot;,&quot;section&quot;:&quot;Hero&quot;},&quot;heroMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Hero&quot;},&quot;mapCard&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;compact&quot;,&quot;photo&quot;,&quot;full&quot;],&quot;default&quot;:&quot;compact&quot;,&quot;tsType&quot;:&quot;'compact'|'photo'|'full'&quot;,&quot;section&quot;:&quot;Map view&quot;},&quot;projectsPerRow&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;3&quot;,&quot;4&quot;],&quot;default&quot;:&quot;4&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const CITIES=['Mumbai','Bengaluru','Pune','Hyderabad','Gurugram','Noida','Chennai','Ahmedabad'];
+const TYPES=[
+ {id:'homes',label:'Homes',desc:'Apartments, villas, builder floors'},
+ {id:'offices',label:'Offices',desc:'Grade A, co-working, IT parks'},
+ {id:'retail',label:'Retail',desc:'High-street and mall shops'},
+ {id:'industrial',label:'Industrial',desc:'Warehouses, sheds, factories'},
+ {id:'land',label:'Land',desc:'Residential and commercial plots'}];
+const AREA=['Under 1,000 sq ft','1,000 – 5,000 sq ft','5,000 – 20,000 sq ft','20,000+ sq ft'];
+const BHK=['1 BHK','2 BHK','3 BHK','4 BHK','5+ BHK'];
+const BUY=['Under ₹50 L','₹50 L – ₹1 Cr','₹1 – 3 Cr','₹3 – 5 Cr','₹5 Cr+'];
+const RENT=['Under ₹25k / mo','₹25k – 50k / mo','₹50k – 1 L / mo','₹1 – 5 L / mo','₹5 L+ / mo'];
+const FIRST={homes:['BHK',BHK],offices:['Carpet area',AREA],retail:['Carpet area',AREA],industrial:['Built-up area',AREA],land:['Plot size',['Under 2,400 sq ft','2,400 – 5,000 sq ft','5,000 sq ft – 1 acre','1 acre+']]};
+const YEARS=[2026,2027,2028,2029];
+const STATUS=[
+ {id:'uc',label:'Under Construction',head:'Built for what comes next.',ground:'#000000',fg:'var(--rez-full-white)'},
+ {id:'rtm',label:'Ready to Move',head:'Move in this season.',ground:'#2F4842',fg:'var(--rez-full-white)'},
+ {id:'nl',label:'New Launches',head:'First to the address.',ground:'#A3835F',fg:'#000000'}];
+const LOC={Mumbai:['Worli','Thane West','Goregaon East','Mahalaxmi','Powai','Andheri West','Chembur','Bandra East'],Bengaluru:['Whitefield','Hebbal','Sarjapur Road','Indiranagar','Yelahanka','Electronic City','Koramangala','Devanahalli'],Pune:['Hinjewadi','Koregaon Park','Baner','Kharadi','Wakad','Hadapsar','Bavdhan','Viman Nagar'],Hyderabad:['Gachibowli','Jubilee Hills','Kokapet','Kondapur','Narsingi','Tellapur','Madhapur','Banjara Hills'],Gurugram:['Golf Course Road','Sector 65','Sohna Road','Sector 106','Dwarka Expressway','Sector 79','New Gurgaon','Sector 49'],Noida:['Sector 150','Sector 128','Noida Extension','Sector 62','Sector 94','Yamuna Expressway','Sector 107','Sector 75'],Chennai:['OMR','Adyar','Porur','Anna Nagar','Sholinganallur','Pallavaram','ECR','Velachery'],Ahmedabad:['SG Highway','Bopal','Prahlad Nagar','Shela','Gota','Thaltej','South Bopal','Science City']};
+const TOP_CITIES=['Bengaluru','Chennai','Delhi','Gurugram','Hyderabad','Kolkata','Lucknow','Mumbai','Navi Mumbai','Noida','Pune','Thane'];
+const OTHER_CITIES=['Agra','Ahmedabad','Ahmednagar','Ajmer','Amritsar','Aurangabad','Bhopal','Bhubaneswar','Chandigarh','Coimbatore','Dehradun','Faridabad','Ghaziabad','Goa','Guwahati','Indore','Jaipur','Jodhpur','Kochi','Kolhapur','Kozhikode','Ludhiana','Madurai','Mangaluru','Mysuru','Nagpur','Nashik','Patna','Raipur','Rajkot','Ranchi','Surat','Thiruvananthapuram','Udaipur','Vadodara','Varanasi','Vijayawada','Visakhapatnam'];
+[...TOP_CITIES,...OTHER_CITIES].forEach(c=>{if(!LOC[c])LOC[c]=({Delhi:['Vasant Kunj','Dwarka','Saket','Greater Kailash','Rohini','Janakpuri','Karol Bagh','Chanakyapuri'],'Navi Mumbai':['Vashi','Kharghar','Nerul','Belapur','Panvel','Airoli','Ulwe','Sanpada'],Thane:['Ghodbunder Road','Majiwada','Kolshet','Hiranandani Estate','Pokhran Road','Kasarvadavali','Balkum','Wagle Estate'],Kolkata:['New Town','Salt Lake','Ballygunge','Rajarhat','Alipore','EM Bypass','Tollygunge','Behala'],Lucknow:['Gomti Nagar','Hazratganj','Aliganj','Indira Nagar','Shaheed Path','Sushant Golf City','Jankipuram','Mahanagar'],Gurugram:['Golf Course Road','Sohna Road','DLF Phase 5','Dwarka Expressway','Sector 65','Cyber City','Sector 54','MG Road']})[c]||['City Centre','North','South','East','West','Ring Road','Airport Road','New Town'];});
+const NAMES=['Aurelia','Kalpa','Saffron','Marine','Vana','Lakeshore','Amara','Indira','Sahyadri','Riverside','Terraces','Skyline','Courtyard','Commons','Grove','Crest','Meridian','Verve','Atrium','Horizon'];
+const SUFFIX=['Residences','Heights','Park','One','Towers','Gardens','Bay','Square'];
+const DEVS=['Lodha Group','Godrej Properties','Prestige Group','Sobha Ltd','Brigade Group','Tata Housing','Oberoi Realty','Piramal Realty','DLF','Mahindra Lifespaces'];
+const CONF=['2 & 3 BHK','3 BHK','3 & 4 BHK','4 BHK','2 BHK','1 & 2 BHK'];
+const PRICES=['₹92 L onwards','₹1.4 Cr onwards','₹1.9 Cr onwards','₹2.8 Cr onwards','₹3.6 Cr onwards','₹4.2 Cr onwards','₹6.1 Cr onwards','₹8.4 Cr onwards'];
+function build(city){
+  const seed=CITIES.indexOf(city)*7, out=[]; let k=0;
+  const mk=(status,year)=>{const i=seed+k++;out.push({status,year,name:NAMES[i%NAMES.length]+' '+SUFFIX[(i*3)%SUFFIX.length],dev:DEVS[(i*7)%DEVS.length],loc:LOC[city][i%8],config:CONF[(i*5)%CONF.length],price:PRICES[(i*3)%PRICES.length],slot:'proj-'+city.toLowerCase()+'-'+(k-1)});};
+  YEARS.forEach(y=>{for(let j=0;j<4;j++) mk('uc',y);});
+  for(let j=0;j<4;j++) mk('rtm');
+  for(let j=0;j<4;j++) mk('nl');
+  return out;
+}
+const CACHE={};
+const U=(id)=>'https://images.unsplash.com/'+id+'?fm=jpg&q=70&w=2400&auto=format&fit=crop';
+const HERO_IMG={
+ 'hero-homes':[U('photo-1758448755856-01d3add0177b'),'Aalo Lens','https://unsplash.com/@aalolens'],
+ 'hero-offices':[U('photo-1741880893442-66f56ad8f3a4'),'Li Zhang','https://unsplash.com/@sunx'],
+ 'hero-retail':[U('photo-1744595805485-5ed5de517e28'),'Grace Anne Bobadilla','https://unsplash.com/@graceannefully'],
+ 'hero-industrial':[U('photo-1746970363282-0b03a51a0141'),'Ivan Prokhorov','https://unsplash.com/@prokhorov'],
+ 'hero-land':[U('photo-1694730652852-9404a2d0214b'),'Jason Leung','https://unsplash.com/@ninjason'],
+ 'hero-uc':[U('photo-1786618315979-2dbbfd3b38a7'),'Timur Seyfelmlyukov','https://unsplash.com/@timurse'],
+ 'hero-rtm':[U('photo-1759845565036-cbecbcfcb8e2'),'Joachim Lesne','https://unsplash.com/@joaching'],
+ 'hero-nl':[U('photo-1751054770504-c69daeec4721'),'John Kakuk','https://unsplash.com/@lensatic']};
+const HB=['Above ₹25 Cr','₹10 – 25 Cr','₹5 – 10 Cr','₹3 – 5 Cr','₹1 – 3 Cr','Under ₹1 Cr'];
+const HR=['Above ₹10 L','₹5 – 10 L','₹3 – 5 L','₹1 – 3 L','₹50k – 1 L','Under ₹50k'];
+const CB=['Above ₹25 Cr','₹10 – 25 Cr','₹5 – 10 Cr','₹3 – 5 Cr','₹1 – 3 Cr','Under ₹1 Cr'];
+const CR=['Above ₹10 L / mo','₹5 – 10 L / mo','₹2 – 5 L / mo','₹1 – 2 L / mo','₹50k – 1 L / mo','Under ₹50k / mo'];
+const AR=['Above 10,000 sq ft','5,000 – 10,000 sq ft','3,000 – 5,000 sq ft','1,000 – 2,000 sq ft','500 – 1,000 sq ft','Below 500 sq ft'];
+const CAT={
+ homes:{noun:'Homes',lease:'Rent',size:['BHK',['Above 5 BHK','5 BHK','4 BHK','3 BHK','2 BHK','1 BHK']],kinds:['Apartments','Duplex','Penthouses','Villas','Builder floors','Row houses'],sale:HB,rent:HR},
+ offices:{noun:'Offices',lease:'Lease',size:['Area',AR],kinds:['Grade A offices','Co-working','IT parks','Business centres','Office floors','Managed offices'],sale:CB,rent:CR},
+ retail:{noun:'Retail',lease:'Lease',size:['Area',AR],kinds:['High-street shops','Mall units','Showrooms','Food & beverage','Kiosks','Shop-cum-offices'],sale:CB,rent:CR},
+ industrial:{noun:'Industrial',lease:'Lease',size:['Area',AR],kinds:['Warehouses','Factories','Industrial sheds','Cold storage','Logistics parks','Data centres'],sale:CB,rent:CR},
+ land:{noun:'Land',lease:'Lease',size:['Plot size',['10 acres+','5 – 10 acres','2 – 5 acres','1 – 2 acres','0.5 – 1 acre','Less than 0.5 acre']],kinds:['Residential plots','Commercial plots','Industrial plots','Farmhouse land','Agricultural land','Township plots'],sale:CB,rent:CR}};
+const BUDGET_TIERS=[['Ultra Luxury','₹25 Cr or above'],['Luxury','₹10 – 25 Cr'],['Super Premium','₹5 – 10 Cr'],['Premium','₹3 – 5 Cr'],['Mid-segment','₹1 – 3 Cr'],['Value','Under ₹1 Cr']];
+const POSS_BG=['#EDEFF7','#FDF9F0','#F9F7F3','#EDEFF7'];
+const hash=s=>{let h=7;for(const ch of s)h=(h*31+ch.charCodeAt(0))%9973;return h;};
+const cnt=(s,max,unit)=>(20+hash(s)%max)+'+ '+unit;
+const scrollRail=(id,dir)=>{const el=document.getElementById(id); if(el) el.scrollBy({left:dir*el.clientWidth*0.9,behavior:'smooth'});};
+const RAIL_ORDER={homes:['loc','budget','type','size'],offices:['loc','budget','size'],retail:['loc','budget','size'],industrial:['loc','budget','size'],land:['type','budget','size']};
+const LF={
+ homes:[['unit','PROPERTY TYPE',['Apartment','Villa','Independent House','Penthouse','Duplex','Jodi','Studio','Independent Floor','Holiday Home','Row/Town House']],['size','BHK',['5+ BHK','4 BHK','3 BHK','2 BHK','1 BHK']],['extra','FURNISHING',['Semi Furnished','Fully Furnished','Unfurnished','Builder Condition','Bare Shell']],['$budget','BUDGET'],['btype','BUILDING TYPE',['Gated Amenities','Standalone','Gated No Amenities','Standalone Amenities']],['bath','BATHROOM',['1','2','3','4','5','>5']],['balc','NO. OF BALCONIES',['1','2','3','4','>4']],['park','NO. OF PARKINGS',['1','2','3','4','>4']],['area','AREA',['Below 500 sq ft','500 – 1,000 sq ft','1,000 – 2,000 sq ft','Above 3,000 sq ft']],['media','LISTING WITH',['Video','Photo','VR Tour']],['numtot','PREFERRED APARTMENT NUMBER TOTAL',['1','2','3','4','5','6','7','8','9'],'For example, unit 1402 totals 1+4+0+2 = 7.'],['door','MAIN DOOR EXIT DIRECTION',['East','West','North','South','North East','North West','South East','South West']]],
+ offices:[['unit','OFFICE TYPE',['Grade A office','Co-working','IT park','Business centre','Office floor']],['size','CARPET AREA',AR],['extra','FIT-OUT',['Furnished','Warm shell','Bare shell']],['avail','AVAILABILITY',['Ready to move','Under construction']]],
+ retail:[['unit','SHOP TYPE',['High-street shop','Mall unit','Showroom','Food & beverage','Kiosk']],['size','CARPET AREA',AR],['extra','FLOOR',['Ground floor','Upper floor','Mezzanine']]],
+ industrial:[['unit','UNIT TYPE',['Warehouse','Factory','Industrial shed','Cold storage','Logistics park']],['size','BUILT-UP AREA',AR],['extra','POWER LOAD',['Up to 100 kVA','100 – 500 kVA','500 kVA+']]],
+ land:[['unit','PLOT TYPE',['Residential plot','Commercial plot','Industrial plot','Farmhouse land','Agricultural land','Township plots']],['size','PLOT SIZE',['Under 2,400 sq ft','2,400 – 5,000 sq ft','5,000 sq ft – 1 acre','1 acre+']],['extra','APPROVAL',['NA approved','RERA approved','Title clear']]]};
+const GEO={Worli:[19.0176,72.8162],'Thane West':[19.2183,72.9781],'Goregaon East':[19.1663,72.8526],Mahalaxmi:[18.9827,72.8236],Powai:[19.1176,72.906],'Andheri West':[19.1364,72.8296],Chembur:[19.0522,72.9005],'Bandra East':[19.0596,72.8484],
+Whitefield:[12.9698,77.75],Hebbal:[13.0358,77.597],'Sarjapur Road':[12.91,77.685],Indiranagar:[12.9784,77.6408],Yelahanka:[13.1007,77.5963],'Electronic City':[12.8452,77.6602],Koramangala:[12.9352,77.6245],Devanahalli:[13.2437,77.7135],
+Hinjewadi:[18.5913,73.7389],'Koregaon Park':[18.5362,73.894],Baner:[18.559,73.7868],Kharadi:[18.5515,73.9348],Wakad:[18.5975,73.77],Hadapsar:[18.5089,73.926],Bavdhan:[18.5126,73.781],'Viman Nagar':[18.5679,73.9143],
+Gachibowli:[17.4401,78.3489],'Jubilee Hills':[17.4326,78.4071],Kokapet:[17.396,78.327],Kondapur:[17.469,78.364],Narsingi:[17.388,78.356],Tellapur:[17.47,78.285],Madhapur:[17.4483,78.3915],'Banjara Hills':[17.4156,78.4347],
+'Golf Course Road':[28.453,77.097],'Sector 65':[28.402,77.071],'Sohna Road':[28.41,77.042],'Sector 106':[28.498,77.009],'Dwarka Expressway':[28.49,76.99],'Sector 79':[28.38,76.99],'New Gurgaon':[28.4,76.97],'Sector 49':[28.412,77.057],
+'Sector 150':[28.41,77.486],'Sector 128':[28.53,77.36],'Noida Extension':[28.59,77.44],'Sector 62':[28.627,77.365],'Sector 94':[28.54,77.33],'Yamuna Expressway':[28.36,77.53],'Sector 107':[28.53,77.38],'Sector 75':[28.576,77.387],
+OMR:[12.95,80.24],Adyar:[13.0012,80.2565],Porur:[13.0382,80.1565],'Anna Nagar':[13.085,80.2101],Sholinganallur:[12.901,80.2279],Pallavaram:[12.9675,80.1491],ECR:[12.85,80.245],Velachery:[12.9815,80.218],
+'SG Highway':[23.045,72.53],Bopal:[23.033,72.465],'Prahlad Nagar':[23.012,72.51],Shela:[23.005,72.45],Gota:[23.1,72.54],Thaltej:[23.05,72.5],'South Bopal':[23.02,72.47],'Science City':[23.078,72.495]};
+const geo=(loc,seed)=>{const g=GEO[loc]||[19.07,72.88];const h=hash(seed||'');return [g[0]+((h%100)-50)/9000,g[1]+((Math.floor(h/100)%100)-50)/9000];};
+const VIEW_GROUPS=[['Scenic Views',['Forest','Greenery','Hill Side','Landscape','Panoramic','Park','Waterfront']],['Premium Views',['Sea View','Lake View','Golf Course','Racecourse','River View']],['Urban & City Views',['City Skyline','Landmark','Main Road','Corner']],['Amenity Views',['Pool','Clubhouse','Central Garden','Courtyard']]];
+const PVIEWS=VIEW_GROUPS.flatMap(g=>g[1]);
+const LOC_GROUPS={Mumbai:[['Western Suburbs',['Andheri West','Goregaon East','Bandra East']],['Eastern Suburbs',['Powai','Chembur']],['South Mumbai',['Worli','Mahalaxmi']],['Thane',['Thane West']]]};
+const locGroups=city=>LOC_GROUPS[city]||(()=>{const l=LOC[city];return [['North',l.slice(0,2)],['South',l.slice(2,4)],['East',l.slice(4,6)],['West',l.slice(6,8)]];})();
+const STL={uc:'Under Construction',rtm:'Ready to Move',nl:'New Launch'};
+const stOk=(pf,p)=>{const a=asArr(pf.status);return !a.length||a.includes(p.status)||a.includes(STL[p.status]);};
+const bdOk=(pf,p)=>{const a=asArr(pf.budget);return !a.length||a.includes(tierOf(p.price));};
+const asArr=v=>Array.isArray(v)?v:(v?[v]:[]);
+const tierOf=price=>{const v=parseFloat(price.replace(/[^0-9.]/g,''))*(price.includes('Cr')?1:0.01);return v>=25?'Ultra Luxury':v>=10?'Luxury':v>=5?'Super Premium':v>=3?'Premium':v>=1?'Mid-segment':'Value';};
+const PROJ_LF=[['ptype','PROJECT TYPE',['Gated amenities','Gated no amenities','Standalone','Standalone no amenities']],['punit','UNIT TYPE',['Studio','Apartment','Jodi','Duplex','Penthouse','Independent floor','Independent house','Villa']],['pbhk','BHK',['1 BHK','1.5 BHK','2 BHK','2.5 BHK','3 BHK','3.5 BHK','4 BHK','4.5 BHK','5 BHK','5+ BHK']],['$budget','BUDGET']];
+const CHIPFMT={bath:v=>v+' Bath',balc:v=>v+' Balcony',park:v=>v+' Parking',numtot:v=>'Unit total '+v,door:v=>v+' facing'};
+const BPTS={sale:['₹50 L','₹1 Cr','₹3 Cr','₹5 Cr','₹10 Cr','₹25 Cr'],rent:['₹25k','₹50k','₹1 L','₹3 L','₹5 L','₹10 L']};
+const pickA=(arr,h)=>Array.isArray(arr)&&arr.length?arr[h%arr.length]:(typeof arr==='string'?arr:undefined);
+const REALTORS=['Prime Estates Consulting','Skyline Realty','Urban Nest Advisors','Keystone Properties','Networth Realty','Buildstone Realty'];
+const MONTHS=['Oct 17, 2026','Oct 16, 2026','Oct 15, 2026','Oct 14, 2026','Oct 12, 2026','Oct 10, 2026'];
+const fmtINR=n=>n>=1e7?'₹ '+(n/1e7).toFixed(2)+' Cr':n>=1e5?'₹ '+(n/1e5).toFixed(2)+' L':'₹ '+Math.round(n/1e3)+'k';
+const fmtN=n=>n.toLocaleString('en-IN');
+function makeListings(st,count=9,offset=0){
+  const c=CAT[st.type], rent=st.mode==='rent', f=st.lf||{}, out=[];
+  for(let k=0;k<count;k++){
+    const i=offset+k;
+    const h=hash(st.city+st.type+st.mode+JSON.stringify(f)+st.locality+i), h2=hash('x'+h);
+    const fu=pickA(f.unit,h), fs=pickA(f.size,h), fe=pickA(f.extra,h);
+    const loc=f.loc||LOC[st.city][(h+i)%8];
+    const name=(st.type==='homes'&&f.project)||NAMES[h%NAMES.length]+' '+SUFFIX[h2%SUFFIX.length];
+    const kind=fu||c.kinds[h%c.kinds.length];
+    let area, specs, title;
+    if(st.type==='homes'){
+      const bhk=fs||c.size[1][h%4]; const b=parseInt(bhk)||5;
+      area=450+b*320+h%300; title=String.fromCharCode(65+h%4)+' - '+(100*(1+h%22)+1+h2%6)+', '+name;
+      specs=[{v:bhk,l:kind.replace(/s$/,'')},{v:Math.max(1,b-(h%2))+' Baths',l:'Bathrooms'},{v:(1+h%2)+' Parks',l:'Parking'},{v:(fe||['Fully furnished','Semi furnished','Unfurnished'][h%3]).replace(/ furnished/i,''),l:'Furnishing'}];
+    } else if(st.type==='land'){
+      area=2400+h*7%40000; title='Plot '+(10+h%180)+', '+NAMES[h%NAMES.length]+' Enclave';
+      specs=[{v:['East','North','West','North-East'][h%4],l:'Facing'},{v:(20+h%5*10)+' ft',l:'Road width'},{v:kind.split(' ')[0],l:'Zone'},{v:(fe||['NA approved','RERA approved','Title clear'][h%3]).split(' ')[0],l:'Approval'}];
+    } else {
+      area=st.type==='industrial'?8000+h*5%60000:600+h*3%9000;
+      title=(st.type==='retail'?'Shop ':'Unit ')+(1+h%9)+'0'+(1+h2%9)+', '+name;
+      specs=st.type==='offices'?[{v:Math.round(area/90)+'',l:'Seats'},{v:(1+h%6)+'',l:'Cabins'},{v:(2+h%10)+'',l:'Parking'},{v:(fe||['Furnished','Warm shell','Bare shell'][h%3]).split(' ')[0],l:'Fit-out'}]
+        :st.type==='retail'?[{v:(14+h%30)+' ft',l:'Frontage'},{v:(fe||['Ground floor','Upper floor','Mezzanine'][h%3]).split(' ')[0],l:'Floor'},{v:h%2?'Private':'Shared',l:'Washroom'},{v:(1+h%6)+'',l:'Parking'}]
+        :[{v:(24+h%20)+' ft',l:'Clear height'},{v:(1+h%8)+'',l:'Docks'},{v:(fe||['Up to 100 kVA','100 – 500 kVA','500 kVA+'][h%3]).replace('Up to ','≤'),l:'Power'},{v:(4+h%20)+'',l:'Parking'}];
+    }
+    const rate=rent?(st.type==='homes'?40+h%110:60+h%200):(st.type==='land'?4000+h%20000:12000+h%55000);
+    const total=area*rate;
+    out.push({title,loc:loc+', '+st.city,price:fmtINR(total)+(rent?' / mo':''),rate:'₹ '+fmtN(rate)+(rent?' per sq ft / mo':' per sq ft'),area:(st.type==='land'?'Plot: ':st.type==='industrial'?'Built-up: ':'Carpet: ')+fmtN(area)+' sq ft',
+      specs,k1:specs[0].v,k2:specs[1].v,keyline:specs[0].v+' · '+specs[1].v+' · '+fmtN(area)+' sq ft',areaShort:fmtN(area)+' sq ft',_loc:loc,realtor:REALTORS[h%REALTORS.length],updated:MONTHS[h2%MONTHS.length],badge:h%3?'Verified':'Available',slot:'lst-'+st.type+'-'+i,ph:kind+' photo',_p:total,_a:area});
+  }
+  if(st.sort==='low') out.sort((a,b)=>a._p-b._p); else if(st.sort==='high') out.sort((a,b)=>b._p-a._p); else if(st.sort==='area') out.sort((a,b)=>b._a-a._a);
+  return out;
+}
+class Component extends DCLogic {
+  state={view:'home',lf:{},sort:'latest',section:'properties',city:'Mumbai',mode:'buy',type:'homes',status:'uc',year:2026,cityOpen:null,locality:''};
+  componentDidMount(){
+    this._close=e=>{ if(this.state.cityOpen && !e.target.closest('button')) this.setState({cityOpen:null}); };
+    document.addEventListener('mousedown',this._close);
+    this._rs=()=>this.setState({w:window.innerWidth});
+    window.addEventListener('resize',this._rs); this._rs();
+  }
+  componentWillUnmount(){document.removeEventListener('mousedown',this._close);window.removeEventListener('resize',this._rs);}
+  _refreshSlots(){
+    cancelAnimationFrame(this._slotRaf);
+    this._slotRaf=requestAnimationFrame(()=>{
+      document.querySelectorAll('image-slot[data-motion]').forEach(el=>{
+        const c=el.getAttribute('credit');
+        if(c && el.getAttribute('src') && !el.hasAttribute('data-credit')) el.setAttribute('credit',c);
+      });
+    });
+  }
+  _syncMap(){
+    const el=document.getElementById('rz-map');
+    if(!el||!this._mapData){ if(this._map){this._map.remove();this._map=null;} return; }
+    if(!window.L){ clearTimeout(this._lt); this._lt=setTimeout(()=>this._syncMap(),300); return; }
+    if(this._map&&this._map.getContainer()!==el){this._map.remove();this._map=null;}
+    if(!this._map){
+      this._map=L.map(el,{scrollWheelZoom:true,zoomControl:false}); L.control.zoom({position:'bottomright'}).addTo(this._map);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(this._map);
+      this._layer=L.layerGroup().addTo(this._map); this._mk='';
+    }
+    const key=JSON.stringify(this._mapData.map(p=>[p.ll,p.label]));
+    if(key===this._mk) return; this._mk=key;
+    this._layer.clearLayers();
+    const b=[];
+    this._mapData.forEach(p=>{
+      const esc=String(p.label).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      const m=L.marker(p.ll,{icon:L.divIcon({className:'',iconSize:[0,0],html:'<div style="transform:translate(-50%,-100%);display:inline-block;white-space:nowrap;padding:7px 11px;border-radius:999px;background:#000;color:#E0E0E0;font:600 12px/1 Montserrat,sans-serif;box-shadow:0 4px 12px rgba(2,17,12,.25);cursor:pointer">'+esc+'</div>'})});
+      if(p.onClick) m.on('click',p.onClick);
+      m.addTo(this._layer); b.push(p.ll);
+    });
+    if(b.length) this._map.fitBounds(b,{padding:[60,60],maxZoom:14});
+    setTimeout(()=>this._map&&this._map.invalidateSize(),50);
+  }
+  componentDidUpdate(){ document.body.style.overflow=this._mapData?'hidden':''; this._syncMap(); this._refreshSlots(); clearTimeout(this._slotT); this._slotT=setTimeout(()=>this._refreshSlots(),600); }
+  renderVals(){
+    const __v=this._rv(); const PH={"homes":["photo-1600607687939-ce8a6c25118c","photo-1600210492486-724fe5c67fb0","photo-1586023492125-27b2c045efd7","photo-1502672260266-1c1ef2d93688","photo-1493809842364-78817add7ffb","photo-1600566753190-17f0baa2a6c3","photo-1484154218962-a197022b5858","photo-1512917774080-9991f1c4c750"],"offices":["photo-1497366216548-37526070297c","photo-1497366811353-6870744d04b2","photo-1524758631624-e2822e304c36","photo-1497215842964-222b430dc094","photo-1556761175-b413da4baf72","photo-1604328698692-f76ea9498e76"],"retail":["photo-1441986300917-64674bd600d8","photo-1567401893414-76b7b1e5a7a5","photo-1555529669-e69e7aa0ba9a","photo-1604719312566-8912e9227c6a","photo-1528698827591-e19ccd7bc23d","photo-1534452203293-494d7ddbf7e0"],"industrial":["photo-1586528116311-ad8dd3c8310d","photo-1553413077-190dd305871c","photo-1565793298595-6a879b1d9492","photo-1581091226825-a6a2a5aee158","photo-1587293852726-70cdb56c2866","photo-1504917595217-d4dc5ebe6122"],"land":["photo-1500382017468-9049fed747ef","photo-1464226184884-fa280b87c399","photo-1500076656116-558758c991c1","photo-1416879595882-3373a0480b5b","photo-1523348837708-15d4a09cfac2","photo-1501785888041-af3ef285b470"],"projects":["photo-1545324418-cc1a3fa10c00","photo-1512917774080-9991f1c4c750","photo-1600585154340-be6161a56a0c","photo-1560448204-e02f11c3d0e2","photo-1574362848149-11496d93a7c7","photo-1486406146926-c627a92ad1ab"]}; const k=this.state.section==='projects'?'projects':(this.state.type||'homes'); const list=PH[k]||PH.homes;
+    __v.rails=(__v.rails||[]).map((r,ri)=>({...r,cards:(r.cards||[]).map((c,i)=>({...c,src:'https://images.unsplash.com/'+list[(i+ri*2)%list.length]+'?fm=jpg&q=70&w=900&auto=format&fit=crop'}))}));
+    return __v;
+  }
+  _rv(){
+    if(!this._slotInit){ this._slotInit=true; setTimeout(()=>this._refreshSlots(),300); setTimeout(()=>this._refreshSlots(),1500); }
+    const s=this.state, set=o=>this.setState(('lf' in o||'type' in o||'mode' in o||'city' in o)&&!('page' in o)?{...o,page:1}:o);
+    const isProj=s.section==='projects';
+    const st=STATUS.find(x=>x.id===s.status);
+    const photo=(this.props.heroStyle ?? 'photo')==='photo';
+    const perRow=Number(this.props.projectsPerRow ?? 4);
+    const [l1,o1]=FIRST[s.type];
+    const pill=(on)=>({bg:on?'#000':'transparent',fg:on?'var(--rez-full-white)':'#000',border:on?'#000':'var(--rez-smoke)'});
+    const OTHER={list:['List Your Property.','Start Listing'],realtor:['Find Your Realtor.','Browse Realtors'],corner:['Realtor Corner.','Join Here']};
+    const other=OTHER[s.section];
+    const heroKey=other?'hero-'+s.section:isProj?'hero-'+s.status:'hero-'+s.type;
+    const all=CACHE[s.city]||(CACHE[s.city]=build(s.city));
+    const list=all.filter(p=>p.status===s.status&&(s.status!=='uc'||p.year===s.year));
+    const openL=lf=>{this.setState({view:'listings',pmode:false,section:'properties',lf,locality:''});window.scrollTo({top:0});};
+    const isL=s.view==='listings';
+    const cL=CAT[s.type], rentL=s.mode==='rent';
+    const lfDefsAll=s.pmode&&isL?PROJ_LF:LF[s.type];
+    const lfDefs=lfDefsAll.filter(d=>d[0][0]!=='$');
+    const lfv=k=>Array.isArray(s.lf[k])?s.lf[k]:[];
+    const toggleV=(k,v)=>{const cur=lfv(k);set({lf:{...s.lf,[k]:cur.includes(v)?cur.filter(x=>x!==v):[...cur,v]}});};
+    const lvG=s.lview||'list';
+    const pfS=s.pmode?(s.pf||{}):{};
+    const PFL={status:{uc:'Under Construction',rtm:'Ready to Move',nl:'New Launch'}};
+    const pfChips=Object.entries(pfS).filter(([k,v])=>v).map(([k,v])=>['pf:'+k,(PFL[k]&&PFL[k][v])||v,null]);
+    const chipList=[...pfChips,...(s.lf.loc&&lvG!=='loc'?[['loc',s.lf.loc,null]]:[]),...(s.lf.project&&s.type==='homes'&&lvG!=='proj'?[['project',s.lf.project,null]]:[]),...(s.lf.budget?[['budget',s.lf.budget,null]]:[]),...lfDefs.flatMap(([k])=>lfv(k).map(v=>[k,CHIPFMT[k]?CHIPFMT[k](v):v,v])),...(s.lf.bmin?[['bmin','Min '+s.lf.bmin,null]]:[]),...(s.lf.bmax?[['bmax','Max '+s.lf.bmax,null]]:[])];
+    const statusLabel={uc:'Under construction',rtm:'Ready to move',nl:'New launches'}[s.status];
+    return {
+      city:s.city,
+      isHome:!isL, isListings:isL, logoH:isL?18:24,
+      goHome:()=>{set({view:'home',pmode:false,section:'properties'});window.scrollTo({top:0});},
+      lstNoun:cL.noun, lstNounLower:'listings', lstIntent:rentL?'Rent':'Buy',
+      intentOpen:s.cityOpen==='intent', toggleIntent:()=>set({cityOpen:s.cityOpen==='intent'?null:'intent'}), intentLabel:rentL?'To Rent':'To Buy',
+      intentItems:[['buy','To Buy'],['rent','To Rent']].map(([id,label])=>({label,bg:s.mode===id?'var(--rez-cloud)':'transparent',weight:s.mode===id?700:500,onClick:()=>set({mode:id,cityOpen:null,lf:{...s.lf,budget:undefined,bmin:undefined,bmax:undefined}})})),
+      ptypeOpen:s.cityOpen==='ptype', togglePtype:()=>set({cityOpen:s.cityOpen==='ptype'?null:'ptype'}), ptypeLabel:cL.noun,
+      ptypeItems:TYPES.map(t=>({label:t.label,bg:s.type===t.id?'var(--rez-cloud)':'transparent',weight:s.type===t.id?700:500,onClick:()=>set({type:t.id,lf:{},cityOpen:null})})),
+      plocOpen:s.cityOpen==='ploc', togglePloc:()=>set({cityOpen:s.cityOpen==='ploc'?null:'ploc'}), plocLabel:s.lf.loc||'All locations',
+      plocItems:['All locations',...LOC[s.city]].map((l,i)=>{const on=i?s.lf.loc===l:!s.lf.loc;return {label:l,bg:on?'var(--rez-cloud)':'transparent',weight:on?700:500,onClick:()=>set({lf:{...s.lf,loc:i?l:undefined},cityOpen:null})};}),
+      lstTypeTabs:TYPES.map(t=>({label:t.label,...pill(s.type===t.id),onClick:()=>set({type:t.id,lf:{}})})),
+      modeLabel:rentL?'Rent':'Buy', modeOpen:s.cityOpen==='mode', toggleMode:()=>set({cityOpen:s.cityOpen==='mode'?null:'mode'}),
+      modeMenu:[['buy','Buy'],['rent','Rent']].map(([id,label])=>({label,bg:s.mode===id?'var(--rez-cloud)':'transparent',weight:s.mode===id?700:500,onClick:()=>set({mode:id,cityOpen:null,lf:{...s.lf,budget:undefined,bmin:undefined,bmax:undefined}})})),
+      ...(()=>{
+        const lv=(s.lview==='proj'&&s.type!=='homes')?'list':(s.lview||'list');
+        const tabs=[['list','List'],['map','Map'],['proj','Projects'],['loc','Location']];
+        const curTab=s.layout==='map'?'map':(s.lview==='proj'&&s.type!=='homes')?'list':(s.lview||'list');
+        const projAll=(CACHE[s.city]||(CACHE[s.city]=build(s.city)));
+        const pf=s.pmode?(s.pf||{}):{};
+        const proj=projAll.filter(p=>stOk(pf,p)&&(!asArr(pf.loc).length||asArr(pf.loc).includes(p.loc))&&bdOk(pf,p)&&(!asArr(pf.view).length||asArr(pf.view).includes(PVIEWS[hash(p.name)%PVIEWS.length])));
+        const n=(k,m)=>String(hash(k)%m);
+        const rFg=s.mode==='rent'?'var(--rez-mocaccino)':'#000', sFg=s.mode==='buy'?'var(--rez-mocaccino)':'#000';
+        const drilled=(lv==='loc'&&s.lf.loc)||(lv==='proj'&&s.lf.project)||'';
+        const fkey=JSON.stringify({...s.lf,loc:undefined,project:undefined})+s.mode;
+        const total=drilled?Number(20+hash(drilled+fkey)%180):lv==='loc'?LOC[s.city].length:lv==='proj'?proj.length:Number(120+hash(s.city+s.type+s.mode+JSON.stringify(s.lf))%880);
+        const ppOpts=lv==='loc'&&!drilled?[12,24,36]:[9,18,27,36];
+        const pkey=drilled?'list':lv;
+        const pp=ppOpts.includes((s.pp||{})[pkey])?s.pp[pkey]:ppOpts[0];
+        const pages=Math.max(1,Math.ceil(total/pp)), page=Math.min(s.page||1,pages), off=(page-1)*pp, cnt2=Math.max(0,Math.min(pp,total-off));
+        const goP=p=>{set({page:p});window.scrollTo({top:0,behavior:'smooth'});};
+        let nums=[];
+        if(pages<=7) nums=Array.from({length:pages},(_,i)=>i+1);
+        else { const st=Math.max(2,Math.min(page-1,pages-4)); nums=[1,...(st>2?['…']:[]),st,st+1,st+2,...(st+2<pages-1?['…']:[]),pages]; }
+        return {
+          projFilters:[['status','STATUS',[['','Any status'],['uc','Under Construction'],['rtm','Ready to Move'],['nl','New Launch']]],
+            ['budget','BUDGET',[['','Any budget'],...BUDGET_TIERS.map(([l,r])=>[l,l+' · '+r])]],
+            ['loc','LOCATION',[['','All localities'],...LOC[s.city].map(l=>[l,l])]],
+            ['view','VIEWS',[['','Any view'],...PVIEWS.map(v=>[v,v])]]].map(([k,label,opts])=>{
+              {const arr=asArr(pf[k]).map(v=>STL[v]||v);
+                const tl=label.charAt(0)+label.slice(1).toLowerCase();
+                return {label,text:arr.length===0?tl:arr.length===1?arr[0]:tl+' · '+arr.length,weight:arr.length?700:500,bg:arr.length?'var(--rez-cloud)':'#fff',border:arr.length?'#000':'var(--rez-smoke)',open:false,items:[],
+                  toggle:()=>set({cityOpen:null,msel:{k,sel:[...arr],tab:0,q:''}})};}
+              // eslint-disable-next-line no-unreachable
+              const cur=opts.find(o=>o[0]===(pf[k]||''))||opts[0];
+              return {label,text:pf[k]?cur[1].split(' · ')[0]:label.charAt(0)+label.slice(1).toLowerCase(),weight:pf[k]?700:500,bg:pf[k]?'var(--rez-cloud)':'#fff',border:pf[k]?'#000':'var(--rez-smoke)',open:s.cityOpen==='pf-'+k,toggle:()=>set({cityOpen:s.cityOpen==='pf-'+k?null:'pf-'+k}),
+                items:opts.map(([v,l])=>({label:l,bg:(pf[k]||'')===v?'var(--rez-cloud)':'transparent',weight:(pf[k]||'')===v?700:500,onClick:()=>set({pf:{...pf,[k]:v||undefined},cityOpen:null,page:1})}))};
+            }),
+          ...(()=>{const m=s.msel; if(!m) return {mselOpen:false};
+            const groups=m.k==='loc'?locGroups(s.city):m.k==='view'?VIEW_GROUPS:m.k==='status'?[['Status',Object.values(STL)]]:[['Budget',BUDGET_TIERS.map(t=>t[0])]]; const q=(m.q||'').toLowerCase();
+            const items=q?groups.flatMap(g=>g[1]).filter(x=>x.toLowerCase().includes(q)):(groups[m.tab]||groups[0])[1];
+            const tog=x=>set({msel:{...m,sel:m.sel.includes(x)?m.sel.filter(y=>y!==x):[...m.sel,x]}});
+            const draft={...pf,[m.k]:m.sel};
+            const cntP=projAll.filter(p=>stOk(draft,p)&&(!asArr(draft.loc).length||asArr(draft.loc).includes(p.loc))&&bdOk(draft,p)&&(!asArr(draft.view).length||asArr(draft.view).includes(PVIEWS[hash(p.name)%PVIEWS.length]))).length;
+            const grpAll=(groups[m.tab]||groups[0])[1], allOn=grpAll.every(x=>m.sel.includes(x));
+            return {mselOpen:true, mselTitle:{loc:'Location',view:'Views',status:'Status',budget:'Budget'}[m.k], mselQ:m.q||'', mselNoTabs:!q&&groups.length>1,
+              onMselQ:e=>set({msel:{...m,q:e.target.value}}),
+              mselTabs:groups.map(([g,xs],i)=>{const on=i===m.tab;const c=xs.filter(x=>m.sel.includes(x)).length;return {label:g+(c?' ('+c+')':''),fg:on?'#000':'var(--rez-graphite)',weight:on?700:500,bar:on?1:0,onClick:()=>set({msel:{...m,tab:i}})};}),
+              mselGroupLabel:allOn?'Clear group':'Select all in group',
+              mselGroupAll:()=>set({msel:{...m,sel:allOn?m.sel.filter(x=>!grpAll.includes(x)):[...new Set([...m.sel,...grpAll])]}}),
+              mselItems:items.map(x=>{const on=m.sel.includes(x);const br=m.k==='budget'?(BUDGET_TIERS.find(t=>t[0]===x)||[])[1]:'';return {label:br?x+' · '+br:x,onClick:()=>tog(x),boxBg:on?'#000':'#fff',boxBorder:on?'#000':'var(--rez-graphite)',chk:on?1:0};}),
+              mselApply:'Apply ('+cntP+' Projects)', mselHasSel:m.sel.length>0,
+              mselClear:()=>set({msel:{...m,sel:[]}}),
+              mselClose:()=>set({msel:null}),
+              onMselApply:()=>set({pf:{...pf,[m.k]:m.sel.length?m.sel:undefined},msel:null,page:1})};})(),
+          notPmode:!(s.pmode&&s.section==='projects'), pmodeOn:!!(s.pmode&&s.section==='projects'), isProjWide:lv==='proj'&&!drilled&&!!s.pmode&&proj.length>0, isProjGrid:lv==='proj'&&!drilled&&!s.pmode,
+          wideCols:(s.w??1280)>=1100?'300px minmax(0,1fr) 260px':(s.w??1280)>=760?'240px minmax(0,1fr)':'minmax(0,1fr)',
+          hasPf:Object.values(pf).some(v=>Array.isArray(v)?v.length:Boolean(v)), clearPf:()=>set({pf:{},page:1}), projEmpty:lv==='proj'&&!drilled&&proj.length===0,
+          perPage:String(pp), ppOptions:ppOpts.map(String), onPerPage:e=>set({pp:{...(s.pp||{}),[pkey]:Number(e.target.value)},page:1}),
+          hasPages:pages>1,
+          pageItems:nums.map(p=>p==='…'?{label:'…',bg:'transparent',fg:'var(--rez-graphite)',border:'transparent',onClick:()=>{}}:{label:String(p),bg:p===page?'#000':'#fff',fg:p===page?'var(--rez-full-white)':'#000',border:p===page?'#000':'var(--rez-smoke)',onClick:()=>goP(p)}),
+          prevPage:()=>page>1&&goP(page-1), nextPage:()=>page<pages&&goP(page+1), prevOp:page>1?1:.35, nextOp:page<pages?1:.35,
+          listings:isL&&(lv==='list'||drilled)?makeListings({...s,lf:drilled&&lv==='proj'?{...s.lf}:s.lf},cnt2,off):[],
+          viewTabs:tabs.map(([id,label])=>{const on=curTab===id;const off=id==='proj'&&s.type!=='homes';return {label,off,fg:off?'var(--rez-steel)':'#000',cursor:off?'not-allowed':'pointer',title:off?'Projects view is for Homes':'',bg:on?'#fff':'transparent',shadow:on?'var(--shadow-sm)':'none',weight:on?700:500,onClick:off?()=>{}:()=>set(id==='map'?{layout:'map',lview:'list',page:1,lf:{...s.lf,project:undefined}}:{layout:'list',lview:id,page:1,lf:{...s.lf,loc:undefined,project:undefined}})};}),
+          isDrilled:!!drilled, drillName:drilled, drillKind:lv==='loc'?'All locations':'All projects', drillTotal:String(total),
+          drillBack:()=>set({lf:{...s.lf,loc:undefined,project:undefined}}),
+          ...(()=>{
+            const map=s.layout==='map';
+            let pts=null;
+            if(isL&&map){
+              if(lv==='loc'&&!drilled) pts=LOC[s.city].map(l=>({ll:geo(l),label:l+' · '+n(s.city+s.type+l+(s.mode==='buy'?'s':'r')+fkey,120),onClick:()=>set({lf:{...s.lf,loc:l}})}));
+              else if(lv==='proj'&&!drilled) pts=proj.slice(0,12).map(p=>({ll:geo(p.loc,p.name),label:p.name,onClick:()=>set({lf:{...s.lf,project:p.name}})}));
+              else { const ppm=(()=>{const v=(s.pp||{}).list;return [9,18,27,36].includes(v)?v:9;})(); pts=makeListings(s,ppm,((s.page||1)-1)*ppm).map(p=>({ll:geo(p._loc,p.title),label:p.price})); }
+            }
+            this._mapData=pts;
+            return {isMap:map, splitCols:map?((s.w??1280)>=900?'minmax(0,1fr) 460px':'minmax(0,1fr)'):'minmax(0,1fr)', splitRows:map?'100%':'auto', splitGap:map?'0':'24px', splitAlign:map?'stretch':'start', mapPos:map?'fixed':'static', mapZ:map?'15':'auto',
+              listMaxH:map?'100%':'none', listOverflow:map?'auto':'visible', listPad:map?'20px':'0', listBorder:map?'1px solid var(--rez-smoke)':'0',
+              toListView:()=>this.setState({layout:'list'}),
+              ...(()=>{const cv=map?(s.mapCard||this.props.mapCard||'compact'):'full';
+                return {cardCompact:cv==='compact',cardPhoto:cv==='photo',cardFull:cv==='full',
+                  cardOpts:[['compact','A','Compact row'],['photo','B','Photo + key facts'],['full','C','Full card']].map(([id,label,title])=>({label,title,bg:cv===id?'#000':'transparent',fg:cv===id?'var(--rez-full-white)':'#000',onClick:()=>this.setState({mapCard:id})}))};})(),
+              gridCols:'repeat('+(map?1:((s.w??1280)>=1000?3:(s.w??1280)>=680?2:1))+',minmax(0,1fr))', locCols:'repeat('+(map?1:((s.w??1280)>=1100?4:(s.w??1280)>=800?3:(s.w??1280)>=560?2:1))+',minmax(0,1fr))',
+              layoutTabs:[['list','List','file-text'],['map','Map','map-pin']].map(([id,label,icon])=>{const on=(s.layout||'list')===id;return {label,icon,bg:on?'#000':'transparent',fg:on?'var(--rez-full-white)':'#000',onClick:()=>set({layout:id})};})};
+          })(),
+          lstPlaceholder:lv==='loc'?'Search locality':lv==='proj'?'Search project or developer':(s.type==='homes'?'Search locality, project or landmark':'Search locality or landmark'), isListView:lv==='list'||!!drilled, isLocView:lv==='loc'&&!drilled, isProjView:lv==='proj'&&!drilled, sortVis:lv==='list'||drilled?'visible':'hidden',
+          showRange:(total?off+1:0)+' – '+(off+cnt2), showTotal:String(total), showNoun:drilled?'listings in '+drilled:lv==='loc'?'localities':lv==='proj'?'projects':'listings',
+          locCards:isL&&lv==='loc'?LOC[s.city].slice(off,off+pp).map(l=>({stats:s.mode==='buy'?[{l:'Primary',v:n(s.city+s.type+l+'p'+fkey,60)},{l:'Resale',v:n(s.city+s.type+l+'s'+fkey,120)}]:[{l:'Rent',v:n(s.city+s.type+l+'r'+fkey,90)}],name:l,rent:n(s.city+s.type+l+'r'+fkey,90),sale:n(s.city+s.type+l+'s'+fkey,120),rentFg:rFg,saleFg:sFg,slot:'loc-'+hash(s.city+l),ph:l+' photo',onClick:()=>{set({lf:{...s.lf,loc:l}});window.scrollTo({top:0,behavior:'smooth'});}})):[],
+          projCards:isL&&lv==='proj'?proj.slice(off,off+pp).map(p=>{
+            const prim=p.status==='rtm'&&hash(p.name)%2?0:Number(n(p.name+'p'+fkey,25)), res=Number(n(p.name+'s'+fkey,20)), rnt=Number(n(p.name+'r'+fkey,30));
+            const base=parseFloat(p.price.replace(/[^0-9.]/g,''))*(p.price.includes('Cr')?100:1);
+            const fm=v=>v>=100?'₹'+(v/100).toFixed(v>=1000?0:1).replace(/\.0$/,'')+' Cr':'₹'+Math.round(v)+' L';
+            const stats=s.mode==='buy'?[{l:'Resale',v:String(res)},{l:'Sale range',v:fm(base*.9)+' – '+fm(base*1.8)}]
+              :[{l:'Rent',v:String(rnt)},{l:'Rent range',v:'₹'+Math.round(base/3)+'k – '+Math.round(base/1.5)+'k / mo'}];
+            const hh=hash(p.name), acres=(0.4+hh%40/10).toFixed(2), towers=1+hh%6, units=80+hh%600;
+            const amenList=['Swimming pool','Clubhouse','Gymnasium','Kids play area','Jogging track','24×7 security','Landscaped garden','EV charging'];
+            const a1=amenList[hh%8], a2=amenList[(hh+3)%8];
+            const amin=600+hh%900, amax=amin+400+hh%1400;
+            const ranges=[...(s.mode==='buy'||true?[{l:'Sale range',v:fm(base)+' – '+fm(base*1.7),sub:'₹ '+fmtN(12000+hh%50000)+' per sq ft'}]:[]),...(hh%3?[{l:'Rent range',v:'₹'+Math.round(base/3)+'k – '+Math.round(base/1.5)+'k / mo',sub:''}]:[])];
+            const poss=p.status==='uc'?'Possession '+['Mar','Jun','Sep','Dec'][hh%4]+' '+p.year:p.status==='rtm'?'Completed '+['Jan','Apr','Jul','Oct'][hh%4]+' '+(2016+hh%8):'Launch '+['Nov','Dec'][hh%2]+' 2026';
+            return {size:acres+' acres · '+towers+' towers · '+units+' units',config:p.config,amen:a1+' · '+a2+' +'+(2+hh%10),areaRange:fmtN(amin)+' – '+fmtN(amax)+' sq ft',ranges,possession:poss,
+              statusBg:p.status==='rtm'?'#2F4842':p.status==='nl'?'var(--rez-mocaccino)':'#000',statusFg:p.status==='nl'?'#000':'var(--rez-full-white)',
+              stats,statCols:String(stats.length),name:p.name,loc:p.loc,dev:p.dev,initials:p.dev.split(' ').map(w=>w[0]).join('').slice(0,2),status:{uc:'Under Construction',rtm:'Ready to Move',nl:'New Launch'}[p.status],rent:n(p.name+'r'+fkey,30),sale:n(p.name+'s'+fkey,20),rentFg:rFg,saleFg:sFg,range:p.price.replace(' onwards','+'),slot:p.slot,ph:p.name+' photo',onClick:()=>{set({lf:{...s.lf,project:p.name}});window.scrollTo({top:0,behavior:'smooth'});}};}):[]
+        };
+      })(),
+      cityOptions:CITIES, onCitySelect:e=>set({city:e.target.value,lf:{...s.lf,loc:undefined}}),
+      drawerOpen:!!s.drawer, openDrawer:()=>set({drawer:true}), closeDrawer:()=>set({drawer:false}),
+      drawerEyebrow:s.pmode?'PROJECT FILTERS':(rentL?'RENT FILTERS':'SALE FILTERS'), drawerTitle:s.pmode?'Projects in '+s.city:(rentL?'Rent ':'Buy ')+cL.noun,
+      drawerGroups:lfDefsAll.map(([k,l,o,hint])=>k[0]==='$'?{label:l,hint:'',isChips:false,isBudget:true,opts:[]}:{label:l,hint:hint||'',isChips:true,isBudget:false,opts:o.map(v=>{const on=lfv(k).includes(v);return {label:v,count:String(4+hash(s.city+s.type+s.mode+k+v)%(s.pmode?40:320)),countFg:on?'var(--rez-full-white)':'var(--rez-graphite)',bg:on?'#000':'#fff',fg:on?'var(--rez-full-white)':'#000',border:on?'#000':'var(--rez-smoke)',onClick:()=>toggleV(k,v)};})}),
+      budgetPoints:BPTS[rentL?'rent':'sale'], bmin:s.lf.bmin||'', bmax:s.lf.bmax||'',
+      onBmin:e=>set({lf:{...s.lf,bmin:e.target.value||undefined}}), onBmax:e=>set({lf:{...s.lf,bmax:e.target.value||undefined}}),
+      filterCount:String(chipList.length), hasFilterCount:chipList.length>0, filterBorder:chipList.length?'#000':'var(--rez-smoke)',
+      chips:chipList.map(([k,label,v])=>({label,onRemove:()=>k.startsWith('pf:')?set({pf:{...(s.pf||{}),[k.slice(3)]:undefined},page:1}):set({lf:{...s.lf,[k]:v==null?undefined:lfv(k).filter(x=>x!==v)}})})),
+      hasChips:chipList.length>0, clearChips:()=>set({lf:{},pf:{},page:1}),
+      lstTotal:String(120+hash(s.city+s.type+s.mode+JSON.stringify(s.lf))%880), applyLabel:'Show '+(120+hash(s.city+s.type+s.mode+JSON.stringify(s.lf))%880)+' results',
+      sort:s.sort, onSort:e=>set({sort:e.target.value}),
+      wide:(s.w ?? 1280)>=1100, narrow:(s.w ?? 1280)<1100,
+      isProperties:s.section==='properties', isProjects:isProj, hasSearch:true, noSearch:false, isList:s.section==='list', isRealtor:s.section==='realtor', isCorner:s.section==='corner',
+      realtors:['Rukmani Iyer','Arjun Mehta','Sana Qureshi','Vikram Rao','Neha Kapoor','Karan Malhotra','Ananya Desai','Rohan Pillai'].map((n,i)=>({name:n,agency:['Prime Estates','Skyline Realty','Urban Nest','Keystone Advisors'][i%4],areas:LOC[s.city].slice(i%4,i%4+2).join(' · '),slot:'realtor-'+i})), otherCta:other?other[1]:'', isUC:s.status==='uc',
+      ...(()=>{
+        const style=this.props.navStyle ?? 'underline', wide=(s.w ?? 1280)>=1100;
+        const items=[['properties','PROPERTIES'],['projects','PROJECTS'],['list','LIST PROPERTY'],['realtor','FIND REALTOR'],['corner','REALTOR CORNER']].filter((x,i)=>wide||i<2);
+        return {
+          navTrack:style==='segmented'?'var(--rez-cloud)':'transparent',
+          navPad:style==='segmented'?'4px':'0',
+          navGap:style==='segmented'?'2px':'4px', navH:style==='underline'?'48px':'38px',
+          navItems:items.map(([id,label])=>{const on=s.section===id;return {label,sep:id==='corner',
+            onClick:()=>{
+              if(id==='list'){window.location.hash='#list';return;} if(id==='realtor'){window.location.hash='#realtor';return;} if(id==='corner'){window.location.hash='#corner';return;} this.setState({section:id,view:'home',pmode:false,layout:'list',cityOpen:null});
+              window.scrollTo({top:0,behavior:'smooth'});},
+            fg:on?(style==='segmented'?'var(--rez-full-white)':'#000'):'var(--rez-graphite)',
+            bg:on&&style==='segmented'?'#000':'transparent',
+            border:on&&style==='outline'?'#000':'transparent',
+            shadow:on&&style==='segmented'?'var(--shadow-sm)':'none',
+            weight:on?700:500, dot:on&&style==='dot'?1:0, bar:on&&style==='underline'?1:0};})
+        };
+      })(),
+      menuOpen:s.cityOpen==='menu',
+      toggleMenu:()=>set({cityOpen:s.cityOpen==='menu'?null:'menu'}),
+      menuItems:[['list','LIST PROPERTY'],['realtor','FIND REALTOR'],['corner','REALTOR CORNER']].map(([id,label])=>({label,bg:s.section===id?'var(--rez-cloud)':'transparent',weight:s.section===id?700:500,onClick:()=>{set({section:id,view:'home',pmode:false,cityOpen:null});window.scrollTo({top:0,behavior:'smooth'});}})),
+      navMain:[['properties','PROPERTIES'],['projects','PROJECTS']].map(([id,label])=>{const on=s.section===id;return {label,fg:on?'var(--rez-full-white)':'var(--rez-graphite)',bg:on?'#000':'transparent',shadow:on?'var(--shadow-sm)':'none',onClick:()=>{set({section:id});window.scrollTo({top:0,behavior:'smooth'});}};}),
+      heroPhoto:photo,
+      heroBg:other?'#02110C':isProj?st.ground:'#02110C',
+      heroFg:photo||!isProj||other?'var(--rez-full-white)':st.fg,
+      heroMotion:(this.props.heroMotion ?? true)?'on':'off',
+      headline:other?other[0]:isProj?'Homes Every Stage.':'Genuine Listings Only!',
+      heroSlots:[...TYPES.map(t=>['hero-'+t.id,t.label]),['hero-uc','Under Construction'],['hero-rtm','Ready to Move'],['hero-nl','New Launches'],['hero-list','List Property'],['hero-realtor','Find Realtor'],['hero-corner','Realtor Corner']].map(([id,l])=>({id,ph:'Drop '+l+' hero photo',src:HERO_IMG[id]?HERO_IMG[id][0]:'',credit:HERO_IMG[id]?'Photo by '+HERO_IMG[id][1]+' on Unsplash':'',href:HERO_IMG[id]?HERO_IMG[id][2]:'',opacity:id===heroKey?1:0,pe:id===heroKey?'auto':'none'})),
+      headerCityOpen:s.cityOpen==='header', searchCityOpen:s.cityOpen==='search',
+      toggleHeaderCity:()=>set({cityOpen:s.cityOpen==='header'?null:'header'}),
+      toggleSearchCity:()=>set({cityOpen:s.cityOpen==='search'?null:'search'}),
+      cityItems:CITIES.map(c=>({name:c,...pill(c===s.city),bg:c===s.city?'#000':'#fff',onPick:()=>set({city:c,cityOpen:null})})),
+      modeSeg:[['buy','Buy'],['rent','Rent']].map(([id,label])=>{const on=s.mode===id;return {label,bg:on?'#fff':'transparent',shadow:on?'var(--shadow-sm)':'none',fg:on?'#000':'var(--rez-graphite)',weight:on?700:500,onClick:()=>set({mode:id,lf:{...s.lf,budget:undefined,bmin:undefined,bmax:undefined}})};}),
+      cityQ:s.cityQ||'', onCityQ:e=>set({cityQ:e.target.value}),
+      detectCity:()=>set({city:'Mumbai',cityOpen:null,cityQ:''}), resetCity:()=>set({city:'Mumbai',cityQ:''}),
+      showTopCities:!(s.cityQ||'').trim(),
+      topCities:TOP_CITIES.map(c=>{const on=c===s.city;return {name:c,bg:on?'var(--rez-cloud)':'#fff',weight:on?700:500,icBg:on?'#000':'var(--rez-cloud)',icFg:on?'var(--rez-full-white)':'#000',onPick:()=>set({city:c,cityOpen:null,cityQ:''})};}),
+      otherHead:(s.cityQ||'').trim()?'Matching Cities':'Other Cities',
+      otherCities:((q=>q?[...TOP_CITIES,...OTHER_CITIES].filter(c=>c.toLowerCase().includes(q)):OTHER_CITIES)((s.cityQ||'').trim().toLowerCase())).map(c=>({name:c,weight:c===s.city?700:400,onPick:()=>set({city:c,cityOpen:null,cityQ:''})})),
+      modeTabs:[['buy','Buy'],['rent','Rent']].map(([id,label])=>({label,bg:s.mode===id?'var(--rez-mocaccino)':'transparent',fg:'#000',onClick:()=>set({mode:id,lf:{...s.lf,budget:undefined,bmin:undefined,bmax:undefined}})})),
+      typeTabs:TYPES.map(t=>({label:t.label,...pill(s.type===t.id),border:s.type===t.id?'#000':'transparent',onClick:()=>set({type:t.id})})),
+      statusTabs:STATUS.map(x=>({label:x.label,...pill(s.status===x.id),onClick:()=>set({status:x.id})})),
+      yearTabs:YEARS.map(y=>({label:'Possession '+y,...pill(s.year===y),onClick:()=>set({year:y})})),
+      typeCards:TYPES.map(t=>({label:t.label,desc:t.desc,slot:'type-'+t.id,ph:t.label+' photo',ring:s.type===t.id?'#000':'transparent',onClick:()=>{set({type:t.id});window.scrollTo({top:0,behavior:'smooth'});}})),
+      filters:[],
+      _oldFilters:isProj?[]:[{label:l1,options:o1},{label:s.mode==='buy'?'Budget':'Rent',options:s.mode==='buy'?BUY:RENT}],
+      locality:s.locality, onLocality:e=>set({locality:e.target.value}),
+      localityPlaceholder:s.section==='list'?'Enter property address or locality':s.section==='realtor'?'Search realtor, agency or locality':s.section==='corner'?'Search guides, tools and updates':isProj?'Search project, developer or locality':(s.type==='homes'?'Search locality, project or landmark':'Search locality or landmark'),
+      onSearch:()=>{if(s.section==='projects'){this.setState({view:'listings',section:'projects',pmode:true,type:'homes',lview:'proj',layout:'list',pf:{status:s.status},lf:{},page:1});window.scrollTo({top:0});return;} if(s.section==='properties'){this.setState({view:'listings',pmode:false,lf:s.view==='listings'?s.lf:{}});window.scrollTo({top:0});return;} const el=document.getElementById('properties'); if(el) window.scrollTo({top:el.offsetTop-20,behavior:'smooth'});},
+      _allR:(this._allRails=(()=>{
+        if(isProj){
+          const second={uc:['Timeline',['2026','2027','2028','2029','2030','Beyond 2030']],rtm:['Age',['Under 1 year','1 – 3 years','3 – 5 years','5 – 10 years','10 – 20 years','20+ years']],nl:['Recency',['Pre-launch','This week','This month','Last 3 months','Last 6 months','Last 12 months']]}[s.status];
+          return [['second',second[0],second[1].map(l=>[l,''])],['budget','Budget',BUDGET_TIERS],['loc','Location',LOC[s.city].slice(0,6).map(l=>[l,''])]].map(([tab,l,opts])=>{
+            const id='rail-p-'+tab;
+            const openP=pf=>{this.setState({view:'listings',section:'projects',pmode:true,type:'homes',lview:'proj',layout:'list',pf:{status:s.status,...pf},lf:{},page:1});window.scrollTo({top:0});};
+            return {id,heading:tab==='second'&&s.status==='uc'?'Possession':'By '+l,viewAll:e=>{e.preventDefault();openP({});},cards:opts.map(([o,r])=>({onClick:()=>openP(tab==='loc'?{loc:o}:tab==='budget'?{budget:o}:{}),label:o+(r?' ('+r.replace(' or above',' & above')+')':''),count:cnt(s.city+s.status+o,600,'projects'),slot:`pcard-${s.status}-${tab}-${hash(o)}`,ph:o})),prev:()=>scrollRail(id,-1),next:()=>scrollRail(id,1)};
+          });
+        }
+        const c=CAT[s.type];
+        const kind=s.mode==='buy'?'sale':'rent', verb=s.mode==='buy'?'Buy':'Rent';
+        const DEF={loc:['Location',LOC[s.city].slice(0,6)],budget:['Budget',c[kind]],type:[s.type==='land'?'Type':'Unit Type',c.kinds],size:[s.type==='homes'?'BHK':'Size',c.size[1]],proj:['Projects',(CACHE[s.city]||(CACHE[s.city]=build(s.city))).slice(0,10).map(p=>p.name)]};
+        const KEY={loc:'loc',budget:'budget',type:'unit',size:'size',proj:'project'};
+        return RAIL_ORDER[s.type].map(tab=>{
+          const [l,opts]=DEF[tab], id='rail-'+tab;
+          return {id,heading:'By '+l,
+            viewAll:e=>{e.preventDefault();openL({});},
+            cards:opts.map(o=>({label:kind==='rent'&&tab==='budget'&&s.type==='homes'?o+' / mo':o,count:cnt(s.city+s.type+kind+o,300,'listings'),slot:'card-'+s.type+'-'+kind+'-'+tab+'-'+hash(o),ph:o,onClick:()=>openL(tab==='loc'?{loc:o}:tab==='budget'?{budget:o}:tab==='proj'?{project:o}:{[KEY[tab]]:[o]})})),
+            prev:()=>scrollRail(id,-1),next:()=>scrollRail(id,1)};
+        });
+      })()),
+      ...(()=>{
+        const all=this._allRails||[]; const ids=all.map(r=>r.id);
+        const act=ids.includes(s.railTab)?s.railTab:ids[0];
+        return {rails:all.filter(r=>r.id===act).map(r=>({...r,cards:r.cards.slice(0,6),viewAll:e=>{if(e&&e.preventDefault)e.preventDefault();r.viewAll({preventDefault(){}});}})),
+          railTabs:all.map(r=>{const on=r.id===act;return {label:r.heading.replace(/^By /,''),fg:on?'var(--rez-full-white)':'var(--rez-graphite)',hoverFg:on?'var(--rez-full-white)':'#000',bg:on?'#000':'transparent',weight:on?600:500,onClick:()=>set({railTab:r.id})};})};
+      })(),
+      showRails:s.section==='properties'||isProj,
+      railsPre:'', railsSub:isProj?'':(s.mode==='buy'?'Sale':(s.type==='homes'?'Rent':'Lease')), railsIntent:isProj?st.label:'', railsMid:isProj?'Homes':CAT[s.type].noun,
+      railsHeading:`${CAT[s.type].noun} to ${s.mode==='buy'?'Buy':'Rent'} in ${s.city}.`,
+      possCards:YEARS.map((y,i)=>({label:`Possession in '${String(y).slice(2)}`,count:cnt(s.city+'poss'+y,900,'projects'),bg:POSS_BG[i],border:s.year===y?'#000':'var(--rez-smoke)',slot:'poss-'+y,ph:'Possession '+y+' illustration',onClick:()=>{set({status:'uc',year:y});const el=document.getElementById('projects');if(el)window.scrollTo({top:el.offsetTop-20,behavior:'smooth'});}})),
+      possPrev:()=>scrollRail('rail-poss',-1), possNext:()=>scrollRail('rail-poss',1),
+      budgetEyebrow:{uc:'UNDER CONSTRUCTION',rtm:'READY TO MOVE',nl:'NEW LAUNCHES'}[s.status],
+      budgetCards:BUDGET_TIERS.map(([l,r])=>({label:l,range:r,count:cnt(s.city+s.status+l,600,'projects'),slot:'bud-'+hash(l),ph:l+' project'})),
+      budPrev:()=>scrollRail('rail-bud',-1), budNext:()=>scrollRail('rail-bud',1),
+      projHeading:s.status==='uc'?`Possession ${s.year} in ${s.city}.`:`${statusLabel} in ${s.city}.`,
+      projects:list.map(p=>({...p,badge:p.status==='uc'?'Possession '+p.year:p.status==='rtm'?'Ready to move':'New launch',tone:p.status==='nl'?'warm':p.status==='rtm'?'ink':'neutral'}))
+    };
+  }
+}
+</script>
+</body>
+</html>
