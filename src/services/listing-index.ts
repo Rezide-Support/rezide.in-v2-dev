@@ -1,11 +1,11 @@
 import { api } from "@/lib/api/client";
 import { defaultPropertyCriteria } from "@/features/search/criteria";
-import type { Intent, Property } from "@/types/models";
+import type { Intent, Property, PropertyCategory } from "@/types/models";
 import { toBackendCity } from "./locations";
 import { toListingFilters, toProperty, type BackendListingPage } from "./property-mapper";
 
 /*
- * Server only. Every live listing for one city and purpose, mapped to the UI's
+ * Server only. Every live listing for one city, purpose and category, mapped to the UI's
  * Property and kept in memory for a few minutes. The filter drawer's per-option
  * counts and the Location / Projects views are computed from it, because the
  * backend's /filter/count endpoint only returns totals. A full Mumbai sale list
@@ -21,8 +21,8 @@ const MAX_LISTINGS = 5000;
 
 const cache = new Map<string, { at: number; listings: Promise<Property[]> }>();
 
-async function loadAll(city: string, intent: Intent): Promise<Property[]> {
-  const body = toListingFilters(defaultPropertyCriteria({ city, intent, perPage: PAGE_SIZE }));
+async function loadAll(city: string, intent: Intent, category: PropertyCategory): Promise<Property[]> {
+  const body = toListingFilters(defaultPropertyCriteria({ city, intent, category, perPage: PAGE_SIZE }));
   const page = (n: number) =>
     api.post<BackendListingPage>("/inventory/Listing/mobile/all", { ...body, page: n, pageSize: PAGE_SIZE }).then((r) => r.data);
 
@@ -33,12 +33,12 @@ async function loadAll(city: string, intent: Intent): Promise<Property[]> {
   return [first, ...rest].flatMap((p) => (p.data ?? []).map(toProperty));
 }
 
-/** Every listing for the city and purpose (homes only: the backend holds nothing else). */
-export function listingIndex(city: string, intent: Intent, now = Date.now()): Promise<Property[]> {
-  const key = `${toBackendCity(city).toLowerCase()}|${intent}`;
+/** Every listing for the city, purpose and category. */
+export function listingIndex(city: string, intent: Intent, category: PropertyCategory = "homes", now = Date.now()): Promise<Property[]> {
+  const key = `${toBackendCity(city).toLowerCase()}|${intent}|${category}`;
   const hit = cache.get(key);
   if (hit && now - hit.at < TTL_MS) return hit.listings;
-  const listings = loadAll(city, intent);
+  const listings = loadAll(city, intent, category);
   cache.set(key, { at: now, listings });
   // A failed load isn't kept, so the next request tries again.
   listings.catch(() => {

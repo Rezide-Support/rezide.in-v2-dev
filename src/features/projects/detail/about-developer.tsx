@@ -77,13 +77,14 @@ export function AboutDeveloper({ project: p, stats }: { project: Project; stats?
           </div>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button asChild size="lg" className="rounded-md">
-              <Link href={projectSearchHref({ city: p.city, q: p.developer })}>Builder projects</Link>
+              <Link href={projectSearchHref({ city: p.city, q: p.developer.split(/\s+/)[0] })}>Builder projects</Link>
             </Button>
             <LeadDialog
               mode="contact"
               title={`Contact ${p.developer}`}
               description={`Ask about ${p.name}. Requests go to the developer's sales team.`}
               target={{ projectId: p.id }}
+              project={{ developerName: p.developer, projectName: p.name, location: `${p.locality}, ${p.city}`, budgetMin: p.priceFrom, budgetMax: p.priceTo }}
               recipient={`${possessive(p.developer)} sales team`}
               intents={PROJECT_INTENTS}
               submitLabel="Send request"
@@ -97,12 +98,16 @@ export function AboutDeveloper({ project: p, stats }: { project: Project; stats?
         <div className="self-start rounded-xl bg-rez-cloud p-3">
         <dl className="grid grid-cols-2 gap-2">
           <StatBox label="Operating in" value={stats?.cities.join(", ") || p.city} className="col-span-2" />
-          <StatBox label="All projects" value={stats?.total ?? 1} />
-          <StatBox label="Ready to move" value={stats?.rtm ?? 0} />
-          <StatBox label="Under const." value={stats?.uc ?? 0} />
-          <StatBox label="Newly launched" value={stats?.nl ?? 0} />
+          {/* The backend can't count a developer's projects, so counts only show when given. */}
+          {stats && (
+            <>
+              <StatBox label="All projects" value={stats.total} />
+              <StatBox label="Ready to move" value={stats.rtm} />
+              <StatBox label="Under const." value={stats.uc} />
+              <StatBox label="Newly launched" value={stats.nl} />
+            </>
+          )}
         </dl>
-        <p className="mt-2 px-1 text-[11px] text-rez-graphite">Counts cover the sample projects listed on Rezide.</p>
         </div>
       </div>
     </section>

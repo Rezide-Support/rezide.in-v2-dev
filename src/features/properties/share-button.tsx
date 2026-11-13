@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { Share2 } from "lucide-react";
 import { Icon } from "@/components/brand/icon";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +41,7 @@ export function ShareButton({
         aria-label={`Share ${title}`}
         className={className ?? "size-9 border-rez-smoke hover:border-black"}
       >
-        <Icon name="share" size={18} />
+        <Share2 size={18} strokeWidth={1.75} aria-hidden />
       </Button>
     );
   }

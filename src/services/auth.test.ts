@@ -77,13 +77,14 @@ describe("backend OTP flows", () => {
         firstname: "Asha",
         lastname: "Rao",
         email: "a@b.in",
+        password: "secret1",
       });
       return [201, { data: { _id: "u2" } }];
     });
 
     await requestOtp("9820012345", { purpose: "signup" });
     const s = await verifyOtp(
-      { phone: "9820012345", code: "1234", role: "seeker", firstName: "Asha", lastName: "Rao", email: "a@b.in" },
+      { phone: "9820012345", code: "1234", role: "seeker", firstName: "Asha", lastName: "Rao", email: "a@b.in", password: "secret1" },
       { purpose: "signup" },
     );
     expect(s.user).toMatchObject({ id: "u2", firstName: "Asha", email: "a@b.in" });
@@ -92,8 +93,15 @@ describe("backend OTP flows", () => {
   it("asks the user to sign in when sign-up returns no account id", async () => {
     backend.onGet(/\/verify\/sms\//).reply(200, {});
     backend.onPost("/user/user/add/customer").reply(201, { message: "Created" });
-    const err = await verifyOtp({ phone: "9820012345", code: "1234", role: "seeker", firstName: "A" }, { purpose: "signup" }).catch((e) => e);
+    const err = await verifyOtp({ phone: "9820012345", code: "1234", role: "seeker", firstName: "A", password: "secret1" }, { purpose: "signup" }).catch((e) => e);
     expect(err).toMatchObject({ status: 409, code: "signin_required" });
+  });
+
+  it("refuses sign-up without a password before spending the OTP", async () => {
+    const err = await verifyOtp({ phone: "9820012345", code: "1234", role: "seeker", firstName: "A" }, { purpose: "signup" }).catch((e) => e);
+    expect(err).toMatchObject({ status: 400, code: "password_required" });
+    expect(backend.history.get).toHaveLength(0);
+    expect(backend.history.post).toHaveLength(0);
   });
 
   it("only checks the number for a one-off verification", async () => {

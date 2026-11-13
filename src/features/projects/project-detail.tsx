@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Images, LayoutGrid, Mountain, Video } from "lucide-react";
-import { Icon } from "@/components/brand/icon";
-import { ErrorState, SampleBadge } from "@/components/common/feedback";
+import { ErrorState } from "@/components/common/feedback";
 import { HERO_IMAGES } from "@/content/media";
 import { PropertyCard } from "@/features/properties/property-card";
 import { Connectivity } from "@/features/properties/detail/connectivity";
-import { DetailCard, NotYetButton, SectionHeading } from "@/features/properties/detail/detail-ui";
+import { BrochureButton } from "@/features/properties/detail/brochure-button";
+import { DetailCard, SectionHeading } from "@/features/properties/detail/detail-ui";
 import { MediaGallery } from "@/features/properties/detail/media-gallery";
 import { Rail } from "@/features/properties/detail/rail";
 import { SaveActions } from "@/features/properties/detail/save-actions";
@@ -50,7 +50,6 @@ export function ProjectDetailView({ id }: { id: string }) {
             <h1 className="text-2xl leading-tight font-semibold tracking-[-0.01em] sm:text-[28px]">{p.name}</h1>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-rez-graphite sm:text-base">
               {p.locality}, {p.city}
-              <SampleBadge>Sample project</SampleBadge>
             </p>
           </header>
           <SaveActions kind="project" id={p.id} title={p.name} path={path} className="-ml-3 lg:ml-0 lg:justify-end lg:self-end" />
@@ -83,9 +82,7 @@ export function ProjectDetailView({ id }: { id: string }) {
               ))}
             </ul>
             <div className="mt-auto border-t border-rez-smoke pt-4">
-              <NotYetButton variant="outline" className="w-full rounded-md" message="Brochures aren't available in this prototype yet.">
-                <Icon name="file-download" size={16} /> Brochure
-              </NotYetButton>
+              <BrochureButton variant="outline" className="w-full rounded-md" url={p.brochureUrl} path={path} />
             </div>
           </DetailCard>
         </div>
@@ -102,14 +99,15 @@ export function ProjectDetailView({ id }: { id: string }) {
               locality={p.locality}
               coords={p.coords}
               groups={p.landmarks}
-              photo={HERO_IMAGES[p.status].src}
+              photo={p.localityPhoto ?? HERO_IMAGES[p.status].src}
+              live
               exploreHref={projectSearchHref({ city: p.city, localities: [p.locality] })}
             />
           </section>
 
           <div className="flex flex-col gap-10">
             <ReraDetails project={p} />
-            <Transactions title={p.name} path={path} toggle />
+            <Transactions title={p.name} path={path} projectId={p.id} toggle />
           </div>
 
           <AboutDeveloper project={p} stats={developer} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Icon } from "@/components/brand/icon";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -91,7 +92,7 @@ export function CredentialDialog({ credential, onClose }: { credential: Credenti
 }
 
 /** Credential pills that open the "why it matters" dialog. */
-export function CredentialPills({ credentials, size = "sm" }: { credentials: CredentialKey[]; size?: "sm" | "md" }) {
+export function CredentialPills({ credentials, size = "sm", markSrc }: { credentials: CredentialKey[]; size?: "sm" | "md"; markSrc?: string }) {
   const [open, setOpen] = useState<CredentialKey | null>(null);
   return (
     <>
@@ -112,9 +113,9 @@ export function CredentialPills({ credentials, size = "sm" }: { credentials: Cre
                 size === "sm" ? "h-7 text-xs" : "h-9 text-[13px]",
               )}
             >
-              <span className="flex size-5 items-center justify-center rounded-full bg-[#1f7a4d] text-white">
+                {markSrc ? <Image src={markSrc} width={20} height={20} alt="" /> : <span className="flex size-5 items-center justify-center rounded-full bg-[#1f7a4d] text-white">
                 <Icon name="check" size={12} />
-              </span>
+                </span>}
               {c}
             </button>
           </li>

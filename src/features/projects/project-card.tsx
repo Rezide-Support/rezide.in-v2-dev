@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Icon } from "@/components/brand/icon";
 import { CoverImage } from "@/components/common/cover-image";
-import { SampleBadge } from "@/components/common/feedback";
 import { PROJECT_STATUS_LABEL } from "@/lib/constants";
 import { formatNumber, formatPrice, initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -20,11 +19,10 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
     <article className="relative flex flex-col overflow-hidden rounded-xl border border-rez-smoke bg-white transition-shadow hover:shadow-rez-md">
       <div className="grid grid-cols-1 gap-6 p-5 md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_260px]">
         <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-rez-cloud">
-          <CoverImage src={p.images[0]} alt={`${p.name} (sample image)`} sizes="(min-width: 1280px) 300px, (min-width: 768px) 240px, 100vw" priority={priority} />
+          <CoverImage src={p.images[0]} alt={p.name} sizes="(min-width: 1280px) 300px, (min-width: 768px) 240px, 100vw" priority={priority} />
           <span className="absolute top-3 left-3 flex size-11 items-center justify-center rounded-full bg-white text-[13px] font-bold">
             {initials(p.developer)}
           </span>
-          <SampleBadge className="absolute top-3 right-3">Sample</SampleBadge>
         </div>
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex items-start justify-between gap-3">
@@ -44,7 +42,7 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
           </div>
           <dl className="flex flex-col">
             {[
-              ["Project size", `${p.acres} acres · ${p.towers} towers · ${formatNumber(p.units)} units`],
+              ["Project size", [p.acres ? `${p.acres} acres` : "", p.towers ? `${p.towers} towers` : "", p.units ? `${formatNumber(p.units)} units` : ""].filter(Boolean).join(" · ") || "Not provided"],
               ["Configurations", p.configurations],
               ["Amenities", p.amenities.slice(0, 2).join(" · ") + (p.amenities.length > 2 ? ` +${p.amenities.length - 2}` : "")],
             ].map(([k, v]) => (
@@ -59,15 +57,15 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-rez-graphite">Area range</span>
             <span className="text-[17px] font-bold">
-              {formatNumber(p.areaMin)} – {formatNumber(p.areaMax)} sq ft
+              {p.areaMin ? `${formatNumber(p.areaMin)} – ${formatNumber(p.areaMax)} sq ft` : "Not provided"}
             </span>
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-rez-graphite">Price range</span>
             <span className="text-[17px] font-bold">
-              {formatPrice(p.priceFrom, { compact: true })} – {formatPrice(p.priceTo, { compact: true })}
+              {p.priceFrom ? `${formatPrice(p.priceFrom, { compact: true })} – ${formatPrice(p.priceTo, { compact: true })}` : "Price on request"}
             </span>
-            <span className="text-xs text-rez-graphite">₹ {formatNumber(p.ratePerSqft)} per sq ft</span>
+            {p.ratePerSqft > 0 && <span className="text-xs text-rez-graphite">₹ {formatNumber(p.ratePerSqft)} per sq ft</span>}
           </div>
           <Link
             href={propertySearchHref({ city: p.city, view: "proj", projects: [p.id] })}
@@ -87,7 +85,7 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
             {p.possessionLabel}
           </span>
           <span className="flex items-center gap-1.5 text-[13px] font-semibold">
-            <Icon name="shield-check" size={16} /> RERA {p.reraId} (sample)
+            <Icon name="shield-check" size={16} /> {p.reraId ? `RERA ${p.reraId}` : "RERA not provided"}
           </span>
         </div>
         <Link

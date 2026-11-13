@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, Download, House, LayoutGrid, Phone } from "lucide-react";
+import { Building2, House, LayoutGrid, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShareButton } from "@/features/properties/share-button";
-import { Chip, NotYetButton } from "@/features/properties/detail/detail-ui";
+import { BrochureButton } from "@/features/properties/detail/brochure-button";
+import { Chip } from "@/features/properties/detail/detail-ui";
 import { formatAreaRange, formatPriceRange, formatRupees } from "@/features/properties/detail/format";
 import { LeadDialog } from "@/features/properties/detail/lead-dialog";
 import { PROJECT_INTENTS } from "@/features/properties/detail/lead-form";
@@ -36,7 +37,7 @@ export function ProjectWideCard({ project: p }: { project: Project }) {
     <article className="flex h-full flex-col overflow-hidden rounded-xl border border-rez-smoke bg-white">
       <div className="grid grid-cols-1 flex-1 gap-5 p-4 md:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_200px]">
         <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-rez-cloud md:aspect-auto md:min-h-[240px]">
-          <Image src={p.images[0]} alt={`${p.name} (sample image)`} fill sizes="(min-width: 768px) 300px, 100vw" quality={70} className="object-cover" />
+          <Image src={p.images[0]} alt={p.name} fill sizes="(min-width: 768px) 300px, 100vw" quality={70} className="object-cover" />
         </div>
         <div className="flex min-w-0 flex-col">
           <div className="flex items-start justify-between gap-3">
@@ -92,14 +93,13 @@ export function ProjectWideCard({ project: p }: { project: Project }) {
           <Chip tone="outline">{p.possessionLabel}</Chip>
         </div>
         <div className="flex gap-2">
-          <NotYetButton variant="outline" size="sm" className="rounded-md" message="Brochures aren't available in this prototype yet.">
-            <Download className="size-4" aria-hidden /> Brochure
-          </NotYetButton>
+          <BrochureButton variant="outline" size="sm" className="rounded-md" url={p.brochureUrl} path={`/projects/${p.id}`} />
           <LeadDialog
             mode="contact"
             title={`Enquire about ${p.name}`}
             description={`${p.developer} · ${p.locality}, ${p.city}`}
             target={{ projectId: p.id }}
+            project={{ developerName: p.developer, projectName: p.name, location: `${p.locality}, ${p.city}`, budgetMin: p.priceFrom, budgetMax: p.priceTo }}
             recipient={`${possessive(p.developer)} sales team`}
             intents={PROJECT_INTENTS}
             submitLabel="Send request"

@@ -17,7 +17,7 @@ export const SPATIAL_API_URL = (process.env.NEXT_PUBLIC_SPATIAL_API_URL || "http
   .replace(/\/+$/, "");
 
 /** H3 + Supercluster below zoom 13, Supercluster above (GeoEstate's default "ALGORITHM_1"). */
-const ENDPOINT = "/v1/locations/search-hybrid";
+const ENDPOINT = "/v1/locations/search";
 export const MAX_MAP_ZOOM = 18;
 /** The service groups up to zoom 24, past what map tiles allow: the deepest map zoom asks for its deepest split. */
 const MAX_API_ZOOM = 24;

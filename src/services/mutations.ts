@@ -38,6 +38,40 @@ export async function sendListingEnquiry({ name, phone, firmId, brokerId, listin
   return data;
 }
 
+/** An enquiry about a project, as rezide.in's project contact card sends it. It goes to the Rezide team. Never mocked. */
+export type ProjectEnquiry = {
+  name: string;
+  /** 10-digit mobile number. */
+  phone: string;
+  email?: string;
+  /** What they asked for: the form's option. */
+  intent: string;
+  developerName: string;
+  projectName: string;
+  location: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  pageUrl: string;
+};
+
+export async function sendProjectEnquiry({ name, phone, email, intent, developerName, projectName, location, budgetMin, budgetMax, pageUrl }: ProjectEnquiry) {
+  await api.post("/lead/developer-contact", {
+    name,
+    mobile: phone,
+    email: email ?? "",
+    developerName,
+    projectName,
+    location,
+    budgetMin: budgetMin || "",
+    budgetMax: budgetMax || "",
+    siteVisitInterest: /visit/i.test(intent),
+    homeLoanInterest: false,
+    message: intent,
+    pageUrl,
+    source: "Rezide.in contact widget",
+  });
+}
+
 /** An enquiry to a realtor firm, as rezide.in's realtor pages send it. It goes to the firm, so it is never mocked. */
 export type RealtorEnquiry = { firmId: string; firstName: string; lastName: string; phone: string; email?: string };
 

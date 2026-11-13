@@ -21,11 +21,11 @@ describe("searchMap", () => {
   });
   afterEach(() => fetchMock.mockRestore());
 
-  it("calls /search-hybrid straight from the browser with a padded, grid-snapped bbox, and keeps only the view", async () => {
+  it("calls /search straight from the browser with a padded, grid-snapped bbox, and keeps only the view", async () => {
     const result = await searchMap(view);
     expect(fetchMock).toHaveBeenCalledOnce();
     const url = new URL(String(fetchMock.mock.calls[0][0]));
-    expect(`${url.origin}${url.pathname}`).toBe(`${SPATIAL_API_URL}/v1/locations/search-hybrid`);
+    expect(`${url.origin}${url.pathname}`).toBe(`${SPATIAL_API_URL}/v1/locations/search`);
     expect(Object.fromEntries(url.searchParams)).toMatchObject({ zoom: "14", radius: "64", limit: "5000" });
     const sent = url.searchParams.get("bbox")!.split(",").map(Number) as BBox;
     expect(containsBbox(sent, view.bbox)).toBe(true);

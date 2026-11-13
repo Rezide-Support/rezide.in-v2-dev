@@ -10,7 +10,10 @@ import type {
   Realtor,
   RealtorSearchCriteria,
 } from "@/types/models";
+import { getProjectDetail, getProjectsByIds, searchProjects } from "./projects";
 import { getFirmAgentDetail, getFirmDetail, getRealtorDetail, searchRealtors } from "./realtors";
+
+const isServer = typeof window === "undefined";
 
 /* Read-only catalogue endpoints: properties, projects, realtors and firms. */
 
@@ -85,15 +88,26 @@ export async function fetchPropertyStats({ city, intent, category }: PropertySta
   return data;
 }
 
+/** Projects: on the server they call the backend; in the browser they go through this app's /api routes. */
 export async function fetchProjects(criteria: ProjectSearchCriteria) {
-  const { data } = await api.get<Paginated<Project>>("/projects", {
+  if (isServer) return searchProjects(criteria);
+  const { data } = await api.get<Paginated<Project>>("/api/projects", {
+    baseURL: "",
     params: toParams(serializeProjectCriteria(criteria)),
   });
   return data;
 }
 
+/** Specific projects by id, for the listings' Projects view. */
+export async function fetchProjectsByIds(ids: string[], city: string) {
+  if (isServer) return getProjectsByIds(ids, city);
+  const { data } = await api.get<Paginated<Project>>("/api/projects", { baseURL: "", params: { ids, city } });
+  return data;
+}
+
 export async function fetchProject(id: string) {
-  const { data } = await api.get<ProjectDetail>(`/projects/${encodeURIComponent(id)}`);
+  if (isServer) return getProjectDetail(id);
+  const { data } = await api.get<ProjectDetail>(`/api/projects/${encodeURIComponent(id)}`, { baseURL: "" });
   return data;
 }
 
@@ -104,8 +118,6 @@ export async function fetchProjectStats(city: string, status?: string) {
 
 /** Realtor directory page size; the finder shows a single page. */
 export const REALTORS_PER_PAGE = 50;
-
-const isServer = typeof window === "undefined";
 
 /** Realtors and firms: on the server they call the backend; in the browser they go through this app's /api routes, as private fields must not reach it. */
 export async function fetchRealtors(c: RealtorSearchCriteria, page = 1, perPage = REALTORS_PER_PAGE) {

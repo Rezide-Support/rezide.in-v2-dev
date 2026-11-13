@@ -33,7 +33,7 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
 const possessionShort = (p: Project) => p.possessionLabel.replace(/^(Possession|Completed|Launch)\s+/i, "");
 
 export function ProjectSummary({ project: p }: { project: Project }) {
-  const yieldPct = p.rentFrom ? ((p.rentFrom * 12) / p.priceFrom) * 100 : undefined;
+  const yieldPct = p.rentFrom && p.priceFrom ? ((p.rentFrom * 12) / p.priceFrom) * 100 : undefined;
   return (
     <section aria-labelledby="summary-heading" className="flex flex-col gap-6 sm:gap-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -178,14 +178,14 @@ export function ReraDetails({ project: p }: { project: Project }) {
       <SectionHeading id="rera-heading">Project RERA details</SectionHeading>
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-rez-smoke px-4 py-3">
         <div className="flex items-center gap-4">
-          {/* No QR is shown: the number is a placeholder and must not look scannable. */}
+          {/* No QR: the backend's RERA records aren't mapped here yet. */}
           <span aria-hidden className="flex size-14 items-center justify-center rounded-md border border-dashed border-rez-steel text-rez-steel">
             <QrCode className="size-8" strokeWidth={1.25} />
           </span>
           <div>
             <p className="text-[15px] font-semibold">{p.reraId}</p>
             <p className="text-[15px] text-rez-graphite">{p.name}</p>
-            <p className="text-xs text-rez-graphite">Placeholder number, not a verified registration.</p>
+            <p className="text-xs text-rez-graphite">As provided by the developer.</p>
           </div>
         </div>
         <NotYetButton variant="ghost" className="font-semibold tracking-[0.04em] text-[#2a5bd7] uppercase" message="RERA verification isn't connected in this prototype, so there are no registration details to show.">

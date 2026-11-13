@@ -36,13 +36,13 @@ export function ToggleChip({
 }
 
 /** Removable filter chip. */
-export function RemovableChip({ children, onRemove, label }: { children: ReactNode; onRemove: () => void; label: string }) {
+export function RemovableChip({ children, onRemove, label, className }: { children: ReactNode; onRemove: () => void; label: string; className?: string }) {
   return (
     <button
       type="button"
       onClick={onRemove}
       aria-label={`Remove filter: ${label}`}
-      className="inline-flex h-8 items-center gap-2 rounded-full border border-black bg-white pr-2.5 pl-3.5 text-[13px] font-medium hover:bg-black/[0.06]"
+      className={cn("inline-flex h-8 items-center gap-2 rounded-full border border-black bg-white pr-2.5 pl-3.5 text-[13px] font-medium hover:bg-black/[0.06]", className)}
     >
       <span>{children}</span>
       <Icon name="x" size={12} />

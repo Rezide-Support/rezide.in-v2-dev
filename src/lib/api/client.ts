@@ -11,11 +11,11 @@ import { API_DOMAINS, isDomainMocked, parseMockingSetting, type ApiDomain, type 
  * fixtures (src/mocks) until NEXT_PUBLIC_API_MOCKING turns them off (see ./mocking.ts).
  */
 
-/** The Rezide backend, as rezide.in uses it. next.config.ts proxies /v1/admin here. */
+/** The Rezide backend. */
 export const REZIDE_API_URL = "https://api.rezide.in/v1/admin";
 
-/** Browser base URL. Same-origin by default, through the next.config.ts proxy, so no CORS is involved. */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/v1/admin";
+/** Browser base URL. The browser calls the backend directly, which allows any origin (CORS). */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || REZIDE_API_URL;
 
 /**
  * Base URL for requests made on the server (detail-page prefetch, metadata).

@@ -2,6 +2,7 @@ import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import {
   fetchProject,
   fetchProjects,
+  fetchProjectsByIds,
   fetchFirm,
   fetchFirmAgent,
   fetchRealtor,
@@ -9,6 +10,7 @@ import {
   type PropertyGroupBy,
 } from "@/services/catalog";
 import { offerRow, visitRow } from "@/features/account/presenters";
+import type { MapArea } from "@/features/search/match";
 import { fetchOffers, fetchOwnerListings, fetchVisits } from "@/services/account";
 import { fetchActivity, fetchShortlistIds, type ActivityUser } from "@/services/activity";
 import { fetchUser } from "@/services/auth";
@@ -45,6 +47,7 @@ import type {
   Intent,
   ProjectStatus,
   ProjectSearchCriteria,
+  PropertyCategory,
   PropertySearchCriteria,
   RealtorSearchCriteria,
 } from "@/types/models";
@@ -85,11 +88,12 @@ export const locationQueries = {
 };
 
 export const propertyQueries = {
-  search: (c: PropertySearchCriteria) =>
+  /** `area`: only the listings in that part of the map. */
+  search: (c: PropertySearchCriteria, area?: MapArea) =>
     queryOptions({
       // View mode does not change results, so it is not part of the key.
-      queryKey: ["properties", "search", { ...c, view: undefined }] as const,
-      queryFn: () => fetchProperties(c),
+      queryKey: ["properties", "search", { ...c, view: undefined }, area ?? null] as const,
+      queryFn: () => fetchProperties(c, area),
       staleTime: CATALOG_STALE,
       placeholderData: keepPreviousData,
     }),
@@ -126,8 +130,8 @@ export const localityQueries = {
 
 /** Home page rails from the Rezide backend (never mocked). */
 export const homeQueries = {
-  properties: (intent: Intent) =>
-    queryOptions({ queryKey: ["home", "properties", intent] as const, queryFn: () => fetchPropertyHome(intent), staleTime: CATALOG_STALE }),
+  properties: (intent: Intent, city: string, category: PropertyCategory) =>
+    queryOptions({ queryKey: ["home", "properties", intent, city, category] as const, queryFn: () => fetchPropertyHome(intent, city, category), staleTime: CATALOG_STALE }),
   projects: (city: string, status: ProjectStatus) =>
     queryOptions({ queryKey: ["home", "projects", city, status] as const, queryFn: () => fetchProjectHome(city, status), staleTime: CATALOG_STALE }),
 };
@@ -137,6 +141,13 @@ export const projectQueries = {
     queryOptions({
       queryKey: ["projects", "search", c] as const,
       queryFn: () => fetchProjects(c),
+      staleTime: CATALOG_STALE,
+      placeholderData: keepPreviousData,
+    }),
+  byIds: (ids: string[], city: string) =>
+    queryOptions({
+      queryKey: ["projects", "by-ids", city, ids] as const,
+      queryFn: () => fetchProjectsByIds(ids, city),
       staleTime: CATALOG_STALE,
       placeholderData: keepPreviousData,
     }),

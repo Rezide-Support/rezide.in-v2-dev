@@ -1,7 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type LinkTab = { href: string; label: string; active: boolean };
+export type LinkTab = { href: string; label: ReactNode; active: boolean };
 
 type LinkTabsProps = {
   /** Accessible name of the tab set, e.g. "Property type". */

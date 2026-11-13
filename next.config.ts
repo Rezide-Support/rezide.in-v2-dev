@@ -24,8 +24,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  // Same-origin proxy to the Rezide backend (as rezide.in does), so the browser makes no cross-origin calls.
-  // /v1/admin is the API client's default base URL (src/lib/api/client.ts).
+  // Only for an environment that still sets NEXT_PUBLIC_API_BASE_URL=/v1/admin. The default calls the backend directly.
   async rewrites() {
     return [{ source: "/v1/admin/:path*", destination: "https://api.rezide.in/v1/admin/:path*" }];
   },
@@ -52,10 +51,14 @@ const nextConfig: NextConfig = {
     // when listing media moves to the production CDN.
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "api.rezide.in", pathname: "/v1/admin/file/upload/**" },
       // Listing and project photos from the Rezide backend.
       { protocol: "https", hostname: "cdn.rezide.in", pathname: "/images/**" },
     ],
     qualities: [70, 75],
+    // Some networks (NAT64) resolve cdn.rezide.in to an address Next treats as private, and every photo answers 400.
+    // Local development only: production keeps this SSRF protection.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
   },
 };
 

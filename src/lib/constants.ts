@@ -84,10 +84,11 @@ export const categoryById = (id: PropertyCategory) =>
 
 export const UNIT_TYPES: Record<PropertyCategory, string[]> = {
   homes: ["Apartment", "Villa", "Independent House", "Penthouse", "Duplex", "Studio", "Independent Floor", "Row House"],
-  offices: ["Grade A office", "Co-working", "IT park", "Business centre", "Office floor"],
-  retail: ["High-street shop", "Mall unit", "Showroom", "Food & beverage", "Kiosk"],
+  // As the backend names them.
+  offices: ["Independent Office"],
+  retail: ["Shop", "Showroom"],
   industrial: ["Warehouse", "Factory", "Industrial shed", "Cold storage", "Logistics park"],
-  land: ["Residential plot", "Commercial plot", "Industrial plot", "Farmhouse land", "Agricultural land"],
+  land: ["Residential Plot", "Commercial Plot", "Industrial Plot", "Farmhouse Land", "Agricultural Land"],
 };
 
 export const BHK_OPTIONS = ["1 BHK", "2 BHK", "3 BHK", "4 BHK", "5+ BHK"];

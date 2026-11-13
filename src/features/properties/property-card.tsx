@@ -1,120 +1,85 @@
+"use client";
+
 import Link from "next/link";
-import { Icon } from "@/components/brand/icon";
+import { Bath, BedDouble, Building2, Car, Phone, Sofa, Store } from "lucide-react";
 import { CoverImage } from "@/components/common/cover-image";
 import { SampleBadge } from "@/components/common/feedback";
-import { formatArea, formatDate, formatPrice, formatRate } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { formatArea, formatDate, formatPrice, formatRate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/types/models";
+import { Viewer } from "./detail/media-gallery";
+import { SaveIconButton } from "./detail/save-actions";
+import { ShareButton } from "./share-button";
+import { BrochureButton } from "./detail/brochure-button";
+import { ListingWhatsAppButton } from "./detail/agent-card";
+import { LeadDialog } from "./detail/lead-dialog";
+import { PROPERTY_INTENTS } from "./detail/lead-form";
 
 export const propertyHref = (p: Pick<Property, "id">) => `/properties/${p.id}`;
-
-/** The headline price, or "Price on request" when the owner withholds it (as rezide.in shows it). */
 export const priceLabel = (p: Property) =>
   p.priceHidden ? "Price on request" : formatPrice(p.price, { monthly: p.intent === "rent" });
 
-/** Verification is illustrative in this build; the badge says so. */
-function VerificationPill({ property, small }: { property: Property; small?: boolean }) {
-  const verified = property.verification === "verified";
-  return (
-    <span
-      className={cn(
-        "pointer-events-none absolute top-3 left-3 flex items-center gap-1.5 rounded-full font-semibold",
-        small ? "h-[26px] px-2.5 text-[11px]" : "h-7 px-3 text-xs",
-        verified ? "bg-black text-rez-full-white" : "bg-white text-black",
-      )}
-    >
-      <Icon name={verified ? "shield-check" : "clock"} size={small ? 13 : 14} />
-      {verified ? "Verified (sample)" : "Verification pending"}
-    </span>
-  );
+export function availabilityLabel(p: Pick<Property, "availability" | "availableFrom">, now = Date.now()) {
+  const status = p.availability?.trim();
+  if (!status) return "Availability not provided";
+  if (status.toLowerCase() === "available" && p.availableFrom && Date.parse(p.availableFrom) > now) return `Available: ${formatDate(p.availableFrom)}`;
+  return status;
 }
 
-/** Full card: the prototype's default list card (variant "C"). */
-export function PropertyCard({
-  property: p,
-  priority,
-  layout = "stack",
-}: {
-  property: Property;
-  priority?: boolean;
-  /** "row": photo left, details right from the md breakpoint (account lists in the prototype). */
-  layout?: "stack" | "row";
-}) {
-  const rent = p.intent === "rent";
-  return (
-    <article
-      className={cn(
-        "group relative flex w-full min-w-0 flex-col overflow-hidden rounded-[20px] border border-rez-smoke bg-white transition-shadow duration-200 ease-rez hover:shadow-rez-md",
-        layout === "row" && "md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]",
-      )}
-    >
-      <div className={cn("relative aspect-[4/3] bg-rez-cloud", layout === "row" && "md:aspect-auto md:min-h-[290px]")}>
-        <CoverImage
-          src={p.images[0]}
-          alt={`${p.title}, ${p.locality}`}
-          sizes="(min-width: 1000px) 400px, (min-width: 680px) 50vw, 100vw"
-          priority={priority}
-        />
-        <VerificationPill property={p} />
-        <SampleBadge className="absolute top-3 right-3">Sample</SampleBadge>
+/** Shared by compact map cards; display the real availability, not prototype verification. */
+function VerificationPill({ property, small }: { property: Property; small?: boolean }) {
+  return <span className={cn("pointer-events-none absolute top-3 left-3 max-w-[calc(100%-24px)] rounded-[4px] bg-black px-3 py-1 text-xs font-semibold text-white", small && "text-[11px]")}>{availabilityLabel(property)}</span>;
+}
+
+/** Existing shared property card, restyled to match the Rezide listing card. */
+export function PropertyCard({ property: p, priority, layout = "stack" }: { property: Property; priority?: boolean; layout?: "stack" | "row" }) {
+  const rent = p.intent === "rent", path = propertyHref(p);
+  const realListing = /^[a-f0-9]{24}$/i.test(p.id);
+  const canContact = !!p.realtorId && !!p.realtorFirmId;
+  const photos = p.images.slice(0, 5);
+  const office = p.category === "offices" || /office/i.test(p.unitType || p.specs[0]?.value || "");
+  const retail = p.category === "retail" || /shop|showroom/i.test(p.unitType || p.specs[0]?.value || "");
+  const features = [
+    { Icon: retail ? Store : office ? Building2 : BedDouble, label: retail ? "Retail type" : office ? "Office type" : "Bedrooms", value: office || retail ? p.specs[0]?.value || p.unitType || "Not provided" : p.bhk ? `${p.bhk} BHK` : p.specs[0]?.value || p.unitType || "Not provided" },
+    { Icon: Bath, label: "Bathrooms", value: p.bathrooms !== undefined ? `${p.bathrooms} Baths` : "Not provided" },
+    { Icon: Car, label: "Parking", value: p.parking !== undefined ? `${p.parking} Parks` : "Not provided" },
+    { Icon: Sofa, label: "Furnishing", value: p.furnishing || p.specs.find(spec => spec.label === "Furnishing")?.value || "Not provided" },
+  ];
+  return <article className={cn("group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-rez-smoke bg-white shadow-[0_1px_3px_#0000001f]", layout === "row" && "md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]")}>
+    <div className={cn("relative aspect-[16/9] shrink-0 bg-rez-cloud", layout === "row" && "md:aspect-auto md:min-h-[290px]")}>
+      <Viewer key={p.id} images={photos} label={p.title} cardHref={path} priority={priority} />
+      <span className="pointer-events-none absolute top-5 left-3 max-w-[calc(100%-132px)] rounded-[4px] bg-black px-3 py-1 text-[11px] font-semibold text-white sm:text-xs">{availabilityLabel(p)}</span>
+      <div className="absolute top-5 right-3 flex gap-2">
+        <SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-7 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
+        <SaveIconButton list="compare" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-7 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
+        <ShareButton title={p.title} path={path} iconOnly className="size-7 rounded-full border-0 bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
       </div>
-      <div className="flex flex-1 flex-col gap-4 px-[22px] pt-5 pb-[22px]">
-        <div className="flex flex-col gap-1">
-          <h3 className="text-[19px] leading-tight font-semibold tracking-[-0.01em]">
-            <Link href={propertyHref(p)} className="after:absolute after:inset-0 after:z-0 focus-visible:outline-none">
-              {p.title}
-            </Link>
-          </h3>
-          <span className="text-sm text-rez-graphite">
-            {p.locality}, {p.city}
-          </span>
+      {p.photoSource && p.photoSource !== "listing" && p.photoSource !== "placeholder" && <SampleBadge className="pointer-events-none absolute right-3 bottom-3">{p.photoSource === "sample-flat" ? "Sample" : "Project photo"}</SampleBadge>}
+    </div>
+    <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-3 px-4 pt-3 pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0"><h3 className="text-[16px] leading-tight font-semibold [overflow-wrap:anywhere] sm:text-[17px]"><Link href={path} className="hover:underline">{p.title || "Property listing"}</Link></h3><p className="mt-1 text-[13px] leading-snug text-rez-graphite">{p.locationLabel || [p.locality, p.city].filter(Boolean).join(", ") || "Location not provided"}</p></div>
+          <BrochureButton url={p.brochureUrl} listingId={realListing ? p.id : undefined} path={path} iconOnly variant="outline" size="icon" className="size-9 shrink-0 rounded-full border-rez-smoke text-rez-graphite shadow-sm" />
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-2xl leading-none font-bold tracking-[-0.01em]">{priceLabel(p)}</span>
-            <span className="text-[13px] text-rez-graphite">{p.priceHidden ? "" : formatRate(p.price, p.areaSqft, rent)}</span>
-          </div>
-          <span className="rounded-lg bg-rez-cloud px-2.5 py-[7px] text-[13px] font-semibold whitespace-nowrap">
-            {p.areaBasis}: {formatArea(p.areaSqft)}
-          </span>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div><p className="text-[20px] leading-tight font-semibold">{priceLabel(p)}</p>{!p.priceHidden && p.price > 0 && <p className="mt-1 text-xs text-rez-graphite">{p.ratePerSqft ? `₹ ${formatNumber(p.ratePerSqft)} per sqft` : formatRate(p.price, p.areaSqft, rent)}</p>}</div>
+          <span className="rounded-[6px] bg-[#f4f4f6] px-2 py-1.5 text-[13px] whitespace-nowrap">{p.areaBasis}: {p.areaSqft ? `${formatNumber(p.areaSqft)} sqft` : "Not provided"}</span>
         </div>
-        <dl className="grid grid-cols-4 gap-1 rounded-2xl bg-rez-cloud px-2 py-3.5">
-          {p.specs.slice(0, 4).map((s) => (
-            <div key={s.label} className="flex min-w-0 flex-col-reverse items-center gap-1 text-center">
-              <dt className="max-w-full truncate text-[11px] leading-tight text-rez-graphite" title={s.label}>{s.label}</dt>
-              <dd className="truncate text-sm leading-tight font-semibold">{s.value}</dd>
-            </div>
-          ))}
+        <dl className="grid grid-cols-4 gap-1 rounded-[8px] bg-[#f4f4f6] px-2 py-2.5">
+          {features.map(feature => <div key={feature.label} className="flex min-w-0 flex-col items-center gap-1 text-center"><dt><feature.Icon className="size-[22px] text-[#777783]" aria-hidden /><span className="sr-only">{feature.label}</span></dt><dd className="text-[10px] leading-snug [overflow-wrap:anywhere] sm:text-xs">{feature.value}</dd></div>)}
         </dl>
-        <div className="flex justify-between gap-3 text-xs leading-snug text-rez-graphite">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span>Listing realtor</span>
-            <span className="truncate text-[13px] font-semibold text-black">{p.realtorFirm}</span>
-          </div>
-          <div className="flex flex-col gap-0.5 text-right">
-            <span>Last updated</span>
-            <span className="text-[13px] font-semibold whitespace-nowrap text-black">{formatDate(p.updatedAt)}</span>
-          </div>
-        </div>
-        <div className="relative z-10 mt-auto grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2.5">
-          <Link
-            href={`${propertyHref(p)}#enquire`}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-black text-sm font-semibold hover:bg-black/[0.06]"
-          >
-            <Icon name="message-dots" size={18} />
-            Message
-          </Link>
-          <Link
-            href={`${propertyHref(p)}#enquire`}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-black text-sm font-semibold text-rez-full-white hover:bg-rez-arsenic"
-          >
-            <Icon name="phone-outgoing" size={18} />
-            Contact
-          </Link>
-        </div>
+        <div className="mt-auto flex justify-between gap-3 text-xs leading-snug text-rez-graphite"><div className="min-w-0"><p>Listing Realtor</p><p className="mt-0.5 text-[12px] font-semibold text-black [overflow-wrap:anywhere]">{p.realtorFirm || "Not provided"}</p></div><div className="shrink-0 text-right"><p>Last Updated</p><p className="mt-0.5 text-[12px] font-semibold text-black">{p.updatedAt && !Number.isNaN(Date.parse(p.updatedAt)) ? formatDate(p.updatedAt) : "Not provided"}</p></div></div>
       </div>
-    </article>
-  );
+      <div className="mt-auto grid grid-cols-2 gap-2.5 bg-[#f4f4f6] px-3 py-5">
+        <ListingWhatsAppButton listingId={p.id} brokerId={realListing ? p.realtorId : ""} title={p.title} className="h-10 min-w-0 gap-2 rounded-[4px] border-rez-smoke bg-white px-2 text-sm" />
+        <LeadDialog mode="contact" title="Contact the realtor" description={p.title} target={{ propertyId: p.id, realtorId: p.realtorId }} recipient={p.realtorFirm || "the realtor"} intents={PROPERTY_INTENTS} listing={realListing ? { id: p.id, firmId: p.realtorFirmId || "", brokerId: p.realtorId, name: p.title, path } : undefined} mobileSheet>
+          <Button className="h-10 min-w-0 gap-2 rounded-[4px] bg-[#18181b] px-2 text-sm" disabled={realListing && !canContact} title={realListing && !canContact ? "Broker details are unavailable" : undefined}><Phone className="size-[18px]" />Contact</Button>
+        </LeadDialog>
+      </div>
+    </div>
+  </article>;
 }
 
 /** Compact row used beside the map. */
@@ -130,31 +95,42 @@ export function PropertyRow({
   priority?: boolean;
   onHover?: (id: string | null) => void;
 }) {
+  const rent = p.intent === "rent";
+  const facts = [p.bhk ? `${p.bhk} BHK` : p.unitType, p.areaSqft ? formatArea(p.areaSqft) : ""].filter(Boolean);
   return (
     <article
       onMouseEnter={() => onHover?.(p.id)}
       onMouseLeave={() => onHover?.(null)}
       className={cn(
-        "relative grid grid-cols-[132px_minmax(0,1fr)] overflow-hidden rounded-[20px] border bg-white transition-shadow hover:shadow-rez-md",
+        "relative flex flex-col gap-2.5 rounded-2xl border bg-white p-3 transition-shadow hover:shadow-rez-md",
         highlighted ? "border-black shadow-rez-md" : "border-rez-smoke",
       )}
     >
-      <div className="relative min-h-[132px] bg-rez-cloud">
-        <CoverImage src={p.images[0]} alt="" sizes="132px" priority={priority} />
+      <div className="flex items-center gap-3">
+        <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-rez-cloud">
+          <CoverImage src={p.images[0]} alt="" sizes="64px" priority={priority} />
+        </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h3 className="truncate text-sm font-semibold">
+            <Link href={propertyHref(p)} className="after:absolute after:inset-0">
+              {p.title}
+            </Link>
+          </h3>
+          <span className="truncate text-xs text-rez-graphite">
+            {p.locality}, {p.city}
+          </span>
+          <span className="text-base leading-tight font-bold">{priceLabel(p)}</span>
+        </div>
       </div>
-      <div className="flex min-w-0 flex-col justify-center gap-1.5 px-4 py-3.5">
-        <span className="text-[19px] leading-none font-bold tracking-[-0.01em]">{priceLabel(p)}</span>
-        <h3 className="truncate text-sm font-semibold">
-          <Link href={propertyHref(p)} className="after:absolute after:inset-0">
-            {p.title}
-          </Link>
-        </h3>
-        <span className="truncate text-[13px] text-rez-graphite">
-          {p.locality}, {p.city}
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px] leading-none font-medium">
+        <span className={cn("rounded-md px-2 py-1.5 font-semibold text-white", rent ? "bg-rez-burgundy" : "bg-rez-timber-tint")}>
+          {rent ? "RENTAL" : "SALE"}
         </span>
-        <span className="text-[13px] font-medium">
-          {[p.specs[0]?.value, p.specs[1]?.value, formatArea(p.areaSqft)].filter(Boolean).join(" · ")}
-        </span>
+        {facts.map((f) => (
+          <span key={f} className="rounded-full border border-rez-smoke px-2.5 py-[5px]">
+            {f}
+          </span>
+        ))}
       </div>
     </article>
   );

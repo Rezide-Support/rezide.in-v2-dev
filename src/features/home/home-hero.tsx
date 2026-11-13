@@ -2,13 +2,22 @@
 
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useId,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { Icon } from "@/components/brand/icon";
 import { LinkTabs } from "@/components/common/link-tabs";
 import { Button } from "@/components/ui/button";
-import { projectSearchHref, propertySearchHref } from "@/features/search/criteria";
+import {
+  projectSearchHref,
+  propertySearchHref,
+} from "@/features/search/criteria";
 import { useSearchSuggestions } from "@/features/search/use-search-suggestions";
-import { CATEGORIES, PROJECT_STATUS, categoryById } from "@/lib/constants";
+import { CATEGORIES, PROJECT_STATUS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { SearchSuggestion, SuggestionKind } from "@/services/locations";
 import {
@@ -22,20 +31,42 @@ import { usePreferredCity } from "@/stores/preferences";
 import type { Intent, ProjectStatus, PropertyCategory } from "@/types/models";
 
 /** Suggestions each hero search can act on (rezide.in's property search leaves realtors out). */
-const PROPERTY_SUGGESTIONS: readonly SuggestionKind[] = ["subRegion", "locality", "project", "other"];
-const PROJECT_SUGGESTIONS: readonly SuggestionKind[] = ["project", "developer", "subRegion", "locality", "other"];
+const PROPERTY_SUGGESTIONS: readonly SuggestionKind[] = [
+  "subRegion",
+  "locality",
+  "project",
+  "other",
+];
+const PROJECT_SUGGESTIONS: readonly SuggestionKind[] = [
+  "project",
+  "developer",
+  "subRegion",
+  "locality",
+  "other",
+];
 
 function HeroPhoto({ heroKey }: { heroKey: HeroKey }) {
   const hero = HERO_IMAGES[heroKey];
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Keyed so only the active photo is requested; the fade replays when the tab changes. */}
-      <div key={heroKey} className="absolute inset-0 animate-in duration-500 fade-in">
-        <Image src={hero.src} alt="" fill priority sizes="100vw" quality={70} className="ken-burns object-cover" />
+      <div
+        key={heroKey}
+        className="absolute inset-0 animate-in duration-500 fade-in"
+      >
+        <Image
+          src={hero.src}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          quality={70}
+          className="ken-burns object-cover grayscale"
+        />
       </div>
       <div
         aria-hidden
-        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,17,12,.12)_0%,rgba(2,17,12,.28)_45%,rgba(2,17,12,.42)_85%,rgba(2,17,12,.05)_100%)]"
+        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.42)_0%,rgba(0,0,0,.36)_50%,rgba(0,0,0,.48)_100%)]"
       />
       <a
         href={hero.href}
@@ -49,16 +80,29 @@ function HeroPhoto({ heroKey }: { heroKey: HeroKey }) {
   );
 }
 
-/** Photo, headline and the white search card shared by both discovery heroes. */
-function HeroShell({ heroKey, title, children }: { heroKey: HeroKey; title: string; children: ReactNode }) {
+/** Photo, headline and the white search card shared by both discovery heroes; `footer` sits under the card. */
+function HeroShell({
+  heroKey,
+  title,
+  children,
+  footer,
+}: {
+  heroKey: HeroKey;
+  title: string;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
   return (
-    <section className="relative flex min-h-[420px] items-center justify-center bg-rez-forest px-4 pt-12 pb-14 md:min-h-[560px] md:px-8 md:pt-[88px] md:pb-20">
+    <section className="relative flex min-h-[420px] items-center justify-center bg-rez-forest px-4 pt-12 pb-14 max-md:-mt-5 max-md:pt-[68px] md:min-h-[560px] md:px-8 md:pt-[88px] md:pb-20">
       <HeroPhoto heroKey={heroKey} />
-      <div className="relative flex w-full max-w-[1040px] flex-col items-center gap-5 md:gap-8">
-        <h1 className="text-center text-[36px] leading-[1.04] font-semibold tracking-[-0.025em] text-balance text-rez-full-white [text-shadow:0_2px_24px_rgba(2,17,12,.45)] sm:text-[clamp(48px,6vw,88px)]">
+      <div className="relative flex w-full max-w-[860px] flex-col items-center gap-5 md:gap-7">
+        <h1 className="text-center text-[36px] leading-[1.1] font-semibold tracking-[-0.02em] text-balance text-white sm:text-[clamp(40px,4.4vw,64px)]">
           {title}
         </h1>
-        <div className="flex w-full flex-col gap-3.5 rounded-[28px] bg-white p-3 shadow-rez-lg sm:p-4">{children}</div>
+        <div className="flex w-full flex-col gap-3 rounded-[24px] bg-white p-3 shadow-rez-lg max-sm:gap-2.5 max-sm:rounded-[20px]">
+          {children}
+        </div>
+        {footer}
       </div>
     </section>
   );
@@ -108,7 +152,8 @@ function SearchRow({
   };
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (showList && active >= 0 && suggestions[active]) return pick(suggestions[active]);
+    if (showList && active >= 0 && suggestions[active])
+      return pick(suggestions[active]);
     setOpen(false);
     onSearch(q.trim());
   };
@@ -125,104 +170,220 @@ function SearchRow({
       onSubmit={submit}
       role="search"
       aria-label={label}
-      className="flex flex-col gap-2 rounded-[28px] border border-rez-smoke p-1.5 sm:min-h-16 sm:flex-row sm:items-center sm:rounded-full"
+      className="flex flex-col gap-2.5 sm:min-h-16 sm:flex-row sm:items-center sm:gap-2 sm:rounded-full sm:border sm:border-rez-smoke sm:p-1.5"
     >
       {leading}
-      <div className="relative flex min-w-0 flex-1 items-center">
-        <span className="flex pl-3 text-rez-graphite" aria-hidden>
-          <Icon name="search" size={18} />
-        </span>
-        <label htmlFor={inputId} className="sr-only">
-          {placeholder}
-        </label>
-        <input
-          id={inputId}
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setOpen(true);
-            setActive(-1);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setOpen(false)}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          autoComplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={showList}
-          aria-controls={listId}
-          aria-activedescendant={showList && active >= 0 ? `${listId}-${active}` : undefined}
-          className="h-12 min-w-0 flex-1 bg-transparent px-3 text-[15px] outline-none placeholder:text-[#767a88]"
-        />
-        {showList && (
-          <ul
-            id={listId}
-            role="listbox"
-            aria-label="Suggestions"
-            className="absolute top-full right-0 left-0 z-30 mt-3 max-h-[min(360px,50vh)] overflow-y-auto rounded-[20px] border border-rez-smoke bg-white shadow-rez-lg"
-          >
-            {suggestions.map((s, i) => (
-              <li
-                key={`${s.kind}-${s.id || s.name}`}
-                id={`${listId}-${i}`}
-                role="option"
-                aria-selected={i === active}
-                // Keep focus in the field so the click lands before the list closes on blur.
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => pick(s)}
-                className={cn(
-                  "flex cursor-pointer items-center gap-3 border-b border-rez-smoke px-[18px] py-3 last:border-b-0 hover:bg-rez-cloud",
-                  i === active && "bg-rez-cloud",
-                )}
-              >
-                <Icon name={s.kind === "realtor" ? "user" : "map-pin"} size={16} className="shrink-0 text-rez-graphite" />
-                <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{s.name}</span>
-                <span className="shrink-0 text-[12px] text-rez-graphite">
-                  {KIND_LABEL[s.kind]}
-                  {s.city ? ` · ${s.city}` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="flex items-center rounded-full border border-rez-smoke p-1 sm:contents">
+        <div className="relative flex min-w-0 flex-1 items-center">
+          <span className="flex pl-3 text-rez-graphite" aria-hidden>
+            <Icon name="search" size={18} />
+          </span>
+          <label htmlFor={inputId} className="sr-only">
+            {placeholder}
+          </label>
+          <input
+            id={inputId}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setOpen(true);
+              setActive(-1);
+            }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setOpen(false)}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            autoComplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={showList}
+            aria-controls={listId}
+            aria-activedescendant={
+              showList && active >= 0 ? `${listId}-${active}` : undefined
+            }
+            className="h-9 min-w-0 flex-1 bg-transparent px-2.5 text-[13px] outline-none placeholder:text-[#767a88] max-sm:placeholder:text-[12px] sm:h-12 sm:px-3 sm:text-[15px]"
+          />
+          {showList && (
+            <ul
+              id={listId}
+              role="listbox"
+              aria-label="Suggestions"
+              className="absolute top-full right-0 left-0 z-30 mt-3 max-h-[min(360px,50vh)] overflow-y-auto rounded-[20px] border border-rez-smoke bg-white shadow-rez-lg"
+            >
+              {suggestions.map((s, i) => (
+                <li
+                  key={`${s.kind}-${s.id || s.name}`}
+                  id={`${listId}-${i}`}
+                  role="option"
+                  aria-selected={i === active}
+                  // Keep focus in the field so the click lands before the list closes on blur.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pick(s)}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-3 border-b border-rez-smoke px-[18px] py-3 last:border-b-0 hover:bg-rez-cloud",
+                    i === active && "bg-rez-cloud",
+                  )}
+                >
+                  <Icon
+                    name={s.kind === "realtor" ? "user" : "map-pin"}
+                    size={16}
+                    className="shrink-0 text-rez-graphite"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
+                    {s.name}
+                  </span>
+                  <span className="shrink-0 text-[12px] text-rez-graphite">
+                    {KIND_LABEL[s.kind]}
+                    {s.city ? ` · ${s.city}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <Button
+          type="submit"
+          size="lg"
+          className="shrink-0 max-sm:h-8 max-sm:px-3.5 max-sm:text-[12px] sm:ml-2 sm:min-w-[140px]"
+        >
+          Search
+        </Button>
       </div>
-      <Button type="submit" size="lg" className="w-full sm:ml-2 sm:w-auto">
-        <Icon name="search" size={20} />
-        Search
-      </Button>
     </form>
   );
 }
 
-export function PropertiesHeroView({ category, intent }: { category: PropertyCategory; intent: Intent }) {
+/** On phones the hero's tab sets become one underlined row, as in the design. */
+const MOBILE_TABS = "max-sm:border-b max-sm:border-rez-smoke max-sm:[&>ul]:flex max-sm:[&>ul]:w-full max-sm:[&>ul]:flex-nowrap max-sm:[&>ul]:justify-between";
+const MOBILE_TAB = "max-sm:h-8 max-sm:rounded-none max-sm:px-0.5 max-sm:text-[12px] max-sm:font-medium max-sm:text-rez-graphite max-sm:aria-[current=page]:bg-transparent max-sm:aria-[current=page]:font-bold max-sm:aria-[current=page]:text-black max-sm:aria-[current=page]:shadow-[inset_0_-2px_0_var(--rez-mocaccino)]";
+
+/** Short labels for phones, where the full ones don't fit on one row. */
+const SHORT_STATUS: Partial<Record<ProjectStatus, string>> = { uc: "Under Const." };
+
+/** The four promises under the property search card; homes and the commercial tabs differ. */
+const TRUST_BADGES: Record<
+  "homes" | "other" | "projects",
+  readonly (readonly [string, string])[]
+> = {
+  homes: [
+    ["Real photos", "No fake listings"],
+    ["RERA-registered", "Realtors"],
+    ["NAR-India", "Members"],
+    ["Tech enabled", "On Rezide"],
+  ],
+  other: [
+    ["Real photos", "No fake listings"],
+    ["Owner-authorised", "Verified properties"],
+    ["RERA-registered", "All realtors"],
+    ["Tech enabled", "On Rezide"],
+  ],
+  projects: [
+    ["Curated Info.", "No fake listings"],
+    ["Recent Transactions", "Verified properties"],
+    ["RERA-registered", "All realtors"],
+    ["Tech enabled", "On Rezide"],
+  ],
+};
+
+/** Solid white shield with a dark tick, as in the design. */
+function TrustShield() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={18}
+      height={18}
+      aria-hidden
+      className="mt-px shrink-0"
+    >
+      <path
+        fill="#fff"
+        d="M12 2 4 5v6.1c0 5 3.4 9.7 8 10.9 4.6-1.2 8-5.9 8-10.9V5l-8-3Z"
+      />
+      <path
+        fill="none"
+        stroke="#111"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m8.5 12 2.4 2.4 4.6-4.8"
+      />
+    </svg>
+  );
+}
+
+function TrustBadges({ set }: { set: keyof typeof TRUST_BADGES }) {
+  return (
+    <ul className="grid grid-cols-2 gap-x-6 gap-y-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-9">
+      {TRUST_BADGES[set].map(([title, sub]) => (
+        <li key={title} className="flex items-start gap-2 text-white">
+          <TrustShield />
+          <span className="flex flex-col leading-tight">
+            <span className="text-[13px] font-semibold">{title}</span>
+            <span className="text-[10px] text-white/60">{sub}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function PropertiesHeroView({
+  category,
+  intent,
+}: {
+  category: PropertyCategory;
+  intent: Intent;
+}) {
   const router = useRouter();
   const { city } = usePreferredCity();
-  const cat = categoryById(category);
   return (
-    <HeroShell heroKey={category} title="Genuine Listings Only!">
+    <HeroShell
+      heroKey={category}
+      title="Genuine Listings Only!"
+      footer={<TrustBadges set={category === "homes" ? "homes" : "other"} />}
+    >
       <LinkTabs
         label="Property type"
         appearance="bare"
         tone="ink"
         wrap
-        items={CATEGORIES.map((c) => ({ href: propertiesHomeHref(c.id, intent), label: c.label, active: c.id === category }))}
+        className={MOBILE_TABS}
+        itemClassName={MOBILE_TAB}
+        items={CATEGORIES.map((c) => ({
+          href: propertiesHomeHref(c.id, intent),
+          label: c.id === "homes" ? "Home" : c.label,
+          active: c.id === category,
+        }))}
       />
       <SearchRow
         label="Search properties"
-        placeholder={category === "homes" ? "Search locality, project or landmark" : "Search locality or landmark"}
+        placeholder={
+          category === "homes"
+            ? "Search locality, project or landmark"
+            : "Search locality or landmark"
+        }
         city={city}
         kinds={PROPERTY_SUGGESTIONS}
-        onSearch={(q) => router.push(propertySearchHref({ city, intent, category, q }))}
+        onSearch={(q) =>
+          router.push(propertySearchHref({ city, intent, category, q }))
+        }
         leading={
           <LinkTabs
             label="Buy or rent"
             size="lg"
-            className="self-start sm:self-auto"
-            itemClassName="min-w-[76px] justify-center"
+            className="w-full sm:w-auto max-sm:[&>ul]:flex max-sm:[&>ul]:w-full max-sm:[&_li]:flex-1"
+            itemClassName="min-w-[76px] justify-center max-sm:h-9 max-sm:w-full max-sm:text-[13px]"
             items={[
-              { href: propertiesHomeHref(category, "buy"), label: "Buy", active: intent === "buy" },
-              { href: propertiesHomeHref(category, "rent"), label: cat.lease, active: intent === "rent" },
+              {
+                href: propertiesHomeHref(category, "buy"),
+                label: "Sale",
+                active: intent === "buy",
+              },
+              {
+                href: propertiesHomeHref(category, "rent"),
+                label: "Rent",
+                active: intent === "rent",
+              },
             ]}
           />
         }
@@ -233,33 +394,59 @@ export function PropertiesHeroView({ category, intent }: { category: PropertyCat
 
 /** Reads the tab from the URL. Render inside `<Suspense>`: the path is request data on dynamic routes. */
 export function PropertiesHero() {
-  const parsed = parsePropertiesHomePath(usePathname()) ?? { category: "homes", intent: "buy" };
-  return <PropertiesHeroView category={parsed.category} intent={parsed.intent} />;
+  const parsed = parsePropertiesHomePath(usePathname()) ?? {
+    category: "homes",
+    intent: "buy",
+  };
+  return (
+    <PropertiesHeroView category={parsed.category} intent={parsed.intent} />
+  );
 }
 
 export function ProjectsHeroView({ status }: { status: ProjectStatus }) {
   const router = useRouter();
   const { city } = usePreferredCity();
   return (
-    <HeroShell heroKey={status} title="Homes for every stage.">
+    <HeroShell
+      heroKey={status}
+      title="Homes Every Stage"
+      footer={<TrustBadges set={status === "uc" ? "projects" : "other"} />}
+    >
       <LinkTabs
         label="Project status"
-        appearance="solid"
+        appearance="bare"
         tone="ink"
-        className="self-start"
-        items={PROJECT_STATUS.map((s) => ({ href: projectsHomeHref(s.id), label: s.label, active: s.id === status }))}
+        wrap
+        className={MOBILE_TABS}
+        itemClassName={MOBILE_TAB}
+        items={PROJECT_STATUS.map((s) => ({
+          href: projectsHomeHref(s.id),
+          label: SHORT_STATUS[s.id] ? (
+            <>
+              <span className="sm:hidden">{SHORT_STATUS[s.id]}</span>
+              <span className="max-sm:hidden">{s.label}</span>
+            </>
+          ) : (
+            s.label
+          ),
+          active: s.id === status,
+        }))}
       />
       <SearchRow
         label="Search projects"
         placeholder="Search project, developer or locality"
         city={city}
         kinds={PROJECT_SUGGESTIONS}
-        onSearch={(q) => router.push(projectSearchHref({ city, q, status: [status] }))}
+        onSearch={(q) =>
+          router.push(projectSearchHref({ city, q, status: [status] }))
+        }
       />
     </HeroShell>
   );
 }
 
 export function ProjectsHero() {
-  return <ProjectsHeroView status={parseProjectsHomePath(usePathname()) ?? "uc"} />;
+  return (
+    <ProjectsHeroView status={parseProjectsHomePath(usePathname()) ?? "uc"} />
+  );
 }

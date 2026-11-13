@@ -3,10 +3,20 @@ import { PROJECTS } from "@/mocks/fixtures/projects";
 import { PROPERTIES } from "@/mocks/fixtures/properties";
 import { REALTORS } from "@/mocks/fixtures/realtors";
 import { defaultProjectCriteria, defaultPropertyCriteria } from "./criteria";
-import { matchesText, paginate, searchProjects, searchProperties, searchRealtors } from "./match";
+import { matchesText, paginate, parseMapArea, searchProjects, searchProperties, searchRealtors } from "./match";
 
 const search = (o: Parameters<typeof defaultPropertyCriteria>[0]) =>
   searchProperties(PROPERTIES, defaultPropertyCriteria({ perPage: 36, ...o }));
+
+describe("parseMapArea", () => {
+  it("reads west,south,east,north", () => {
+    expect(parseMapArea("72.8,18.9,73,19.3")).toEqual([72.8, 18.9, 73, 19.3]);
+  });
+
+  it.each([null, "", "72.8,18.9,73", "a,b,c,d", "72.8,,73,19.3", "73,18.9,72.8,19.3", "72.8,19.3,73,18.9"])("ignores %s", (value) => {
+    expect(parseMapArea(value)).toBeUndefined();
+  });
+});
 
 describe("property matching over the fixed inventory", () => {
   it("returns only listings for the requested city, intent and category", () => {

@@ -5,7 +5,7 @@ import { api } from "@/lib/api/client";
 import { PLACEHOLDER_IMAGE, toListingFilters, toProperty, toPropertyPage, type BackendListing } from "@/services/property-mapper";
 import { localityOptions } from "@/features/search/filter-drawer";
 import { clearListingIndex } from "@/services/listing-index";
-import { getListingDetail, listingFacets, listingGroups, searchListings } from "@/services/properties";
+import { getListingDetail, listingFacets, listingGroups, searchListings, searchListingsInArea } from "@/services/properties";
 
 /* The Rezide backend's listing search, answered here by a test double. Shapes follow live responses. */
 
@@ -54,6 +54,24 @@ const listing = (over: Partial<BackendListing> = {}): BackendListing => ({
 });
 
 describe("toProperty", () => {
+  it("reads the unit and floor unless the owner hides them", () => {
+    const shown = listing();
+    Object.assign(shown.listing_details!, { unit_no: { unit: "1902", floor: 19 }, floor_no: "19", total_floor: "40", building_age: 16 });
+    expect(toProperty(shown)).toMatchObject({ unitNo: "1902", floor: 19, totalFloors: 40, ageYears: 16 });
+    const hidden = listing();
+    Object.assign(hidden.listing_details!, { unit_no: { unit: "1902" }, floor_no: "19", unitHide: true, floorHide: "true", building_age: -1 });
+    expect(toProperty(hidden)).toMatchObject({ unitNo: undefined, floor: undefined, ageYears: undefined });
+  });
+
+  it("places a listing at its project when it has no coordinates of its own", () => {
+    const l = listing({ listing_address: { city: "Mumbai" } });
+    l.listing_details!.project!.locality_and_address = { coordinates: { latitude: "19.2", longitude: 72.8 } };
+    expect(toProperty(l).coords).toEqual([19.2, 72.8]);
+    l.listing_details!.project!.locality_and_address = undefined;
+    expect(toProperty(l).coords).toEqual([0, 0]);
+    expect(toProperty(listing()).coords).toEqual([19.12, 72.91]);
+  });
+
   it("maps a sale listing to the card's fields", () => {
     const p = toProperty(listing());
     expect(p).toMatchObject({
@@ -149,7 +167,6 @@ describe("toListingFilters", () => {
       pageSize: 18,
       property_purpose: ["rent"],
       project_names_localities: ["lodha", "Powai"],
-      project_id: undefined,
       project_type: ["Pent House", "Villa"],
       bhk: ["64de06554f5f0ae6e6023292", "64de06664f5f0ae6e60232a2", "656730d08eb9d2295cb750ed"],
       furnishing: ["650eb6b2a1a78c56b3fac96e"],
@@ -189,9 +206,24 @@ describe("listing search", () => {
     expect(page.items).toHaveLength(1);
   });
 
-  it("has no listings outside homes, without asking the backend", async () => {
-    await expect(searchListings(defaultPropertyCriteria({ category: "offices" }))).resolves.toMatchObject({ items: [], total: 0 });
-    expect(backend.history.post).toHaveLength(0);
+  it("asks for other categories by listing type, and leaves homes as they were", async () => {
+    backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [], result_sale: 0, result_rent: 0 });
+    await searchListings(defaultPropertyCriteria({ category: "offices" }));
+    await searchListings(defaultPropertyCriteria());
+    const [offices, homes] = backend.history.post.map((r) => JSON.parse(r.data));
+    expect(offices.listing_type).toEqual(["office"]);
+    expect(homes.listing_type).toBeUndefined();
+  });
+
+  it("reads a commercial record that has no listing_address", () => {
+    const office = toProperty({
+      _id: "o1",
+      listing_type: "office",
+      listing_details: { listing_location: "Santacruz West, Daulat Nagar STC", property_sub_type: "Ready to Move", address_details: { city: [{ label: "Mumbai" }], region: [{ label: "Western Suburbs" }], sub_region: [{ label: "Santacruz West" }], locality: [{ label: "Daulat Nagar STC" }] } },
+      commercial_details: { property_purpose: "sale", property_price: 5 },
+    });
+    expect(office).toMatchObject({ category: "offices", city: "Mumbai", locality: "Santacruz West", unitType: "Office", price: 5 });
+    expect(toProperty({ listing_type: "retail", listing_details: { unit_type: "Shop" } })).toMatchObject({ category: "retail", unitType: "Shop" });
   });
 
   it("loads one listing with similar listings from its locality, never itself", async () => {
@@ -287,9 +319,45 @@ describe("filter counts and groups (from the city's listings)", () => {
     expect(f.total).toBe(3);
   });
 
-  it("has nothing to count outside homes", async () => {
-    await expect(listingFacets(defaultPropertyCriteria({ category: "retail" }))).resolves.toMatchObject({ total: 0 });
-    expect(backend.history.post).toHaveLength(0);
+  it("counts other categories from their own listings", async () => {
+    backend.reset();
+    backend.onPost("/inventory/Listing/mobile/all").reply((config) => {
+      expect(JSON.parse(config.data).listing_type).toEqual(["retail"]);
+      return [200, { data: [listing({ listing_type: "retail" })], result_sale: 1, result_rent: 0 }];
+    });
+    await expect(listingFacets(defaultPropertyCriteria({ category: "retail" }))).resolves.toMatchObject({ total: 1 });
+  });
+});
+
+describe("the map view's list", () => {
+  let backend: MockAdapter;
+  const inView = listing({ _id: "in", listing_address: { city: "Mumbai", subregion: "Powai", latitude: 19.12, longitude: 72.91 } });
+  const elsewhere = listing({ _id: "out", listing_address: { city: "Mumbai", subregion: "Parel", latitude: 18.99, longitude: 72.83 } });
+  const nowhere = listing({ _id: "none", listing_address: { city: "Mumbai", subregion: "Powai" } });
+  nowhere.listing_details!.project = undefined;
+  const twoBhk = (() => {
+    const l = listing({ _id: "two", listing_address: { city: "Mumbai", subregion: "Powai", latitude: 19.13, longitude: 72.9 } });
+    l.listing_details!.bhk = { name: "2 BHK" };
+    return l;
+  })();
+  const powai: [number, number, number, number] = [72.85, 19.05, 72.95, 19.2];
+
+  beforeEach(() => {
+    clearListingIndex();
+    backend = new MockAdapter(api);
+    backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [inView, elsewhere, nowhere, twoBhk], result_sale: 4, result_rent: 0 });
+  });
+  afterEach(() => backend.restore());
+
+  it("keeps only the listings in that part of the map", async () => {
+    const page = await searchListingsInArea(defaultPropertyCriteria(), powai);
+    expect(page.items.map((p) => p.id).sort()).toEqual(["in", "two"]);
+    expect(page.total).toBe(2);
+  });
+
+  it("still applies the search filters, and answers an empty area", async () => {
+    await expect(searchListingsInArea(defaultPropertyCriteria({ bhk: ["2 BHK"] }), powai)).resolves.toMatchObject({ total: 1, items: [{ id: "two" }] });
+    await expect(searchListingsInArea(defaultPropertyCriteria(), [80, 10, 81, 11])).resolves.toMatchObject({ total: 0, items: [], pageCount: 1 });
   });
 });
 

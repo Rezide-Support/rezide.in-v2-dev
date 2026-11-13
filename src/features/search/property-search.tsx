@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Icon } from "@/components/brand/icon";
 import { RemovableChip } from "@/components/common/chip";
 import { EmptyState, ErrorState } from "@/components/common/feedback";
-import { NativeSelect } from "@/components/common/native-select";
+import { SearchSelect } from "@/components/common/search-select";
 import { Pagination } from "@/components/common/pagination";
 import { Segmented } from "@/components/common/segmented";
 import { Button } from "@/components/ui/button";
@@ -26,13 +26,13 @@ import {
   SORT_OPTIONS,
   areaRangeLabel,
   countActiveFilters,
-  defaultProjectCriteria,
   parsePropertyCriteria,
   serializePropertyCriteria,
 } from "./criteria";
 import { FilterDrawer, filterGroups } from "./filter-drawer";
 import { LocalityGrid, ProjectGrid, groupByLocality, groupByProject } from "./grouped-views";
-import { matchesText } from "./match";
+import { matchesText, type MapArea } from "./match";
+import type { MapView } from "./leaflet-map";
 import { MapExplorer } from "./results-map";
 import { useUrlCriteria } from "./use-url-criteria";
 
@@ -42,7 +42,7 @@ type MapCard = "compact" | "photo" | "full";
  * Card used beside the map. The prototype offered three designs (A/B/C) as a
  * viewer toggle; the chosen design is A. All three stay implemented, so a
  * different choice is a one-word change here:
- *   "compact" (A) photo thumbnail + price, title, locality, key facts (PropertyRow)
+ *   "compact" (A) small photo + title, locality, price, then sale/rental and key-fact pills (PropertyRow)
  *   "photo"   (B) larger photo with key facts (PropertyPhotoCard)
  *   "full"    (C) the full list card (PropertyCard)
  */
@@ -147,7 +147,11 @@ export function PropertySearch() {
   const drilledProj = view === "proj" && criteria.projects.length === 1 ? criteria.projects[0] : null;
   const showGroups = (view === "loc" || view === "proj") && !drilledLoc && !drilledProj;
 
-  const query = useQuery({ ...propertyQueries.search(criteria), enabled: !showGroups });
+  // The map view lists what's in the part of the map being searched, once the map has reported it.
+  const [mapArea, setMapArea] = useState<{ city: string; area: MapArea } | null>(null);
+  const mapList = useRef<HTMLDivElement>(null);
+  const area = isMap && mapArea?.city === criteria.city ? mapArea.area : undefined;
+  const query = useQuery({ ...propertyQueries.search(criteria, area), enabled: !showGroups && (!isMap || !!area) });
   const grouped = useQuery({
     ...propertyQueries.groups(
       { ...criteria, q: "", localities: view === "loc" ? [] : criteria.localities, projects: [] },
@@ -155,9 +159,14 @@ export function PropertySearch() {
     ),
     enabled: showGroups,
   });
+  // The busiest projects among the listings, by id.
+  const groupedProjectIds = useMemo(() => {
+    const ids = [...(grouped.data?.groups ?? [])].sort((a, b) => b.count - a.count).map((g) => g.key);
+    return [...new Set([...(drilledProj ? [drilledProj] : []), ...ids])].slice(0, 36);
+  }, [grouped.data, drilledProj]);
   const projects = useQuery({
-    ...projectQueries.search(defaultProjectCriteria({ city: criteria.city, perPage: PER_PAGE_OPTIONS[PER_PAGE_OPTIONS.length - 1] })),
-    enabled: view === "proj",
+    ...projectQueries.byIds(groupedProjectIds, criteria.city),
+    enabled: view === "proj" && !!grouped.data,
   });
   // Per-option counts for the filter drawer, computed by the API.
   const facets = useQuery({ ...propertyQueries.facets(criteria), enabled: drawerOpen });
@@ -200,6 +209,14 @@ export function PropertySearch() {
     update(patch);
   };
   const clearAll = () => update(CLEARED);
+  const onMapView = ({ bbox }: MapView) => {
+    // Rounded to ~10 m, as the map's own requests are, so tiny jitters don't reload the list.
+    const next = bbox.map((v) => Number(v.toFixed(4))) as MapArea;
+    if (area && next.join() === area.join()) return;
+    // A shared link keeps its page on load; moving the map starts the new list from the top.
+    if (area && criteria.page > 1) update({ page: 1 });
+    setMapArea({ city: criteria.city, area: next });
+  };
 
   const placeholder =
     view === "loc" && !drilledLoc
@@ -254,6 +271,24 @@ export function PropertySearch() {
   );
 
   const emptyState = () => {
+    if (isMap) {
+      return (
+        <EmptyState
+          title="No listings in this part of the map."
+          action={
+            (filterCount > 0 || criteria.q) && (
+              <Button variant="secondary" onClick={clearAll}>
+                Clear search and filters
+              </Button>
+            )
+          }
+        >
+          <p>
+            Move the map or zoom out to see {rent ? `${cat.noun.toLowerCase()} for ${cat.lease.toLowerCase()}` : `${cat.noun.toLowerCase()} for sale`} in {criteria.city}.
+          </p>
+        </EmptyState>
+      );
+    }
     const budgetPoints = BUDGET_POINTS[criteria.intent];
     return (
       <EmptyState
@@ -333,6 +368,7 @@ export function PropertySearch() {
           onChange={(page) => {
             update({ page });
             window.scrollTo({ top: 0, behavior: "smooth" });
+            mapList.current?.scrollTo({ top: 0 });
           }}
         />
       </>
@@ -411,12 +447,12 @@ export function PropertySearch() {
         <h1 className="sr-only">
           {criteria.city} {cat.noun} {rent ? `for ${cat.lease.toLowerCase()}` : "for sale"}, map view
         </h1>
-        {/* One scrollbar: the page scrolls the results while the map stays pinned beside them. */}
+        {/* Desktop: map and results fill the screen below the header (76px + 1px border); the results scroll in their panel. */}
         {/* Dual-screen: map on one screen, results on the other (see fold-x / fold-y in globals.css). */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_460px] fold-x:grid-cols-[var(--seg-0-width)_var(--seg-1-width)]! fold-x:gap-x-(--hinge-width) fold-y:grid-cols-1!">
-          <div className="relative h-[60vh] min-h-[360px] overflow-hidden bg-rez-cloud lg:sticky lg:top-0 lg:h-dvh lg:self-start fold-x:sticky fold-x:top-0 fold-x:h-dvh! fold-x:self-start fold-y:sticky fold-y:top-0 fold-y:z-10 fold-y:h-(--seg-0-height)! fold-y:min-h-0">
+        <div className="grid grid-cols-1 lg:h-[calc(100dvh-77px)] lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[minmax(0,1fr)] fold-x:h-auto! fold-x:grid-cols-[var(--seg-0-width)_var(--seg-1-width)]! fold-x:grid-rows-none! fold-x:gap-x-(--hinge-width) fold-y:h-auto! fold-y:grid-cols-1! fold-y:grid-rows-none!">
+          <div className="relative h-[60vh] min-h-[360px] overflow-hidden bg-rez-cloud lg:h-full lg:min-h-0 fold-x:sticky fold-x:top-0 fold-x:h-dvh! fold-x:self-start fold-y:sticky fold-y:top-0 fold-y:z-10 fold-y:h-(--seg-0-height)! fold-y:min-h-0">
             {/* Keyed by city so choosing another city re-centres the map. */}
-            <MapExplorer key={criteria.city} city={criteria.city} intent={criteria.intent} category={criteria.category} />
+            <MapExplorer key={criteria.city} city={criteria.city} intent={criteria.intent} category={criteria.category} onViewChange={onMapView} />
             <div className="pointer-events-none absolute inset-x-4 top-4 z-[500] flex flex-wrap items-center gap-2.5">
               <form
                 role="search"
@@ -462,16 +498,17 @@ export function PropertySearch() {
             </div>
           </div>
           <div
+            ref={mapList}
             aria-busy={pending}
             className={cn(
-              "min-w-0 border-rez-smoke p-4 transition-opacity sm:p-5 lg:min-h-dvh lg:border-l fold-x:border-l-0",
+              "min-w-0 border-rez-smoke p-4 transition-opacity sm:p-5 lg:overflow-y-auto lg:border-l fold-x:overflow-visible! fold-x:border-l-0 fold-y:overflow-visible!",
               pending && data && "opacity-60",
             )}
           >
             <div className="px-0.5 pt-1 pb-4 text-sm [&_p]:text-sm">{summary}</div>
             {listResults(MAP_CARD)}
             <p className="mt-4 text-xs text-rez-graphite">
-              This list follows your search and filters. Map pins come from the map service and follow the part of the map in view.
+              This list shows {criteria.city} listings in the part of the map in view that match your search and filters. Map pins show every listing there, including sale, rental and nearby cities.
             </p>
           </div>
         </div>
@@ -496,10 +533,10 @@ export function PropertySearch() {
             <label className="sr-only" htmlFor={`${inputId}-type`}>
               Property type
             </label>
-            <NativeSelect
+            <SearchSelect
               id={`${inputId}-type`}
               value={criteria.category}
-              onChange={(e) => changeCategory(e.target.value as PropertyCategory)}
+              onValueChange={(value) => changeCategory(value as PropertyCategory)}
               className="border-black pl-[22px] text-[15px] font-bold"
             >
               {CATEGORIES.map((c) => (
@@ -507,19 +544,19 @@ export function PropertySearch() {
                   {c.label}
                 </option>
               ))}
-            </NativeSelect>
+            </SearchSelect>
             <label className="sr-only" htmlFor={`${inputId}-intent`}>
               Buy or rent
             </label>
-            <NativeSelect
+            <SearchSelect
               id={`${inputId}-intent`}
               value={criteria.intent}
-              onChange={(e) => changeIntent(e.target.value as Intent)}
+              onValueChange={(value) => changeIntent(value as Intent)}
               className="border-black pl-[22px] text-[15px] font-bold"
             >
               <option value="buy">To Buy</option>
               <option value="rent">To {cat.lease}</option>
-            </NativeSelect>
+            </SearchSelect>
             <span aria-hidden className="mx-1 hidden h-7 w-px bg-rez-smoke sm:block" />
             <div className="flex max-w-full min-w-0 items-center gap-2.5">
               <span aria-hidden className="eyebrow hidden text-rez-graphite sm:inline">
@@ -622,27 +659,27 @@ export function PropertySearch() {
             <div className="flex flex-wrap items-center gap-4">
               <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
                 Per page
-                <NativeSelect size="sm" value={criteria.perPage} onChange={(e) => update({ perPage: Number(e.target.value) })}>
+                <SearchSelect size="sm" value={criteria.perPage} onValueChange={(value) => update({ perPage: Number(value) })} aria-label="Results per page">
                   {PER_PAGE_OPTIONS.map((n) => (
                     <option key={n} value={n}>
                       {n}
                     </option>
                   ))}
-                </NativeSelect>
+                </SearchSelect>
               </label>
               <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
                 Sort by
-                <NativeSelect
+                <SearchSelect
                   size="sm"
                   value={criteria.sort}
-                  onChange={(e) => update({ sort: e.target.value as PropertySearchCriteria["sort"] })}
+                  onValueChange={(value) => update({ sort: value as PropertySearchCriteria["sort"] })} aria-label="Sort results"
                 >
                   {SORT_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
                   ))}
-                </NativeSelect>
+                </SearchSelect>
               </label>
             </div>
           )}

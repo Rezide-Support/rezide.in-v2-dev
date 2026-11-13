@@ -8,10 +8,9 @@ import { CoverImage } from "@/components/common/cover-image";
 import { Segmented } from "@/components/common/segmented";
 import { Button } from "@/components/ui/button";
 import { projectSearchHref, propertySearchHref } from "@/features/search/criteria";
-import { AREA_BANDS, BUDGET_POINTS, BUDGET_TIERS, PROJECT_STATUS, UNIT_TYPES, categoryById, localitiesFor } from "@/lib/constants";
+import { BUDGET_TIERS, PROJECT_STATUS, categoryById } from "@/lib/constants";
 import { homeQueries } from "@/lib/queries";
 import { PHOTO_IDS, unsplash } from "@/content/media";
-import { POPULAR_LOCALITIES_CITY } from "@/services/home";
 import { usePreferredCity } from "@/stores/preferences";
 import type { Intent, ProjectStatus, PropertyCategory } from "@/types/models";
 
@@ -45,6 +44,7 @@ function RailGrid({
             </li>
           ))
         : null}
+      {!loading && cards.length === 0 ? <li className="col-span-full py-10 text-center text-[15px] text-rez-graphite">Nothing to show here for this city yet.</li> : null}
       {cards.map((c, i) => (
         <li key={c.label}>
           <Link
@@ -67,18 +67,6 @@ function RailGrid({
       ))}
     </ul>
   );
-}
-
-function budgetRanges(intent: Intent) {
-  const pts = BUDGET_POINTS[intent];
-  const ranges = pts.map((pt, i) => ({
-    label: i === 0 ? `Under ${pt.label}` : `${pts[i - 1].label} – ${pt.label}`,
-    min: i === 0 ? undefined : pts[i - 1].value,
-    max: pt.value,
-    key: `${i === 0 ? 0 : pts[i - 1].value}-${pt.value}`,
-  }));
-  const last = pts[pts.length - 1];
-  return [...ranges, { label: `Above ${last.label}`, min: last.value, max: undefined, key: `${last.value}-` }].slice(-6).reverse();
 }
 
 type RailTab = "loc" | "budget" | "type" | "size";
@@ -107,15 +95,13 @@ function ViewAll({ href, label }: { href: string; label: string }) {
 
 export function PropertyRails({ category, intent }: { category: PropertyCategory; intent: Intent }) {
   const { city } = usePreferredCity();
-  // The backend only holds homes, so other categories have nothing to ask for.
-  const isHomes = category === "homes";
-  const stats = useQuery({ ...homeQueries.properties(intent), enabled: isHomes });
+  const stats = useQuery(homeQueries.properties(intent, city, category));
   const cat = categoryById(category);
   const labels: Record<RailTab, string> = {
     loc: "Location",
     budget: "Budget",
-    type: category === "land" ? "Type" : "Unit Type",
-    size: category === "homes" ? "BHK" : "Size",
+    type: category === "land" ? "Type" : "Unit type",
+    size: category === "homes" ? "BHK" : "Area",
   };
   const tabs = RAIL_ORDER[category].map((value) => ({ value, label: labels[value] }));
   const [tab, setTab] = useState<RailTab>(tabs[0].value);
@@ -125,8 +111,8 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
   const s = stats.data;
   const monthly = intent === "rent" ? " / mo" : "";
 
-  // Homes come from the backend's home-page rails, as on rezide.in. Its popular localities are all in Mumbai.
-  const homeCards = (): RailCard[] => {
+  // Localities link to the city they're in.
+  const railCards = (): RailCard[] => {
     if (!s) return [];
     switch (tab) {
       case "loc":
@@ -134,7 +120,7 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
           label: l.name,
           image: l.image,
           count: intent === "rent" ? l.forRent : l.forSale,
-          href: propertySearchHref({ ...base, city: POPULAR_LOCALITIES_CITY, localities: [l.name] }),
+          href: propertySearchHref({ ...base, city: s.localityCity, localities: [l.name] }),
         }));
       case "budget":
         return s.budgets.map((b) => ({
@@ -146,37 +132,32 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
       case "type":
         return s.unitTypes.map((u) => ({ label: u.label, count: u.count, plus: u.plus, href: propertySearchHref({ ...base, unitTypes: [u.label] }) }));
       default:
-        return s.bhks.map((b) => ({ label: b.label, count: b.count, plus: b.plus, href: propertySearchHref({ ...base, bhk: [b.label] }) }));
+        return category === "homes"
+          ? s.bhks.map((b) => ({ label: b.label, count: b.count, plus: b.plus, href: propertySearchHref({ ...base, bhk: [b.label] }) }))
+          : s.areas.map((a) => ({ label: a.label, count: a.count, href: propertySearchHref({ ...base, areaMin: a.min, areaMax: a.max }) }));
     }
   };
 
-  // Other categories keep their options, with no listings to count yet.
-  const otherCards = (): RailCard[] => {
-    switch (tab) {
-      case "loc":
-        return localitiesFor(city).slice(0, 6).map((l) => ({ label: l, count: 0, href: propertySearchHref({ ...base, localities: [l] }) }));
-      case "budget":
-        return budgetRanges(intent).map((b) => ({ label: b.label + monthly, count: 0, href: propertySearchHref({ ...base, budgetMin: b.min, budgetMax: b.max }) }));
-      case "type":
-        return UNIT_TYPES[category].slice(0, 6).map((u) => ({ label: u, count: 0, href: propertySearchHref({ ...base, unitTypes: [u] }) }));
-      default:
-        return AREA_BANDS.map((b) => ({ label: b.label, count: 0, href: propertySearchHref({ ...base, areaMin: b.min, areaMax: b.max }) }));
-    }
-  };
+  const cards = railCards();
 
-  const cards = isHomes ? homeCards() : otherCards();
-
-  const verb = intent === "buy" ? "Sale" : cat.lease;
+  const verb = intent === "buy" ? "Sale" : "Rent";
 
   return (
     <section aria-labelledby={headingId} className="px-4 pt-12 pb-16 md:px-8 md:pt-[88px] md:pb-[88px]">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <h2 id={headingId} className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty md:text-[40px]">
-            <span className="font-extrabold">{city}</span> {cat.noun} for{" "}
-            <span className="font-extrabold text-rez-mocaccino-ink">{verb}</span>.
+        <div className="flex flex-wrap items-center justify-between gap-6 max-sm:flex-col max-sm:items-stretch max-sm:gap-4">
+          <h2 id={headingId} className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty max-sm:text-center max-sm:text-[22px] md:text-[36px]">
+            <span className="text-rez-mocaccino-ink">{city}</span> {category === "offices" ? "Office" : cat.noun} for{" "}
+            <span className={intent === "buy" ? "text-rez-burgundy" : "text-rez-timber"}>{verb}</span>
           </h2>
-          <Segmented label="Browse by" value={tab} onChange={setTab} options={tabs} appearance="outline" size="lg" />
+          <Segmented
+            label="Browse by"
+            value={tab}
+            onChange={setTab}
+            options={tabs}
+            className="rounded-[14px] max-sm:flex max-sm:w-full max-sm:rounded-full"
+            itemClassName="min-w-[112px] rounded-[10px] text-[13px] aria-checked:font-semibold max-sm:h-9 max-sm:min-w-0 max-sm:flex-1 max-sm:rounded-full max-sm:px-2 max-sm:text-[12px]"
+          />
         </div>
         {stats.isError ? (
           <p role="alert" className="text-sm text-rez-graphite">
@@ -186,7 +167,7 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
             </button>
           </p>
         ) : null}
-        <RailGrid cards={cards} pool={PHOTO_IDS[category]} loading={isHomes && stats.isPending} />
+        <RailGrid cards={cards} pool={PHOTO_IDS[category]} loading={stats.isPending} />
         <ViewAll href={propertySearchHref(base)} label={`View all ${cat.noun.toLowerCase()} for ${verb.toLowerCase()} in ${city}`} />
       </div>
     </section>
@@ -196,10 +177,8 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
 export function ProjectRails({ status }: { status: ProjectStatus }) {
   const { city } = usePreferredCity();
   const stats = useQuery(homeQueries.projects(city, status));
-  // The prototype's Age (ready to move) and Recency (new launches) rails need
-  // completion and launch dates the catalogue doesn't have yet; see README.
   const tabs = [
-    ...(status === "uc" ? [{ value: "year", label: "Possession" }] : []),
+    { value: "year", label: { uc: "Possession", rtm: "Age", nl: "Recency" }[status] },
     { value: "budget", label: "Budget" },
     { value: "loc", label: "Location" },
   ];
@@ -232,18 +211,32 @@ export function ProjectRails({ status }: { status: ProjectStatus }) {
             label: l.name,
             image: l.image,
             count: l.projects,
-            href: projectSearchHref({ city: POPULAR_LOCALITIES_CITY, status: [status], localities: [l.name] }),
+            href: projectSearchHref({ city: s.localityCity, status: [status], localities: [l.name] }),
           }));
 
   return (
     <section aria-labelledby={headingId} className="px-4 pt-12 pb-16 md:px-8 md:pt-[88px] md:pb-[88px]">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <h2 id={headingId} className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-[40px]">
-            <span className="font-extrabold">{city}</span>{" "}
-            <span className="font-extrabold text-rez-mocaccino-ink">{statusLabel}</span> Homes.
+        <div className="flex flex-wrap items-center justify-between gap-6 max-sm:flex-col max-sm:items-stretch max-sm:gap-4">
+          <h2 id={headingId} className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty max-sm:text-center max-sm:text-[22px] md:text-[36px]">
+            <span className="text-rez-mocaccino-ink">{city}</span>{" "}
+            {status === "uc" ? (
+              <>
+                <span className="sm:hidden">Under Const.</span>
+                <span className="max-sm:hidden">{statusLabel}</span>
+              </>
+            ) : (
+              statusLabel
+            )}
           </h2>
-          <Segmented label="Browse by" value={tab} onChange={setTab} options={tabs} appearance="outline" size="lg" />
+          <Segmented
+            label="Browse by"
+            value={tab}
+            onChange={setTab}
+            options={tabs}
+            className="rounded-[14px] max-sm:flex max-sm:w-full max-sm:rounded-full"
+            itemClassName="min-w-[112px] rounded-[10px] text-[13px] aria-checked:font-semibold max-sm:h-9 max-sm:min-w-0 max-sm:flex-1 max-sm:rounded-full max-sm:px-2 max-sm:text-[12px]"
+          />
         </div>
         {stats.isError ? (
           <p role="alert" className="text-sm text-rez-graphite">

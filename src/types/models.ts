@@ -52,6 +52,10 @@ export interface Property {
   amenities: string[];
   description: string;
   images: string[];
+  photoSource?: "listing" | "sample-flat" | "project" | "placeholder";
+  availability?: string;
+  locationLabel?: string;
+  ratePerSqft?: number;
   coords: LatLng;
   realtorId: string;
   /** Denormalised for cards; the full profile comes from the realtor endpoint. */
@@ -98,6 +102,13 @@ export interface Property {
   landmarks?: LandmarkGroup[];
   /** The backend's locality for this listing; `locality` prefers the wider sub-region. */
   localityName?: string;
+  /** Unit number and floor, unless the owner hides them. */
+  unitNo?: string;
+  floor?: number;
+  /** Floors in the building. */
+  totalFloors?: number;
+  /** Age of the building in years. */
+  ageYears?: number;
 }
 
 export type PropertyVisit = {
@@ -181,6 +192,10 @@ export interface Project {
   videoUrl?: string;
   landmarks?: LandmarkGroup[];
   developerProfile?: DeveloperProfile;
+  /** Brochure file, when the developer has shared one. */
+  brochureUrl?: string;
+  /** The real locality's photo, when the backend has one. */
+  localityPhoto?: string;
 }
 
 export type RealtorCredential = "RERA" | "GST" | "NAR-India";

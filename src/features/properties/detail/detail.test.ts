@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { configurationPlans, haversineKm, landmarksFor } from "@/mocks/fixtures/detail-extras";
 import { PROPERTIES } from "@/mocks/fixtures/properties";
 import { PROJECTS } from "@/mocks/fixtures/projects";
-import { fetchProject } from "@/services/catalog";
 import { COMPARE_LIMIT, useSavedStore } from "@/stores/saved";
 import { formatAreaRange, formatFeet, formatKm, formatPriceRange, roomArea } from "./format";
 import { leadSchema, toEnquiry, toListingEnquiry, type LeadValues } from "./lead-form";
@@ -107,12 +106,6 @@ describe("sample detail data", () => {
     expect(PROJECTS.every((p) => p.configurationPlans?.length === p.bhkOptions.length)).toBe(true);
   });
 
-  // Listing detail is live (src/services/properties.test.ts); projects are still mocked.
-  it("returns related projects and developer stats with a project", async () => {
-    const pd = await fetchProject("lodha-park");
-    expect(pd.similar?.every((p) => p.city === "Mumbai" && p.id !== "lodha-park")).toBe(true);
-    expect(pd.developer?.total).toBeGreaterThan(0);
-  });
 });
 
 describe("saved store (device only)", () => {
@@ -132,5 +125,12 @@ describe("saved store (device only)", () => {
     expect(toggle("compare", { kind: "project", id: "extra", title: "P" })).toBe("limit");
     expect(toggle("compare", { kind: "property", id: "x", title: "X" })).toBe("added");
     expect(JSON.parse(localStorage.getItem("rezide-saved")!).state.compare).toHaveLength(COMPARE_LIMIT + 1);
+  });
+
+  it("caps Sale and Rental properties separately", () => {
+    const { toggle } = useSavedStore.getState();
+    for (let i = 0; i < COMPARE_LIMIT; i++) expect(toggle("compare", { kind: "property", id: `s${i}`, title: "S", intent: "buy" })).toBe("added");
+    expect(toggle("compare", { kind: "property", id: "s-extra", title: "S", intent: "buy" })).toBe("limit");
+    expect(toggle("compare", { kind: "property", id: "r0", title: "R", intent: "rent" })).toBe("added");
   });
 });

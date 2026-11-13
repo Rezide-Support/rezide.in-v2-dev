@@ -38,6 +38,8 @@ export type VerifyOtpInput = {
   firm?: string;
   reraId?: string;
   city?: string;
+  /** Sign-up only: the backend hashes it when creating the customer and fails without one. */
+  password?: string;
 };
 
 /**
@@ -126,6 +128,11 @@ export async function verifyOtp(input: VerifyOtpInput, { purpose = "signin" }: O
     return toSession(data, input);
   }
 
+  // Checked before the OTP is spent: `add/customer` answers 500 ("Illegal arguments: undefined, string") without a password.
+  if (purpose === "signup" && !input.password) {
+    throw new ApiError("Choose a password to create your account.", 400, "password_required");
+  }
+
   await api.get(`${USER_URL}/verify/sms/${code}`, { params: { phone } });
   // A one-off number check: the caller discards the session.
   if (purpose === "verify") return toSession({}, input);
@@ -136,6 +143,7 @@ export async function verifyOtp(input: VerifyOtpInput, { purpose = "signin" }: O
     firstname: input.firstName?.trim(),
     lastname: input.lastName?.trim(),
     email: input.email?.trim() || undefined,
+    password: input.password,
   });
   const session = toSession(data, input);
   // Without an id the account exists but can't be used yet: sign in as rezide.in asks after sign-up.

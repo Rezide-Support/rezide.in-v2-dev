@@ -34,6 +34,10 @@ npm run dev                  # http://localhost:3000
 | `NEXT_PUBLIC_API_WITH_CREDENTIALS` | `false` | `true` sends cookies on cross-origin API requests (real session cookie) |
 | `NEXT_PUBLIC_MOCK_DELAY_MS` | `250` | Simulated latency for mock responses |
 
+### Live Find Realtor
+
+Set `NEXT_PUBLIC_API_MOCKING=off` and restart the dev server to connect `/realtors` to the live broker directory. Its same-origin proxies use server-only `API_ORIGIN` (default `https://api.rezide.in`) and optional `REQUEST_SERVICE_SECRET`; never use a `NEXT_PUBLIC_` variable for the secret. See [the live integration contract](docs/API.md#live-find-realtor-integration) for endpoints, supported filters, pagination and limitations. Other pages retain their existing integration behavior. Do not submit test contact/invitation leads to production.
+
 ### Trying the journeys
 
 - **Sign-in:** real OTP from the Rezide backend, sent by SMS to your mobile (4-digit codes). Use a number registered on rezide.in, or sign up first.

@@ -132,7 +132,7 @@ export function PropertyInfoTabs({ property: p, project }: { property: Property;
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-rez-cloud">
-                <Image src={project.images[0]} alt={`${project.name} (sample image)`} fill sizes="(min-width: 768px) 30vw, 100vw" quality={70} className="object-cover" />
+                <Image src={project.images[0]} alt={project.name} fill sizes="(min-width: 768px) 30vw, 100vw" quality={70} className="object-cover" />
               </div>
               <div className="flex flex-col gap-3">
                 <h3 className="text-[15px] font-semibold tracking-[0.02em] uppercase">{project.name} – key features</h3>

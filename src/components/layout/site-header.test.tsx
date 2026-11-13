@@ -27,7 +27,7 @@ describe("primary navigation", () => {
     const expected = NAV_ITEMS.map((i) => i.href);
     // Read the desktop bar first: the open menu is modal and hides the rest of the page.
     expect(hrefs(screen.getByRole("navigation", { name: "Primary" }))).toEqual(expected);
-    await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    await userEvent.click(screen.getAllByRole("button", { name: "Open menu" })[0]);
     const mobile = await screen.findByRole("navigation", { name: "Menu" });
     expect(hrefs(mobile)).toEqual(expected);
   });
@@ -36,7 +36,7 @@ describe("primary navigation", () => {
     renderHeader();
     const desktop = screen.getByRole("navigation", { name: "Primary" });
     expect(within(desktop).getByRole("link", { name: "Find Realtor" })).toHaveAttribute("aria-current", "page");
-    await userEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    await userEvent.click(screen.getAllByRole("button", { name: "Open menu" })[0]);
     const mobile = await screen.findByRole("navigation", { name: "Menu" });
     expect(within(mobile).getByRole("link", { name: "Find Realtor" })).toHaveAttribute("aria-current", "page");
   });

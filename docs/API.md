@@ -108,9 +108,11 @@ Model `Property` (`src/types/models.ts`). Key fields: `id`, `title`, `category` 
 
 ### `GET /properties` [impl]
 
-Search. Response `Paginated<Property>`. Used by `/properties` (list and map views), the map pins (current page only).
+Search. Response `Paginated<Property>`. Used by `/properties` (list view).
 
 **Live.** The browser calls this app's route `GET /api/properties?<page query>` (`src/app/api/properties/route.ts`), which reads the query with `parsePropertyCriteria` and calls the Rezide backend's `POST /inventory/Listing/mobile/all` on the server (`src/services/properties.ts`), as rezide.in's `/api/listings` does. `src/services/property-mapper.ts` writes the backend body (city as the master's name, BHK and furnishing as master ids, bathrooms/parking `5+` → `["5", ">"]`, facing as `N`/`NE`/…, text and localities in `project_names_localities`, sort labels such as `"Price (High to Low)"`) and maps each listing to `Property`. When `priceHide` is set the price is never read, so it can't reach the browser: the card shows "Price on request". The total is `result_sale` or `result_rent`. Photos come from `https://cdn.rezide.in/images/{key}.jpeg` (own photos, else project sample flats, else project photos, else `/images/listing-placeholder.jpg`). The backend only holds homes, so other categories return no listings without a call. Unit type is sent as `project_type`; the media filter has no backend filter yet and is ignored.
+
+**Map view's list.** `GET /api/properties?<page query>&bbox=west,south,east,north` returns one page of the listings in that part of the map (`searchListingsInArea`), as the map moves and when a cluster is focused. The backend can't search by area, so this filters the city's cached listings (`src/services/listing-index.ts`, below), with the search params applied here by `matchesProperty`. A listing's location is its `listing_address`, else its project's `locality_and_address.coordinates`; a listing with neither isn't listed. Map pins come from a different service (below), so the list's count won't equal the pins' total.
 
 ### `GET /properties/facets` [impl]
 
@@ -132,7 +134,7 @@ Semantics (**disjunctive facets**): `facets[group][value]` = number of listings 
 The `/properties` map view shows markers for the part of the map in view: clusters (count bubbles), projects (name · count) and single listings (price). It follows GeoEstate's integration (`geo_estate_new/src/services/properties.js`, `requestPolicy.js`): the browser calls `GET {NEXT_PUBLIC_SPATIAL_API_URL}/v1/locations/search-hybrid?bbox=&zoom=&radius=64&limit=5000` directly (`src/services/map-search.ts`), with no route in this app. `src/services/map-request-policy.ts` pads and grid-snaps the bounds, caches responses for 2 minutes (reused for any view inside them at the same zoom), shares identical requests, and rate-limits (8 back to back, then one per 2 s; backs off after 429). The map reports its view 400 ms after it settles; at map zoom 18 the API is asked for zoom 24; clicking a cluster or project zooms in two levels.
 
 - The service is `https://si.rezide.in`; `NEXT_PUBLIC_SPATIAL_API_URL` overrides it for another environment.
-- Map behaviour follows GeoEstate (`features/search/map-explorer.tsx`): tapping a cluster draws the circle around its H3 cell and searches only that square (`h3-js`, `map-focus.ts`); pin popups (`map-popup.ts`); a search center pin moved by tapping the map or by the browser's location; recenter, show all, a listings rail, a project's listings panel and fullscreen. Items may also carry `projectName`, `listings`, `locality`, `city`, `address`, `bedrooms`, `bhk`, `area` and `area_unit`, which are shown when sent.
+- Map behaviour follows GeoEstate (`features/search/map-explorer.tsx`): tapping a cluster draws the circle around its H3 cell and searches only that square (`h3-js`, `map-focus.ts`); pin popups (`map-popup.ts`); a search center pin moved by tapping the map. Items may also carry `projectName`, `listings`, `locality`, `city`, `address`, `bedrooms`, `bhk`, `area` and `area_unit`, which are shown when sent.
 - **CORS:** the service must allow this site's origin. `http://localhost:3000` is allowed today; the production domain must be added by the backend team (as `geo-estate-new.vercel.app` is).
 - **To raise with the backend team:** no sale/rent or city filter (the map mixes sale and rental listings); listing items carry the short `listing_id`, which `GET /inventory/Listing/{id}` doesn't accept, so pins open a listing only when the id is a backend `_id`; the service holds no listings yet (every area returns `count: 0`), so the map shows no pins until they are loaded.
 
@@ -171,6 +173,16 @@ type PropertyDetail = { property: Property; realtor: Realtor | null; similar: Pr
 
 ## 3. Catalogue: projects, realtors, firms
 
+### Projects (live)
+
+Projects come from the Rezide backend (`src/services/projects.ts`), read on this app's server through `GET /api/projects` and `GET /api/projects/{id}`, as rezide.in's `/api/projects`. **The detail record holds the developer's bank and PAN details**, so `project-mapper.ts` copies only named public fields.
+
+Behind them: `POST /Inventory/project/filter/new` with `{ page, pageSize, city, project_names_localities_subRegions, project_age: ["Under Construction"|"Ready to Move"|"New Launch"], views, budget_min, budget_max, ids }` → `{ result_count, data }`; `GET /Inventory/project/{id}` → `{ project, towers, stateRera, projectOverview }`; listings from `POST /inventory/Listing/mobile/all` by `project_names_localities`, kept by the row's project id, because the endpoint's `project_id` filter misses listings (**to raise with the backend team**: Lodha Bellagio has live listings but `project_id` returns none, while `/filter/count` counts them); landmarks and locality photo as in Localities.
+
+The backend ignores possession years (`under_construction`), matches any of text and localities together, and takes one budget range, so those searches fetch every matching page (cached 5 minutes) and are checked here. It has no developer filter, so developer counts aren't shown and "Builder projects" searches project names by the developer's first word. New launches come back worded as Under Construction, so `nl` is shown only when it's the only status asked for. Project enquiries send `POST /lead/developer-contact`. Project shortlists stay on the device.
+
+The contracts below are the original proposal, and the mock still answers them.
+
 ### `GET /projects` [impl]
 
 Params: `city` (required), `q` (tokens over `name`, `developer`, `locality`), `status[]` (`uc|rtm|nl`), `loc[]`, `budget[]` (tier ids from `BUDGET_TIERS`: `value|mid-segment|premium|super-premium|luxury|ultra-luxury`, matched on `priceFrom`, `min` inclusive / `max` exclusive), `year[]` (possession year, int > 2000; projects without one never match), `view[]` (any of the project's `views`), `page`, `per`. OR within a group, AND across. Sort: status `nl`, `uc`, `rtm`, then `name`. Response `Paginated<Project>`. Used by `/projects/search` (including the live count for the unapplied filter dialog), the listing wizard's project picker (`per=36`) and the "Projects" view of `/properties` (`per=36`).
@@ -187,9 +199,35 @@ type ProjectDetail = { project: Project; listings: Property[]; similar?: Project
 
 404 for unknown ids. Used by `/projects/[id]`.
 
-### Realtors and firms (live)
+### Live Find Realtor integration
 
-The directory comes from the Rezide backend (`src/services/realtors.ts`), read on this app's server through `GET /api/realtors`, `GET /api/realtors/{id}`, `GET /api/firms/{id}` and `GET /api/firms/{id}/agents/{agent}`, as rezide.in's `/api/brokers`. **Firm records hold PAN and Aadhaar numbers, bank details, mobile numbers and emails**, so `realtor-mapper.ts` copies only named public fields. Ids are the backend's `_id`s; they are used as URL slugs.
+`/realtors` always uses TanStack Query and same-origin Next.js proxies instead of the legacy catalogue endpoints below.
+
+| Local endpoint | Backend endpoint (POST unless noted) |
+| --- | --- |
+| `/api/brokers?city=Mumbai&page=1&pageSize=6` | `/v1/admin/brokers/filter/web?city=Mumbai&page=1&pageSize=6` |
+| `GET /api/search?q=...&scope=broker` | `GET /v1/admin/repository/locality/search/list/{encodedQuery}/broker` |
+| `/api/listings/all?firm_id=...` | `/v1/admin/inventory/Listing/mobile/all?firm_id=...` |
+| `/api/realtors/contact` | `/v1/contact/form/realtor` (outside admin) |
+| `GET /api/brokers/profile?name=...` | `POST /v1/admin/brokers/filter/web?searchParams=...&page=1&pageSize=9`, body `{ searchParams: decodedFirmName }` |
+| `GET /api/brokers/listings?firm_id=...&purpose=sale\|rent&page=...` | `POST /v1/admin/inventory/Listing/mobile/all?firm_id=...`, body `{ page, pageSize: 9, property_purpose: "sale"\|"rent" }` |
+| `/api/realtors/invitation` | `/v1/admin/lead/developer-contact` |
+
+Server configuration: `API_ORIGIN=https://api.rezide.in`, optional `REQUEST_SERVICE_SECRET`. The secret is only attached to upstream admin requests. Requests time out after 15 seconds. Public directory/count reads cache for 60 seconds and suggestions for 300 seconds; submissions are never cached. The proxy returns an explicit public DTO and strips private identity/contact fields from backend firm/person records.
+
+Directory filters: `status=complete`, `active_status=active`, `sortBy=[1]`, plus nonempty label arrays `subRegions`, `locality`, `projects`, `searchParams`, `specialization`. URL `broker` maps to `searchParams`; URL `spec` maps to specialization labels, not IDs. By Firm sends specialization to the backend. By Name checks the person's own specializations (falling back to the firm's) locally so an individual specialization is not lost to a firm-only backend filter. Language (`lang`) and Gender (`gender`) are checked locally against the complete matching people directory before totals and pagination. Filter changes reset page; selected values, removal chips and Clear all use URL state. The navbar city is sent as an optional upstream `city` query parameter. City is included in directory query/cache keys for both view modes and dropdown options. Changing city resets pagination and clears location/project filters. Bengaluru is normalized to the backend city name Bangalore.
+
+Dropdown options are unique labels from all pages of the selected city directory without other filters: locations from `general_information.allSubRegions`, specialization from firm/person specialization arrays, and language from managers/agents' `language`. `Gujrati` is displayed/matched as `Gujarati`. The proxy includes only the public `salutation` label alongside the existing public person fields. Gender is a temporary approximation: `Mr.` maps to Male; `Ms.`, `Mrs.` and `Miss` map to Female; missing/unrecognized titles map to Not specified. This is not an explicit or verified gender attribute. Language and Gender are shown only in By Name mode. Options do not shrink with the current filters.
+
+By Firm uses server pagination (six per page, `broker_count` total). By Name loads all matching firm pages, deduplicates managers/agents by ID within each firm, and pages the flattened people six at a time. Person-card listing totals are labelled as firm totals. Firm counts fall back to directory totals when unavailable. Profiles use `/realtors/{encodedFirmName}` and `/realtors/{encodedFirmName}/{personId}` and display the public fields available from the directory; property inventory detail integration is separate.
+
+Contact sends `firm_id`, `fname`, optional `lname`, `mobile`, required `email`, `enquiryType=realtor`. Invitations send `type=listRealtors`, `fullName`, `email`, `mobile`, `realtorName`, `source="Rezide.in find realtor page"`. Forms only submit on explicit user action. Do not submit test leads to production.
+
+Name-based firm profiles at `/realtors/{firmName}` and `/brokers/{firmName}` share the same public profile and paginated listings. The first matching firm supplies the firm ID. Available Sale is the default; changing to Available Rental resets the page to 1. Totals come from `result_sale` and `result_rent`. Existing property cards use the server-side `toProperty` allowlist, preserving withheld prices; list records provide the required card data, so no per-card detail calls are made. Profile responses expose only public firm information, office addresses, HTTP(S) social links and public team summaries. All upstream calls remain server-only and attach `REQUEST_SERVICE_SECRET` when configured. Directory cards use the broker response's own rental/sale totals without making listing requests.
+
+### Shared realtor and firm services (live)
+
+Shared consumers, including property details and the listing wizard, use `src/services/realtors.ts`, read on this app's server through `GET /api/realtors`, `GET /api/realtors/{id}`, `GET /api/firms/{id}` and `GET /api/firms/{id}/agents/{agent}`, as rezide.in's `/api/brokers`. **Firm records hold PAN and Aadhaar numbers, bank details, mobile numbers and emails**, so `realtor-mapper.ts` copies only named public fields. Ids are the backend's `_id`s; they are used as URL slugs. ID-based firm/person profile URLs retain these full profile services, while firm-name URLs from Find Realtor use the public directory profiles described above.
 
 Behind them: `POST /brokers/filter/web?page=&pageSize=&status=complete` with `{ status: "complete", active_status: "active", sortBy: [1] }` → `{ data, broker_count }`; per person `POST /inventory/Listing/mobile/filter/count?broker_id=` → `{ result_sale, result_rent }`; listings `POST /inventory/Listing/mobile/all?firm_id=|broker_id=` with `{ page, pageSize, property_purpose }` (first 100 per purpose). The backend ignores city, language and specialization on the directory, and it has only a few dozen firms, so the directory is cached in memory for 10 minutes and filtered here. Someone with no stated city is listed under every city, as rezide.in lists everyone. Gender is read from the salutation. The backend has no association, rating or deal data.
 
@@ -221,12 +259,12 @@ Params: `city`, `by` (`name|firm`: what `q` searches), `q`, `spec[]` (any of), `
 
 ## 4. Auth (OTP)
 
-**Live: the Rezide backend, never mocked** (`src/services/auth.ts`, the same flow and endpoints as the rezide.in web app). The browser calls `/v1/admin/*`, which `next.config.ts` proxies to `https://api.rezide.in/v1/admin/*`. Numbers are sent as `91` + 10 digits; codes are 4 digits (`OTP_LENGTH`). The purpose passed to `useOtpFlow` picks the endpoints:
+**Live: the Rezide backend, never mocked** (`src/services/auth.ts`, the same flow and endpoints as the rezide.in web app). The browser calls `https://api.rezide.in/v1/admin/*` directly. Numbers are sent as `91` + 10 digits; codes are 4 digits (`OTP_LENGTH`). The purpose passed to `useOtpFlow` picks the endpoints:
 
 | Purpose (`useOtpFlow` option) | Used by | Send OTP | Verify OTP |
 | --- | --- | --- | --- |
 | `signin` (default) | `/login`, List Property gate, Realtor Corner sign-in and checkout | `GET /user/user/login/otp/mobile/{phone}?role=customer\|broker` | `GET /user/user/login/user/{otp}?phone={phone}` → user `{ id, firstname, lastname, phone, email }` |
-| `signup` | `/signup` (customers; realtor sign-up is refused with a message) | `GET /user/user/send/sms/otp/{phone}` | `GET /user/user/verify/sms/{otp}?phone={phone}`, then `POST /user/user/add/customer { phone, firstname, lastname, email }` |
+| `signup` | `/signup` (customers; realtor sign-up is refused with a message) | `GET /user/user/send/sms/otp/{phone}` | `GET /user/user/verify/sms/{otp}?phone={phone}`, then `POST /user/user/add/customer { user_role, user_group, phone, firstname, lastname, email, password }` (the backend bcrypt-hashes `password`; without it it answers 500 "Illegal arguments: undefined, string") |
 | `verify` | Realtor Corner trial dialog (number check only; the session is discarded) | `GET /user/user/send/sms/otp/{phone}` | `GET /user/user/verify/sms/{otp}?phone={phone}` |
 
 Sign out also calls `POST /user/user/logout`. The verified user is mapped to `Session = { user: User; expiresAt }` with `User = { id, role, firstName, lastName, phone, email?, firm? }` and kept for 12 h in `localStorage` (`src/stores/session.ts`). Errors come back as `{ error }` or `{ message }` (wrong code: `400 { "error": "Invalid OTP" }`), shown under the code field; a 401 from these endpoints is a form error, not an expired session.
@@ -259,7 +297,7 @@ Frontend seams already in place (`src/lib/api/client.ts`, `src/app/providers.tsx
 
 The property detail page's contact form, Make an offer and Request visit send to the listing's broker, as rezide.in does: `POST https://api.rezide.in/v1/contact/form` from the browser (`sendListingEnquiry` in `src/services/mutations.ts`), body `{ name, firm_id, phone: "+91…", brokerId, listing_id, enquiryType, notes? }`, answering `{ message }`. `brokerId` and `firm_id` come from the listing's `broker_and_agent`, and `enquiryType` holds rezide.in's wording (`toListingEnquiry` in `lead-form.tsx`). Offer and visit need a signed-in user; the contact form doesn't. rezide.in's offer button sends no amount, so the amount this form asks for goes in `notes`.
 
-**Not live:** project leads (`POST /lead/developer-contact`) and realtor profile leads (`POST https://api.rezide.in/v1/contact/form/realtor`) wait for the Projects and Realtors modules, which still use sample ids. The Realtor Corner callback and trial forms have no endpoint on rezide.in.
+The Realtor Corner callback and trial forms have no endpoint on rezide.in.
 
 ### `POST /enquiries` [impl]
 
@@ -367,9 +405,9 @@ Notes for the backend:
 
 ## Home page rails (live)
 
-The Properties and Projects home rails (`src/features/home/rails.tsx`) load through `src/services/home.ts` from the same endpoints as rezide.in's `homeSlice`: `GET /inventory/project/home-page/locality`, `/budget`, `/possession?status=Under Construction`, and `GET /inventory/listing/home-page?property=sale|rent&subType=byBudget|byType|byBhk`. Counts are worded by the backend ("326+ listings") and shown as they come.
+The Properties and Projects home rails (`src/features/home/rails.tsx`) load through `src/services/home.ts`: `GET /inventory/project/home-page/locality/city?city=`, `/budget?city=`, `/possession?status=Under Construction&city=`, `GET /inventory/listing/home-page?property=sale|rent&subType=byBudget&city=&property_type=home|office|retail|land`, and `subType=byType|byBhk`, which stay nationwide. Offices, retail, industrial and land only get budgets from these; their Location, Type and Size cards count real listings (`POST /inventory/Listing/mobile/all` with `listing_type: [office|retail|industrial|land]`). Counts are worded by the backend ("326+ listings") and shown as they come. City names are sent as the backend spells them (Bengaluru → Bangalore).
 
-**To raise with the backend team:** these endpoints ignore `location` (Pune returns the same numbers as Mumbai) and the popular localities are all in Mumbai with no city field, so the counts are not per city and can be higher than a card's search results (e.g. 3 BHK shows 326+, Mumbai search has 304). Some popular-locality names match no search ("N M Joshi Marg Police Station"). `/developers` isn't used: the new UI has no developers section.
+**Deployment:** these filters come from a backend handover marked "pending deploy". Until it's deployed, `/locality/city` answers 404 and the filters are ignored. So a 404 falls back to the old `/inventory/project/home-page/locality` (Mumbai's popular localities, linking to Mumbai). `/locality/city` is deployed now, so the fallback can be removed. The doc has no `property_type` for industrial. `/developers` isn't used: the new UI has no developers section.
 
 ## 10. Reference data owned by the frontend today
 

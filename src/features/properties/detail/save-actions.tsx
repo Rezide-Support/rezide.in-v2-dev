@@ -2,12 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, Scale } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { accountQueries } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { setShortlisted } from "@/services/activity";
-import { COMPARE_LIMIT, useIsSaved, useSavedStore, type SavedKind, type SavedList } from "@/stores/saved";
+import { COMPARE_LIMIT, compareGroupOf, useIsSaved, useSavedStore, type SavedKind, type SavedList } from "@/stores/saved";
 import { useSession } from "@/stores/session";
 import type { Intent } from "@/types/models";
 import { ShareButton } from "../share-button";
@@ -56,17 +57,27 @@ function useAccountShortlist(userId: string, id: string, title: string, intent: 
  */
 export function useSaveToggle(list: SavedList, kind: SavedKind, id: string, title: string, intent?: Intent) {
   const { session } = useSession();
+  const router = useRouter();
   const accountList = list === "shortlist" && kind === "property" && !!intent && !!session?.user.id;
   const account = useAccountShortlist(accountList ? session.user.id : "", id, title, intent);
   const device = useIsSaved(list, kind, id);
   const toggle = useSavedStore((s) => s.toggle);
   const run = () => {
     if (accountList) return account.run();
-    const result = toggle(list, { kind, id, title });
+    // Compare is for signed-in users, as on rezide.in.
+    if (list === "compare" && !session && !device) {
+      toast.error("Sign in to compare properties and projects.", {
+        action: { label: "Sign in", // Read at click time: reading the path while rendering would need a Suspense boundary here.
+        onClick: () => router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`) },
+      });
+      return;
+    }
+    const result = toggle(list, { kind, id, title, ...(kind === "property" && intent ? { intent } : {}) });
     if (result === "limit") {
-      toast.error(`You can compare up to ${COMPARE_LIMIT} ${kind === "project" ? "projects" : "properties"}. Remove one first.`);
+      const group = { sale: "properties for sale", rent: "rental properties", projects: "projects" }[compareGroupOf({ kind, intent })];
+      toast.error(`You can compare up to ${COMPARE_LIMIT} ${group} at a time. Remove one first.`);
     } else if (result === "added") {
-      toast.success(`${COPY[list].add}: ${title}`, { description: "Saved on this device only. It isn't synced to an account in this prototype." });
+      toast.success(`${COPY[list].add}: ${title}`, list === "compare" ? undefined : { description: "Saved on this device only. It isn't synced to an account in this prototype." });
     } else {
       toast(`${COPY[list].remove}: ${title}`);
     }
@@ -74,7 +85,7 @@ export function useSaveToggle(list: SavedList, kind: SavedKind, id: string, titl
   return { on: accountList ? account.on : device, run };
 }
 
-function SaveButton({ list, kind, id, title, intent, compact }: { list: SavedList; kind: SavedKind; id: string; title: string; intent?: Intent; compact?: boolean }) {
+function SaveButton({ list, kind, id, title, intent, compact, className }: { list: SavedList; kind: SavedKind; id: string; title: string; intent?: Intent; compact?: boolean; className?: string }) {
   const { on, run } = useSaveToggle(list, kind, id, title, intent);
   const IconCmp = list === "shortlist" ? Heart : Scale;
   return (
@@ -84,7 +95,7 @@ function SaveButton({ list, kind, id, title, intent, compact }: { list: SavedLis
       onClick={run}
       aria-pressed={on}
       aria-label={compact ? `${COPY[list].label} ${title}` : undefined}
-      className={cn(!compact && "px-2.5 font-medium whitespace-nowrap", on && "text-rez-mocaccino-ink")}
+      className={cn(!compact && "px-2.5 font-medium whitespace-nowrap", on && "text-rez-mocaccino-ink", className)}
     >
       <IconCmp className="size-[18px]" fill={on && list === "shortlist" ? "currentColor" : "none"} strokeWidth={on ? 2.25 : 2} aria-hidden />
       {/* The label stays the same when toggled (colour, filled icon and aria-pressed show the state),
@@ -99,13 +110,13 @@ export function SaveActions({ kind, id, title, path, intent, className }: { kind
   return (
     <div className={cn("flex flex-wrap items-center gap-0.5 min-[340px]:flex-nowrap", className)}>
       <ShareButton title={title} path={path} className="h-10 border-transparent px-2.5 font-medium hover:bg-black/[0.06]" />
-      <SaveButton list="compare" kind={kind} id={id} title={title} />
+      <SaveButton list="compare" kind={kind} id={id} title={title} intent={intent} />
       <SaveButton list="shortlist" kind={kind} id={id} title={title} intent={intent} />
     </div>
   );
 }
 
 /** Round icon-only variant for cards. */
-export function SaveIconButton(props: { list: SavedList; kind: SavedKind; id: string; title: string }) {
+export function SaveIconButton(props: { list: SavedList; kind: SavedKind; id: string; title: string; intent?: Intent; className?: string }) {
   return <SaveButton {...props} compact />;
 }

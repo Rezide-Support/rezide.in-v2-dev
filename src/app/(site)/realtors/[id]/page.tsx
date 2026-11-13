@@ -7,6 +7,8 @@ import { DetailSkeleton } from "@/components/common/detail-skeleton";
 import { FirmProfileView } from "@/features/realtors/firm-profile";
 import { realtorHref } from "@/features/realtors/links";
 import { ApiError } from "@/lib/api/client";
+import { LiveRealtorProfile } from "@/features/realtors/live-profile";
+import { decodeDirectorySegment } from "@/features/realtors/directory-model";
 import { firmQueries } from "@/lib/queries";
 import { fetchFirm, fetchRealtor } from "@/services/catalog";
 
@@ -31,6 +33,7 @@ async function legacyAgentUrl(id: string): Promise<string | null> {
 export async function generateMetadata({ params }: PageProps<"/realtors/[id]">): Promise<Metadata> {
   const { id } = await params;
   await connection();
+  if (!/^[0-9a-f]{24}$/i.test(id)) return { title: decodeDirectorySegment(id) };
   try {
     const { firm, team } = await fetchFirm(id);
     return {
@@ -44,6 +47,7 @@ export async function generateMetadata({ params }: PageProps<"/realtors/[id]">):
 
 async function FirmData({ params }: { params: PageProps<"/realtors/[id]">["params"] }) {
   const { id } = await params;
+  if (!/^[0-9a-f]{24}$/i.test(id)) return <LiveRealtorProfile firmName={decodeDirectorySegment(id)} />;
   // The directory is request-time data (the mock adapter reads the clock), so opt out of prerendering here.
   await connection();
   const queryClient = new QueryClient();

@@ -1,7 +1,7 @@
 import { api } from "@/lib/api/client";
 import type { ActivityItem, ActivityTab, Intent } from "@/types/models";
 import { toBackendPhone } from "./auth";
-import { toProperty, type BackendListing } from "./property-mapper";
+import { isObjectId, toProperty, type BackendListing } from "./property-mapper";
 
 /*
  * A user's activity on the Rezide backend, the same endpoints as rezide.in's
@@ -47,7 +47,45 @@ export function toActivityItems(rows: ActivityRow[]): ActivityItem[] {
   return [...items.values()];
 }
 
+/** Each listing's newest row only, so a listing viewed many times is loaded once. */
+function latestPerListing(rows: ActivityRow[]): ActivityRow[] {
+  const latest = new Map<string, ActivityRow>();
+  for (const row of rows) {
+    const id = row.listing?._id;
+    if (!id || !row.timestamp) continue;
+    const seen = latest.get(id);
+    if (!seen || Date.parse(row.timestamp) > Date.parse(seen.timestamp ?? "")) latest.set(id, row);
+  }
+  return [...latest.values()];
+}
+
 /* ---------------- Reading (server) ---------------- */
+
+/**
+ * Viewed and shortlist rows embed the listing without its lookups populated: project, BHK,
+ * furnishing and availability come as bare ids, so the card would show ids and no project photos.
+ */
+function isUnpopulated(listing: BackendListing): boolean {
+  const d = listing.listing_details ?? {};
+  const c = listing.commercial_details ?? {};
+  return [d.project, d.bhk, c.furnishing, c.availablility_status].some(isObjectId);
+}
+
+/** Replaces each unpopulated listing with its full record (GET /inventory/Listing/{id}); one that fails keeps the row's copy. */
+async function withFullListings(rows: ActivityRow[]): Promise<ActivityRow[]> {
+  return Promise.all(
+    rows.map(async (row) => {
+      const id = row.listing?._id;
+      if (!id || !isUnpopulated(row.listing!)) return row;
+      try {
+        const { data } = await api.get<BackendListing>(`/inventory/Listing/${encodeURIComponent(id)}`);
+        return data?._id ? { ...row, listing: data } : row;
+      } catch {
+        return row;
+      }
+    }),
+  );
+}
 
 /** A share row. `listing_id` comes populated, but only `_id` is used, as on rezide.in. */
 type SharedRow = { listing_id?: { _id?: string } | string | null; createdAt?: string };
@@ -78,11 +116,11 @@ export async function getActivity(tab: ActivityTab, user: ActivityUser): Promise
   switch (tab) {
     case "viewed": {
       const { data } = await api.get<{ result?: { visits?: ActivityRow[] } }>(VIEWED(user.id), { params });
-      return toActivityItems(data.result?.visits ?? []);
+      return toActivityItems(await withFullListings(latestPerListing(data.result?.visits ?? [])));
     }
     case "shortlisted": {
       const { data } = await api.get<{ result?: { shortlist?: ActivityRow[] } }>(SHORTLIST(user.id), { params });
-      return toActivityItems(data.result?.shortlist ?? []);
+      return toActivityItems(await withFullListings(latestPerListing(data.result?.shortlist ?? [])));
     }
     case "shared":
       return toActivityItems(await sharedRows(user.phone));

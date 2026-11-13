@@ -37,10 +37,11 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
 export const FOOTER_COLUMNS: { label: string; href?: string }[][] = [
   [
     { label: "Explore", href: "/properties" },
-    { label: "Projects", href: "/projects" },
+    { label: "Features" },
     { label: "Pricing", href: "/realtor-corner#pricing" },
-    { label: "Find a Realtor", href: "/realtors" },
+    { label: "Newsletter" },
   ],
-  [{ label: "About Us" }, { label: "Careers" }, { label: "Blog" }, { label: "Help Centre" }],
-  [{ label: "Support" }, { label: "Privacy Policy" }, { label: "Terms of Use" }, { label: "Cookies Policy" }],
+  [{ label: "Company" }, { label: "Careers" }, { label: "Blog" }, { label: "Learning center" }],
+  // Phones lay this group out in two columns, row by row: Support | Privacy Policy, Terms of use | Cookies Policy.
+  [{ label: "Support" }, { label: "Privacy Policy" }, { label: "Terms of use" }, { label: "Cookies Policy" }],
 ];

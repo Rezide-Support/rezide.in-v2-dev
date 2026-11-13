@@ -29,12 +29,18 @@ export const REALTOR_CITIES = ["Mumbai", "Pune", "Bengaluru", "Delhi NCR", "Hyde
 const ASSOCIATIONS = ["NAR-India Independent", "NAR-India, AREA", "NAR-India, SMART", "NAR-India, TREK", "Other association"];
 
 const signinSchema = z.object({ phone: indianMobile });
-const customerSignupSchema = z.object({
-  firstName: personName("first name"),
-  lastName: personName("last name"),
-  email: optionalEmail,
-  phone: indianMobile,
-});
+// The backend hashes a password for every new customer (rezide.in's sign-up asks for one); without it
+// `add/customer` fails with 500 "Illegal arguments: undefined, string". Sign-in itself stays OTP-only.
+const customerSignupSchema = z
+  .object({
+    firstName: personName("first name"),
+    lastName: personName("last name"),
+    email: optionalEmail,
+    phone: indianMobile,
+    password: z.string().min(6, "Password must be at least 6 characters.").max(128, "Password is too long."),
+    confirmPassword: z.string().min(1, "Confirm your password."),
+  })
+  .refine((v) => v.password === v.confirmPassword, { message: "Passwords don’t match.", path: ["confirmPassword"] });
 const realtorSignupSchema = z.object({
   firstName: personName("first name"),
   lastName: personName("last name"),
@@ -55,6 +61,8 @@ type DetailsValues = {
   reraId?: string;
   city?: string;
   association?: string;
+  password?: string;
+  confirmPassword?: string;
 };
 
 /** Only same-origin relative paths are accepted as post-login destinations. */
@@ -83,7 +91,7 @@ function DetailsStep({
   const schema = mode === "signin" ? signinSchema : audience === "realtor" ? realtorSignupSchema : customerSignupSchema;
   const { register, handleSubmit, control, formState, setError } = useForm<DetailsValues>({
     resolver: zodResolver(schema as z.ZodType<DetailsValues, DetailsValues>),
-    defaultValues: { phone: "", firstName: "", lastName: "", email: "", firm: "", reraId: "", city: "", association: "" },
+    defaultValues: { phone: "", firstName: "", lastName: "", email: "", firm: "", reraId: "", city: "", association: "", password: "", confirmPassword: "" },
     mode: "onTouched",
   });
   const e = formState.errors;
@@ -147,6 +155,16 @@ function DetailsStep({
           render={({ field }) => <PhoneInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} name={field.name} />}
         />
       </Field>
+      {mode === "signup" && audience === "customer" && (
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <Field label="Password" required error={e.password?.message} hint="At least 6 characters">
+            <Input type="password" autoComplete="new-password" {...register("password")} />
+          </Field>
+          <Field label="Confirm password" required error={e.confirmPassword?.message}>
+            <Input type="password" autoComplete="new-password" {...register("confirmPassword")} />
+          </Field>
+        </div>
+      )}
       {error && !(error instanceof ApiError && error.fieldErrors?.phone) ? <FormError>{errorMessage(error)}</FormError> : null}
       <Button type="submit" size="xl" disabled={pending} className="mt-1 tracking-[0.1em] uppercase">
         {pending ? "Sending code…" : "Send OTP"}

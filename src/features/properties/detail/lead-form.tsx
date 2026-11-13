@@ -17,7 +17,7 @@ import { API_MOCKING, ApiError, errorMessage } from "@/lib/api/client";
 import { localIsoDate } from "@/lib/format";
 import { indianMobile, personName } from "@/lib/validation";
 import { cn } from "@/lib/utils";
-import { createEnquiry, sendListingEnquiry, type ListingEnquiry } from "@/services/mutations";
+import { createEnquiry, sendListingEnquiry, sendProjectEnquiry, type ListingEnquiry } from "@/services/mutations";
 import { useSession } from "@/stores/session";
 import type { EnquiryChannel } from "@/types/models";
 
@@ -80,6 +80,9 @@ export function toEnquiry(v: LeadValues): { channel: EnquiryChannel; message?: s
 /** A real listing: its enquiries go to its broker through the backend, as on rezide.in. */
 export type LeadListing = { id: string; firmId: string; brokerId: string; name: string; path: string };
 
+/** A real project: its enquiries go to the Rezide team, as on rezide.in. */
+export type LeadProject = { developerName: string; projectName: string; location: string; budgetMin?: number; budgetMax?: number };
+
 /** The exact values rezide.in submits, where they differ from the option's label. */
 const INTENT_VALUES: Record<string, string> = {
   "Request the price for this property": "I would like to request the price for this property",
@@ -120,13 +123,15 @@ type Props = {
   className?: string;
   /** Visible labels (dialogs) or placeholder-style with screen-reader labels (v1 agent card). */
   compact?: boolean;
-  /** Set on a real listing: the request goes to its broker. Without it, it goes to the enquiry service (mocked). */
+  /** Set on a real listing: the request goes to its broker. Without it or `project`, it goes to the enquiry service (mocked). */
   listing?: LeadListing;
+  /** Set on a real project: the request goes to the Rezide team. */
+  project?: LeadProject;
   /** The option chosen at the start, e.g. asking for the price of a listing that withholds it. */
   defaultIntent?: string;
 };
 
-export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, submitLabel, className, compact, listing, defaultIntent = "" }: Props) {
+export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, submitLabel, className, compact, listing, project, defaultIntent = "" }: Props) {
   const { session, status } = useSession();
   const form = useForm<LeadValues>({
     resolver: zodResolver(leadSchema),
@@ -146,6 +151,10 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
 
   const mutation = useMutation({
     mutationFn: async (v: LeadValues): Promise<{ id?: string; message?: string }> => {
+      if (project) {
+        await sendProjectEnquiry({ ...project, name: `${v.firstName} ${v.lastName}`.trim(), phone: v.phone, email: session?.user.email, intent: v.intent, pageUrl: window.location.href });
+        return {};
+      }
       if (!listing) return createEnquiry({ ...target, ...toEnquiry(v) });
       if (!listing.firmId || !listing.brokerId) throw new Error("Broker details are unavailable right now. Please try again.");
       return sendListingEnquiry(toListingEnquiry(v, listing));
@@ -160,7 +169,7 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
   });
 
   // Whether this form's request is only stored by the mock API.
-  const demo = API_MOCKING && !listing;
+  const demo = API_MOCKING && !listing && !project;
 
   // As on rezide.in, an offer or visit on a listing needs an account.
   if (listing && mode !== "contact" && status === "anonymous") {

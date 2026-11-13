@@ -1,6 +1,6 @@
 import { api } from "@/lib/api/client";
 import { defaultPropertyCriteria, serializePropertyCriteria } from "@/features/search/criteria";
-import { groupProperties, propertyFacets } from "@/features/search/match";
+import { groupProperties, propertyFacets, searchProperties, type MapArea } from "@/features/search/match";
 import {
   BATHROOM_OPTIONS,
   BHK_OPTIONS,
@@ -13,6 +13,7 @@ import {
 import type { Paginated, Property, PropertySearchCriteria } from "@/types/models";
 import type { PropertyDetail, PropertyFacets, PropertyGroupBy, PropertyGroups } from "./catalog";
 import { listingIndex } from "./listing-index";
+import { findListingProject, getProjectsByIds } from "./projects";
 import { findRealtor } from "./realtors";
 import {
   brochureUrlFor,
@@ -42,9 +43,10 @@ const emptyPage = (c: PropertySearchCriteria): Paginated<Property> => ({
 
 /** Server only: one page of listings from the backend, in the UI's shape. */
 export async function searchListings(criteria: PropertySearchCriteria): Promise<Paginated<Property>> {
-  // The backend only holds homes today; offices, retail, industrial and land have no listings.
-  if (criteria.category !== "homes") return emptyPage(criteria);
-  const { data } = await api.post<BackendListingPage>("/inventory/Listing/mobile/all", toListingFilters(criteria));
+  // The backend's project_id filter misses listings, so projects are searched by name.
+  const projectNames = criteria.projects.length ? (await getProjectsByIds(criteria.projects, criteria.city)).items.map((p) => p.name) : [];
+  if (criteria.projects.length && projectNames.length === 0) return emptyPage(criteria);
+  const { data } = await api.post<BackendListingPage>("/inventory/Listing/mobile/all", toListingFilters(criteria, projectNames));
   return toPropertyPage(data, criteria);
 }
 
@@ -63,20 +65,20 @@ const SIMILAR_COUNT = 3;
 /**
  * Server only: one listing for the detail page, with similar listings (same
  * purpose in the same locality). A missing listing rejects with the backend's 404.
- * The project card stays empty until the Projects module is live.
  */
 export async function getListingDetail(id: string): Promise<PropertyDetail> {
   const { data } = await api.get<BackendListing>(`/inventory/Listing/${encodeURIComponent(id)}`);
   const property = toProperty(data);
-  const [nearby, brochureUrl, realtor] = await Promise.all([
+  const [nearby, brochureUrl, realtor, { project, projectStock }] = await Promise.all([
     searchListings(
-      defaultPropertyCriteria({ city: property.city, intent: property.intent, localities: [property.locality], perPage: SIMILAR_COUNT + 1 }),
+      defaultPropertyCriteria({ city: property.city, intent: property.intent, category: property.category, localities: [property.locality], perPage: SIMILAR_COUNT + 1 }),
     ).catch(() => null),
     findBrochure(property.id),
     findRealtor(property.realtorId),
+    findListingProject(property.projectId, property.city),
   ]);
   const similar = (nearby?.items ?? []).filter((s) => s.id !== property.id).slice(0, SIMILAR_COUNT);
-  return { property: { ...property, brochureUrl }, realtor, similar, project: null };
+  return { property: { ...property, brochureUrl }, realtor, similar, project, projectStock };
 }
 
 /**
@@ -100,9 +102,13 @@ export async function fetchProperty(id: string): Promise<PropertyDetail> {
   return data;
 }
 
-/** Listings the counts and groups are computed from: none outside homes (the backend holds nothing else). */
-const indexFor = (c: PropertySearchCriteria) =>
-  c.category === "homes" ? listingIndex(c.city, c.intent) : Promise.resolve<Property[]>([]);
+/** Listings the counts, groups and map list are computed from. */
+const indexFor = (c: PropertySearchCriteria) => listingIndex(c.city, c.intent, c.category);
+
+/** Server only: one page of the listings in part of the map. The backend can't search by area. */
+export async function searchListingsInArea(criteria: PropertySearchCriteria, area: MapArea): Promise<Paginated<Property>> {
+  return searchProperties(await indexFor(criteria), criteria, area);
+}
 
 /**
  * Server only: per-option counts for the filter drawer ("disjunctive": each count
@@ -146,13 +152,13 @@ export async function fetchPropertyGroups(criteria: PropertySearchCriteria, grou
   return data;
 }
 
-/** Listing search: on the server it calls the backend; in the browser it goes through /api/properties. */
-export async function fetchProperties(criteria: PropertySearchCriteria): Promise<Paginated<Property>> {
-  if (isServer) return searchListings(criteria);
+/** Listing search, optionally within part of the map: on the server it calls the backend; in the browser it goes through /api/properties. */
+export async function fetchProperties(criteria: PropertySearchCriteria, area?: MapArea): Promise<Paginated<Property>> {
+  if (isServer) return area ? searchListingsInArea(criteria, area) : searchListings(criteria);
   const { data } = await api.get<Paginated<Property>>("/api/properties", {
     // This app's own route, not the backend: no base URL.
     baseURL: "",
-    params: toParams(serializePropertyCriteria({ ...criteria, view: "list" })),
+    params: { ...toParams(serializePropertyCriteria({ ...criteria, view: "list" })), bbox: area?.join(",") },
   });
   return data;
 }

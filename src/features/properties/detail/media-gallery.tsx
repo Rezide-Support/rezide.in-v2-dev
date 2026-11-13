@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { SampleBadge } from "@/components/common/feedback";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,11 +54,14 @@ export function MediaGallery({ tabs, title, className }: { tabs: GalleryTab[]; t
   );
 }
 
-function Viewer({ images, label }: { images: string[]; label: string }) {
+export function Viewer({ images, label, cardHref, priority }: { images: string[]; label: string; cardHref?: string; priority?: boolean }) {
   const [index, setIndex] = useState(0);
+  const [failedSrc, setFailedSrc] = useState("");
+  const touchStart = useRef<number | null>(null);
   const thumbs = useRef<(HTMLButtonElement | null)[]>([]);
   const n = images.length;
   const go = (i: number) => {
+    if (n < 2) return;
     const next = (i + n) % n;
     setIndex(next);
     const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -72,6 +76,17 @@ function Viewer({ images, label }: { images: string[]; label: string }) {
       go(index + 1);
     }
   };
+
+  if (cardHref) return <div role="region" aria-roledescription="carousel" aria-label={label} onKeyDown={onKeyDown} className="relative h-full w-full" onTouchStart={event => { touchStart.current = event.touches[0].clientX; }} onTouchEnd={event => { if (touchStart.current === null) return; const distance = event.changedTouches[0].clientX - touchStart.current; if (Math.abs(distance) > 40) go(index + (distance < 0 ? 1 : -1)); touchStart.current = null; }}>
+    <Link href={cardHref} className="absolute inset-0" aria-label={`View ${label}`}>
+      <Image src={images[index] && images[index] !== failedSrc ? images[index] : "/images/listing-placeholder.jpg"} onError={() => setFailedSrc(images[index] || "")} alt={`${label}, photo ${index + 1} of ${n || 1}`} fill sizes="(min-width: 1280px) 420px, (min-width: 768px) 50vw, 100vw" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : undefined} className="object-cover" />
+    </Link>
+    {n > 1 && <>
+      <button type="button" onClick={() => go(index - 1)} aria-label={`Previous photo of ${label}`} className="absolute top-1/2 left-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-sm"><ArrowLeft className="size-4" strokeWidth={1.5} /></button>
+      <button type="button" onClick={() => go(index + 1)} aria-label={`Next photo of ${label}`} className="absolute top-1/2 right-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-sm"><ArrowRight className="size-4" strokeWidth={1.5} /></button>
+      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2" aria-label="Choose photo">{images.map((src, i) => <button key={`${src}:${i}`} type="button" onClick={() => go(i)} aria-label={`Show photo ${i + 1} of ${label}`} aria-current={i === index ? "true" : undefined} className="flex size-5 items-center justify-center"><span className={cn("size-2 rounded-full", i === index ? "bg-white" : "bg-white/50")} /></button>)}</div>
+    </>}
+  </div>;
 
   return (
     <div role="region" aria-roledescription="carousel" aria-label={label} onKeyDown={onKeyDown} className="flex flex-col gap-2">

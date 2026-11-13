@@ -15,6 +15,7 @@ import { PropertyCard } from "@/features/properties/property-card";
 import { CATEGORIES } from "@/lib/constants";
 import { formatDate, formatNumber, formatPhone, initials } from "@/lib/format";
 import { accountQueries } from "@/lib/queries";
+import { ACCOUNT_RECORDS_AVAILABLE } from "@/services/account";
 import { cn } from "@/lib/utils";
 import type { ActivityTab, Session } from "@/types/models";
 import { useSession } from "@/stores/session";
@@ -346,7 +347,7 @@ export function AccountView() {
             <h1 id="account-title" className="text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[36px]">
               {TITLES[tab](owner)}
             </h1>
-            {(tab === "visits" || tab === "offers") && <SampleBadge>Sample activity</SampleBadge>}
+            {(tab === "visits" || tab === "offers") && ACCOUNT_RECORDS_AVAILABLE && <SampleBadge>Sample activity</SampleBadge>}
           </div>
           {ACTIVITY_TABS.includes(tab) && (
             <Segmented

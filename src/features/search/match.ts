@@ -85,8 +85,24 @@ export function paginate<T>(items: T[], page: number, perPage: number): Paginate
   return { items: items.slice(start, start + perPage), total, page: current, perPage, pageCount };
 }
 
-export function searchProperties(all: Property[], c: PropertySearchCriteria): Paginated<Property> {
-  return paginate(sortProperties(all.filter((p) => matchesProperty(p, c)), c.sort), c.page, c.perPage);
+/** Part of a map: [west, south, east, north]. */
+export type MapArea = [west: number, south: number, east: number, north: number];
+
+/** Reads `west,south,east,north` from a query string; anything else is no area. */
+export function parseMapArea(value: string | null): MapArea | undefined {
+  const parts = value?.split(",").map((v) => (v.trim() === "" ? NaN : Number(v))) ?? [];
+  if (parts.length !== 4 || !parts.every(Number.isFinite)) return undefined;
+  const [west, south, east, north] = parts;
+  return west <= east && south <= north ? [west, south, east, north] : undefined;
+}
+
+/** Listings with no known location have coords [0, 0], which no Indian map view includes. */
+const isInArea = ({ coords: [lat, lng] }: Property, [west, south, east, north]: MapArea) =>
+  lng >= west && lng <= east && lat >= south && lat <= north;
+
+export function searchProperties(all: Property[], c: PropertySearchCriteria, area?: MapArea): Paginated<Property> {
+  const found = all.filter((p) => matchesProperty(p, c) && (!area || isInArea(p, area)));
+  return paginate(sortProperties(found, c.sort), c.page, c.perPage);
 }
 
 /* ---------------- Projects ---------------- */
