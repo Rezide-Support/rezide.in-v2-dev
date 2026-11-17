@@ -4,6 +4,7 @@ Next.js rebuild of the client-supplied **Rezide.in prototype**. It covers the se
 
 > **Prototype build.** Every listing, project, realtor, account record and dashboard record is **sample data** served by an in-process mock API. **Sign-in and sign-up are live**: they use the Rezide backend's OTP endpoints, as rezide.in does. No other message, payment, upload or verification reaches a real service.
 
+
 ## Stack
 
 Next.js 16 (App Router, Cache Components, Turbopack) · TypeScript · Tailwind CSS v4 · shadcn/ui (Radix, retheme to Rezide tokens) · TanStack Query · Zustand · Axios (+ axios-mock-adapter) · React Hook Form + Zod · Leaflet (lazy-loaded) · Vitest + Testing Library.
