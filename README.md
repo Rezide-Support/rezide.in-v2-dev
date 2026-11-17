@@ -1,6 +1,5 @@
 # Rezide frontend
 
-
 Next.js rebuild of the client-supplied **Rezide.in prototype**. It covers the seeker, owner and realtor journeys with the prototype's brand (wordmark, Montserrat / Special Gothic, black · white · mocaccino · timber green · burgundy palette) on a maintainable stack.
 
 > **Prototype build.** Every listing, project, realtor, account record and dashboard record is **sample data** served by an in-process mock API. **Sign-in and sign-up are live**: they use the Rezide backend's OTP endpoints, as rezide.in does. No other message, payment, upload or verification reaches a real service.
