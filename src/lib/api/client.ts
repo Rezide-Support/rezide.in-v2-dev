@@ -1,5 +1,5 @@
+import { API_BASE_URL, API_SERVER_BASE_URL } from "./origins";
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { installMockApi } from "@/mocks/install";
 import { API_DOMAINS, isDomainMocked, parseMockingSetting, type ApiDomain, type MockingSetting } from "./mocking";
 
 /**
@@ -12,20 +12,19 @@ import { API_DOMAINS, isDomainMocked, parseMockingSetting, type ApiDomain, type 
  */
 
 /** The Rezide backend. */
-export const REZIDE_API_URL = "https://api.rezide.in/v1/admin";
+export const REZIDE_API_URL = API_SERVER_BASE_URL;
 
 /** Browser base URL. The browser calls the backend directly, which allows any origin (CORS). */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || REZIDE_API_URL;
+export { API_BASE_URL, API_SERVER_BASE_URL } from "./origins";
 
 /**
  * Base URL for requests made on the server (detail-page prefetch, metadata).
  * Node has no page origin, so a relative base can't be resolved there: it falls
  * back to the backend's absolute URL. Server-only: never inlined into the browser bundle.
  */
-export const API_SERVER_BASE_URL =
-  process.env.API_SERVER_BASE_URL || (API_BASE_URL.startsWith("/") ? REZIDE_API_URL : API_BASE_URL);
 
-export const MOCKING: MockingSetting = parseMockingSetting(process.env.NEXT_PUBLIC_API_MOCKING);
+
+export const MOCKING: MockingSetting = process.env.NODE_ENV === "production" ? { mode: "off" } : parseMockingSetting(process.env.NEXT_PUBLIC_API_MOCKING);
 /** True when any part of the API is mocked; UI uses it to show "demo mode" notices. */
 export const API_MOCKING = MOCKING.mode !== "off";
 
@@ -47,11 +46,12 @@ export const api = axios.create({
   withCredentials: process.env.NEXT_PUBLIC_API_WITH_CREDENTIALS === "true",
 });
 
-if (API_MOCKING) {
-  // Only the listed domains are mocked; anything else (auth's /user/user/*) goes to the backend.
-  installMockApi(api, { domains: MOCKING.mode === "domains" ? MOCKING.domains : API_DOMAINS });
-}
-
+// A compile-time production guard keeps the adapter and fixtures out of production.
+const mockReady = process.env.NODE_ENV !== "production" && API_MOCKING
+  ? import("@/mocks/install").then(({ installMockApi }) => {
+      installMockApi(api, { domains: MOCKING.mode === "domains" ? MOCKING.domains : API_DOMAINS });
+    })
+  : Promise.resolve();
 /* ---------------- Auth seam ---------------- */
 
 /**
@@ -89,6 +89,7 @@ export function configureAuth(hooks: AuthHooks) {
 }
 
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  await mockReady;
   const token = authHooks.getAccessToken?.();
   if (token && !config.headers.has("Authorization")) config.headers.set("Authorization", `Bearer ${token}`);
   if (isServer && authHooks.getServerHeaders) {
@@ -103,8 +104,10 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
  * The OTP and sign-up endpoints (src/services/auth.ts) may answer 401 for a wrong
  * code; that is a form error, not an expired session.
  */
-const isAuthEndpoint = (url: string | undefined) =>
-  /(^|\/)user\/user\/(login|send|verify|add\/customer|logout)\b/.test(url ?? "");
+const isAuthEndpoint = (url: string | undefined, method?: string) =>
+  /(^|\/)user\/user\/(login|send|verify|add\/customer|logout)\b/.test(url ?? "") ||
+  // The profile save (PUT /user/user/{id}): as on rezide.in, a 401 there is shown on the form, not a sign-out.
+  (method?.toLowerCase() === "put" && /(^|\/)user\/user\/[a-f\d]{24}$/i.test(url ?? ""));
 
 /* ---------------- Errors ---------------- */
 
@@ -150,7 +153,7 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorBody>) => {
     const apiError = toApiError(error);
-    if (apiError.status === 401 && !isAuthEndpoint(error.config?.url)) authHooks.onUnauthorized?.(apiError);
+    if (apiError.status === 401 && !isAuthEndpoint(error.config?.url, error.config?.method)) authHooks.onUnauthorized?.(apiError);
     return Promise.reject(apiError);
   },
 );

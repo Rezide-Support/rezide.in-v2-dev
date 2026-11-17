@@ -1,7 +1,7 @@
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { api } from "@/lib/api/client";
-import { sendRealtorEnquiry } from "@/services/mutations";
+
 import { realtorsOf, toFirm, type BackendFirm } from "@/services/realtor-mapper";
 import type { RealtorSearchCriteria } from "@/types/models";
 import { findRealtor, getFirmAgentDetail, getFirmDetail, matchesDirectory, resetRealtorCaches, searchRealtors } from "@/services/realtors";
@@ -101,11 +101,11 @@ describe("backend reads", () => {
     expect(JSON.parse(request.data)).toEqual({ status: "complete", active_status: "active", sortBy: [1] });
   });
 
-  it("finds people with their own listing counts, and keeps the directory", async () => {
+  it("uses firm counts without per-person requests, and keeps the directory", async () => {
     const { items, total } = await searchRealtors(blank);
     expect(total).toBe(2);
-    expect(items.map((r) => [r.id, r.saleListings, r.rentalListings])).toEqual([["m1", 5, 2], ["a1", 5, 2]]);
-    expect(backend.history.post.find((r) => r.url?.includes("count"))?.params).toEqual({ broker_id: "m1" });
+    expect(items.map((r) => [r.id, r.saleListings, r.rentalListings])).toEqual([["m1", 7, 3], ["a1", 7, 3]]);
+    expect(backend.history.post.some((r) => r.url?.includes("filter/count"))).toBe(false);
     await searchRealtors(blank);
     expect(backend.history.post.filter((r) => r.url === "/brokers/filter/web")).toHaveLength(1);
   });
@@ -115,9 +115,9 @@ describe("backend reads", () => {
     expect(items.map((r) => [r.firm, r.saleListings, r.rentalListings])).toEqual([["Asset Pro", 7, 3]]);
   });
 
-  it("shows a person with no count when counting fails", async () => {
+  it("retains firm counts without depending on count endpoint", async () => {
     backend.onPost("/inventory/Listing/mobile/filter/count").reply(500);
-    await expect(searchRealtors(blank)).resolves.toMatchObject({ items: [{ saleListings: 0 }, { saleListings: 0 }] });
+    await expect(searchRealtors(blank)).resolves.toMatchObject({ items: [{ saleListings: 7 }, { saleListings: 7 }] });
   });
 
   it("loads a firm with its team and listings", async () => {
@@ -147,12 +147,3 @@ describe("backend reads", () => {
   });
 });
 
-describe("sendRealtorEnquiry", () => {
-  it("posts rezide.in's body to the realtor contact form", async () => {
-    const backend = new MockAdapter(api);
-    backend.onPost("https://api.rezide.in/v1/contact/form/realtor").reply(200, { message: "Thanks" });
-    await expect(sendRealtorEnquiry({ firmId: "f1", firstName: " Asha ", lastName: "Rao", phone: "9820012345" })).resolves.toEqual({ message: "Thanks" });
-    expect(JSON.parse(backend.history.post[0].data)).toEqual({ firm_id: "f1", fname: "Asha", lname: "Rao", mobile: "+919820012345", email: "", enquiryType: "realtor" });
-    backend.restore();
-  });
-});

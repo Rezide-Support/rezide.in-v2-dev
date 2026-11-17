@@ -1,4 +1,5 @@
 "use client";
+import { isBackendId } from "@/lib/ids";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
@@ -15,7 +16,6 @@ export function mapStartFor(city: string): { center: LatLng; zoom: number } {
   return centre ? { center: centre, zoom: 12 } : { center: [20.59, 78.96], zoom: 5 };
 }
 
-const isBackendId = (s: string) => /^[a-f\d]{24}$/i.test(s);
 const short = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
 const listings = (n: number) => `${n} ${n === 1 ? "listing" : "listings"}`;
 
@@ -36,7 +36,7 @@ export function toMapPoint(item: MapItem, index: number): MapPoint {
   const price = itemPrice(item.price);
   const id = openableListingId(item.listingId);
   return {
-    id: `listing-${item.listingId ?? index}-${index}`,
+    id: item.listingId ?? `listing-${index}`,
     kind: "listing",
     position,
     label: price ? formatPrice(price) : "Price on request",

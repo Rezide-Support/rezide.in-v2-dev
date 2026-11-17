@@ -13,15 +13,18 @@ import { LeadForm, PROPERTY_INTENTS, type LeadListing } from "./lead-form";
 export function ListingWhatsAppButton({ listingId, brokerId, title, className }: { listingId: string; brokerId: string; title: string; className?: string }) {
   const [loading, setLoading] = useState(false);
   return <Button variant="outline" className={className} disabled={loading || !brokerId} title={!brokerId ? "Broker contact details are unavailable" : undefined} onClick={async () => {
+    const tab = window.open("", "_blank");
+    if (!tab) { toast.error("Allow popups to open WhatsApp in a new tab."); return; }
+    tab.opener = null;
     setLoading(true);
     try {
       const response = await fetch(`/api/properties/${encodeURIComponent(listingId)}/card-resources?resource=broker&brokerId=${encodeURIComponent(brokerId)}`);
       if (!response.ok) throw new Error("Broker details unavailable");
       const data = await response.json();
-      if (!data.phone) { toast("A WhatsApp number isn't available for this realtor."); return; }
+      if (!data.phone) { tab.close(); toast("A WhatsApp number isn't available for this realtor."); return; }
       const url = new URL(`/properties/${encodeURIComponent(listingId)}`, window.location.origin);
-      window.location.assign(`https://wa.me/${data.phone}?text=${encodeURIComponent(`Hi, I'm interested in ${title}. ${url}`)}`);
-    } catch { toast.error("Couldn't load the realtor's contact details. Please try again."); }
+      tab.location.href = `https://wa.me/${data.phone}?text=${encodeURIComponent(`Hi, I'm interested in ${title}. ${url}`)}`;
+    } catch { tab.close(); toast.error("Couldn't load the realtor's contact details. Please try again."); }
     finally { setLoading(false); }
   }}><Image src="/images/whatsapp.svg" width={16} height={16} alt="" />{loading ? "Loading…" : "WhatsApp"}</Button>;
 }

@@ -14,8 +14,8 @@ import { useSession } from "@/stores/session";
 import { SectionHeading } from "./detail-ui";
 import { formatRupees } from "./format";
 
-const SALE_COLUMNS = ["Transaction date", "Wing", "Flat no.", "Configuration", "Area (sq ft)", "Value", "Rate per sq ft", "Ready reckoner"];
-const RENT_COLUMNS = ["Transaction date", "Wing", "Flat no.", "Configuration", "Area (sq ft)", "Security deposit", "Monthly rent", "Rate per sq ft"];
+const SALE_COLUMNS = ["Transaction date", "Wing", "Flat no.", "Configuration", "Area (in sqft.)", "Value", "Rate per sqft.", "Ready Reckoner"];
+const RENT_COLUMNS = ["Transaction date", "Wing", "Flat no.", "Configuration", "Area (in sqft.)", "Security deposit", "Monthly rent", "Rate per sqft."];
 
 /** Bar widths for the blurred placeholder cells (no real values are rendered). */
 const WIDTHS = ["w-24", "w-10", "w-6", "w-10", "w-10", "w-12", "w-20", "w-20"];

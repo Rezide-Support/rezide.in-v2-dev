@@ -1,9 +1,12 @@
+import { setBounded } from "@/lib/bounded-cache";
+import { cache as cacheDetail } from "react";
+import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { ApiError, api } from "@/lib/api/client";
-import { matchesText, paginate } from "@/features/search/match";
+import { paginate } from "@/features/search/match";
 import type { Intent, Paginated, Project, ProjectSearchCriteria, Property } from "@/types/models";
-import type { ProjectDetail } from "./catalog";
+import type { DeveloperStats, ProjectDetail } from "./catalog";
 import { fetchLandmarks, fetchLocalityPhoto } from "./localities";
-import { inChosenBudgets, toProject, toProjectFilters, withProjectDetail, type BackendProjectDetail, type BackendProjectRow } from "./project-mapper";
+import { inChosenBudgets, toConfigurationPlans, toProject, toProjectFilters, withProjectDetail, type BackendProjectDetail, type BackendProjectRow } from "./project-mapper";
 import { toProperty, type BackendListingPage } from "./property-mapper";
 
 /*
@@ -51,23 +54,21 @@ function allMatching(c: ProjectSearchCriteria, now = Date.now()): Promise<Projec
     return pages.flatMap((p) => (p.data ?? []).map((row) => toProject(row, c.city, statusFor(c))));
   };
   const projects = load();
-  cache.set(key, { at: now, projects });
-  projects.catch(() => cache.delete(key));
+  setBounded(cache, key, { at: now, projects }, 25, TTL_MS, now);
+  projects.catch(() => { if (cache.get(key)?.projects === projects) cache.delete(key); });
   return projects;
 }
 
 /**
- * The project search. Most filters are the backend's. It ignores possession years, can't
- * combine text with localities (any of them matches), and treats budgets as one range, so
- * those searches are checked here.
+ * The project search. Most filters are the backend's. It ignores possession years and
+ * treats budgets as one range, so those searches are checked here.
  */
 export async function searchProjects(c: ProjectSearchCriteria): Promise<Paginated<Project>> {
-  const textAndPlace = c.q.trim() !== "" && c.localities.length > 0;
-  if (c.years.length === 0 && !textAndPlace && c.budget.length <= 1) {
+  if (c.years.length === 0 && c.budget.length <= 1) {
     const page = await postFilters(toProjectFilters(c));
     const total = page.result_count ?? 0;
     return {
-      items: (page.data ?? []).map((row) => toProject(row, c.city, statusFor(c))),
+      items: await withConfigurations((page.data ?? []).map((row) => toProject(row, c.city, statusFor(c)))),
       total,
       page: c.page,
       perPage: c.perPage,
@@ -78,10 +79,27 @@ export async function searchProjects(c: ProjectSearchCriteria): Promise<Paginate
   const matched = all.filter(
     (p) =>
       (c.years.length === 0 || (p.possessionYear !== undefined && c.years.includes(p.possessionYear))) &&
-      (!textAndPlace || matchesText(c.q, [p.name, p.developer, p.locality])) &&
       (c.budget.length <= 1 || inChosenBudgets(p, c)),
   );
-  return paginate(matched, c.page, c.perPage);
+  const page = paginate(matched, c.page, c.perPage);
+  return { ...page, items: await withConfigurations(page.items) };
+}
+
+/**
+ * The cards' per-configuration ranges (the "Details" table), as rezide.in loads them: one
+ * batched POST /Inventory/project/ids for the page. Those records hold the developer's bank
+ * details, so only the ranges are copied. A failure leaves the cards without the table.
+ */
+async function withConfigurations(items: Project[]): Promise<Project[]> {
+  const ids = items.map((p) => p.id).filter((id) => BACKEND_ID_PATTERN.test(id));
+  if (ids.length === 0) return items;
+  try {
+    const { data } = await api.post<{ data?: (Parameters<typeof toConfigurationPlans>[0] & { _id?: string })[] }>("/Inventory/project/ids", { projectIds: ids });
+    const byId = new Map((data.data ?? []).flatMap((r) => (r._id ? [[r._id, toConfigurationPlans(r)] as const] : [])));
+    return items.map((p) => (byId.get(p.id)?.length ? { ...p, configurationPlans: byId.get(p.id) } : p));
+  } catch {
+    return items;
+  }
 }
 
 /** Specific projects, in the given city. */
@@ -117,10 +135,10 @@ async function listingsOf(projectId: string, projectName: string): Promise<Prope
 const orEmpty = <T,>(fallback: T) => (): T => fallback;
 
 /** One project for the detail page. A missing project rejects with a 404. */
-export async function getProjectDetail(id: string): Promise<ProjectDetail> {
+export const getProjectDetail = cacheDetail(async (id: string): Promise<ProjectDetail> => {
   // Checked first: the backend's detail endpoint answers an unknown id with a server error.
   const missing = () => new ApiError("This project doesn't exist or is no longer live.", 404);
-  if (!/^[0-9a-f]{24}$/i.test(id)) throw missing();
+  if (!BACKEND_ID_PATTERN.test(id)) throw missing();
   const rows = await getProjectsByIds([id], "");
   const row = rows.items.find((p) => p.id === id);
   if (!row) throw missing();
@@ -132,20 +150,54 @@ export async function getProjectDetail(id: string): Promise<ProjectDetail> {
   const similarIds = (detail.project.similar_projects ?? []).flatMap((s) => (s.value && s.value !== id ? [s.value] : [])).slice(0, RELATED_COUNT);
   const place = address?.sub_region?.trim() || project.locality;
 
-  const [listings, landmarks, localityPhoto, similar, nearby] = await Promise.all([
+  const [listings, landmarks, localityPhoto, similar, nearby, developer] = await Promise.all([
     listingsOf(id, project.name).catch(orEmpty<Property[]>([])),
     fetchLandmarks(id).catch(orEmpty(undefined)),
     address?.locality ? fetchLocalityPhoto(address.locality).catch(orEmpty(null)) : Promise.resolve(null),
     getProjectsByIds(similarIds, project.city).then((p) => p.items).catch(orEmpty<Project[]>([])),
     // Near by: rezide.in searches the project's sub-region.
     place
-      ? postFilters({ page: 1, pageSize: RELATED_COUNT + 1, city: [], project_names_localities_subRegions: [place], project_age: [], views: [], ids: [] })
+      ? postFilters({ page: 1, pageSize: RELATED_COUNT + 1, city: [], project_names_localities_subRegions: [place], subRegions: [], project_age: [], views: [], sortBy: "Latest", ids: [] })
           .then((p) => (p.data ?? []).map((r) => toProject(r, project.city)).filter((p2) => p2.id !== id).slice(0, RELATED_COUNT))
           .catch(orEmpty<Project[]>([]))
       : Promise.resolve<Project[]>([]),
+    developerStats(project).catch(orEmpty(undefined)),
   ]);
   const similarOnly = similar.filter((s) => !nearby.some((n) => n.id === s.id));
-  return { project: { ...project, landmarks, localityPhoto: localityPhoto ?? undefined }, listings, similar: similarOnly, nearby };
+  return { project: { ...project, landmarks, localityPhoto: localityPhoto ?? undefined }, listings, similar: similarOnly, nearby, developer };
+});
+
+/** How many projects the developer's counts are read from (rezide.in reads one page of 50). */
+const DEVELOPER_PAGE = 50;
+
+/**
+ * The About developer counts, worked out as rezide.in does: the backend has no developer
+ * filter, so projects are searched by the developer's name. The total is the search's
+ * count; the statuses are counted on its first page of 50.
+ */
+async function developerStats(project: Project): Promise<DeveloperStats | undefined> {
+  const name = project.developerProfile?.name || project.developer;
+  if (!name.trim()) return undefined;
+  const page = await postFilters({
+    page: 1,
+    pageSize: DEVELOPER_PAGE,
+    city: [],
+    project_names_localities_subRegions: [name.trim()],
+    subRegions: [],
+    project_age: [],
+    views: [],
+    sortBy: "Latest",
+    ids: [],
+  });
+  const statuses = (page.data ?? []).map((r) => r.status?.trim().toLowerCase());
+  const count = (s: string) => statuses.filter((v) => v === s).length;
+  return {
+    total: page.result_count ?? 0,
+    rtm: count("ready to move"),
+    uc: count("under construction"),
+    nl: count("new launch"),
+    cities: project.developerProfile?.cities?.length ? project.developerProfile.cities : [project.city],
+  };
 }
 
 /** The project on a listing page, with its listing counts. A failure never fails the listing. */

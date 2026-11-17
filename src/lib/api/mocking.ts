@@ -1,6 +1,7 @@
 /**
  * NEXT_PUBLIC_API_MOCKING:
- * - unset / "on" / "true" / "all": every request is answered by the in-process mock API.
+ * - unset: development/test mocks; production uses live APIs.
+ * - "on" / "true" / "all": mocks in development/test; production always ignores mocking.
  * - "off" / "false" / "none": nothing is mocked; requests go to NEXT_PUBLIC_API_BASE_URL.
  * - a comma-separated domain list, e.g. "dashboard,account": only those domains are
  *   mocked and everything else goes to the real API, so the backend can ship domain
@@ -12,10 +13,6 @@
  * here: it always talks to the Rezide backend (src/services/auth.ts).
  */
 export const API_DOMAINS = [
-  "properties",
-  "projects",
-  "realtors",
-  "firms",
   "enquiries",
   "listings",
   "account",
@@ -33,7 +30,8 @@ export type MockingSetting =
 
 export function parseMockingSetting(raw: string | undefined): MockingSetting {
   const value = (raw ?? "").trim().toLowerCase();
-  if (value === "" || value === "on" || value === "true" || value === "all") return { mode: "all" };
+  if (value === "") return { mode: process.env.NODE_ENV === "production" ? "off" : "all" };
+  if (value === "on" || value === "true" || value === "all") return { mode: "all" };
   if (value === "off" || value === "false" || value === "none") return { mode: "off" };
   const names = value.split(",").map((v) => v.trim()).filter(Boolean);
   const domains = names.filter((n): n is ApiDomain => (API_DOMAINS as readonly string[]).includes(n));

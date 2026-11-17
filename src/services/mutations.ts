@@ -1,3 +1,4 @@
+import { publicApiOrigin } from "@/lib/api/origins";
 import { api } from "@/lib/api/client";
 import type { Enquiry, EnquiryInput, ListingDraft } from "@/types/models";
 import { toBackendPhone } from "./auth";
@@ -10,7 +11,7 @@ export async function createEnquiry(input: EnquiryInput) {
 }
 
 /** The Rezide backend's enquiry form, outside /v1/admin. rezide.in posts to it from the browser too. */
-const CONTACT_FORM_URL = "https://api.rezide.in/v1/contact/form";
+const CONTACT_FORM_URL = `${publicApiOrigin()}/v1/contact/form`;
 
 /** A listing enquiry as rezide.in sends it. It goes to the listing's broker, so it is never mocked. */
 export type ListingEnquiry = {
@@ -72,19 +73,44 @@ export async function sendProjectEnquiry({ name, phone, email, intent, developer
   });
 }
 
-/** An enquiry to a realtor firm, as rezide.in's realtor pages send it. It goes to the firm, so it is never mocked. */
-export type RealtorEnquiry = { firmId: string; firstName: string; lastName: string; phone: string; email?: string };
+/** rezide.in's "Contact Builder" form (About developer), sent as its lead body. Never mocked. */
+export type DeveloperContactLead = {
+  name: string;
+  mobile: string;
+  email: string;
+  developerName: string;
+  projectName: string;
+  location: string;
+  isPropertyBroker: boolean;
+  /** Not asked of brokers. */
+  reasonToBuy?: "Investment" | "Self Use";
+  needPropertyIn?: "Less than 3 months" | "Less than 6 months" | "More than 6 months";
+  homeLoanInterest?: boolean;
+  siteVisitInterest?: boolean;
+  budgetMin?: number;
+  budgetMax?: number;
+  pageUrl: string;
+};
 
-export async function sendRealtorEnquiry({ firmId, firstName, lastName, phone, email }: RealtorEnquiry) {
-  const { data } = await api.post<{ message?: string }>("https://api.rezide.in/v1/contact/form/realtor", {
-    firm_id: firmId,
-    fname: firstName.trim(),
-    lname: lastName.trim(),
-    mobile: `+${toBackendPhone(phone)}`,
-    email: email?.trim() ?? "",
-    enquiryType: "realtor",
+export async function sendDeveloperContactLead(lead: DeveloperContactLead) {
+  const broker = lead.isPropertyBroker;
+  await api.post("/lead/developer-contact", {
+    name: lead.name.trim(),
+    mobile: lead.mobile.trim(),
+    email: lead.email.trim(),
+    developerName: lead.developerName,
+    projectName: lead.projectName,
+    needPropertyIn: broker ? "" : (lead.needPropertyIn ?? ""),
+    reasonToBuy: broker ? "" : (lead.reasonToBuy ?? ""),
+    isPropertyBroker: broker ? "Yes" : "No",
+    location: lead.location,
+    homeLoanInterest: !broker && Boolean(lead.homeLoanInterest),
+    siteVisitInterest: !broker && Boolean(lead.siteVisitInterest),
+    pageUrl: lead.pageUrl,
+    source: "Rezide.in contact widget",
+    // As on rezide.in, a broker's enquiry carries no budget.
+    ...(broker ? {} : { budgetMin: lead.budgetMin || "", budgetMax: lead.budgetMax || "" }),
   });
-  return data;
 }
 
 /** Who submits a listing. The wizard needs a signed-in user. */

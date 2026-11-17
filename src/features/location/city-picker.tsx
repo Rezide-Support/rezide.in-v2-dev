@@ -46,15 +46,14 @@ export function CityPicker({ city, onSelect, variant = "compact", triggerClassNa
   );
 
   const search = (
-    <label className="flex h-9 shrink-0 items-center gap-2 rounded-lg border border-rez-smoke px-3 focus-within:border-rez-graphite">
-      <Icon name="search" size={15} className="text-rez-graphite" />
+    <label className={cn("flex h-9 shrink-0 items-center gap-2 rounded-lg border border-rez-smoke px-3 focus-within:border-rez-graphite", bar && "h-11 rounded-[12px]")}>
+      <Icon name="search" size={bar ? 18 : 15} className="text-rez-graphite" />
       <span className="sr-only">Search cities</span>
       <input
-        autoFocus
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search City"
-        className="min-w-0 flex-1 bg-transparent text-xs font-medium outline-none placeholder:text-xs placeholder:text-rez-graphite"
+        className={cn("min-w-0 flex-1 bg-transparent text-base sm:text-xs font-medium outline-none placeholder:text-xs placeholder:text-rez-graphite", bar && "text-base sm:text-sm placeholder:text-sm")}
       />
     </label>
   );
@@ -69,6 +68,7 @@ export function CityPicker({ city, onSelect, variant = "compact", triggerClassNa
             aria-current={c === city ? "true" : undefined}
             className={cn(
               "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] hover:bg-rez-cloud",
+              bar && "min-h-11 rounded-[12px] px-3 text-sm",
               c === city ? "bg-rez-mocaccino/15 font-bold hover:bg-rez-mocaccino/15" : "font-medium",
             )}
           >
@@ -123,13 +123,14 @@ export function CityPicker({ city, onSelect, variant = "compact", triggerClassNa
       </PopoverTrigger>
       {bar ? (
         // Opens over its own bar, the full width of the screen, as in the design.
-        <PopoverContent
+        <PopoverContent onOpenAutoFocus={event => { if (window.matchMedia("(pointer: coarse)").matches) event.preventDefault(); }}
+          aria-label="Select city"
           align="start"
           side="bottom"
           sideOffset={-44}
           alignOffset={-16}
           avoidCollisions={false}
-          className="flex max-h-[min(460px,75vh)] w-[calc(var(--radix-popover-trigger-width)+32px)] flex-col gap-2 overflow-hidden rounded-t-none rounded-b-[20px] border-0 bg-white px-4 pb-4 shadow-rez-lg"
+          className="flex max-h-[min(380px,75dvh)] w-[calc(var(--radix-popover-trigger-width)+32px)] flex-col gap-2 overflow-hidden rounded-t-none rounded-b-[24px] border-0 bg-white px-4 pt-0 pb-4 shadow-rez-lg ring-0"
         >
           <button
             type="button"
@@ -144,7 +145,7 @@ export function CityPicker({ city, onSelect, variant = "compact", triggerClassNa
           <div className="min-h-0 flex-1 overflow-y-auto">{q ? results : list(BAR_CITIES, { pins: true })}</div>
         </PopoverContent>
       ) : (
-        <PopoverContent
+        <PopoverContent onOpenAutoFocus={event => { if (window.matchMedia("(pointer: coarse)").matches) event.preventDefault(); }}
           align="start"
           sideOffset={10}
           className="flex max-h-[min(420px,72vh)] w-[min(240px,calc(100vw-32px))] flex-col gap-2 overflow-hidden rounded-xl border-rez-smoke bg-white p-2.5 shadow-rez-lg"

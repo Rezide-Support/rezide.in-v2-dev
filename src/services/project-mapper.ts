@@ -1,5 +1,6 @@
+import { CDN_ORIGIN, uploadUrl } from "@/lib/api/origins";
 import { BUDGET_TIERS } from "@/lib/constants";
-import type { Project, ProjectConfiguration, ProjectSearchCriteria, ProjectStatus } from "@/types/models";
+import type { DeveloperProfile, Project, ProjectConfiguration, ProjectRera, ProjectSearchCriteria, ProjectSortKey, ProjectStatus } from "@/types/models";
 import { cityLabel, toBackendCity } from "./locations";
 import { cdnImage, PLACEHOLDER_IMAGE } from "./property-mapper";
 
@@ -16,6 +17,7 @@ const urls = (items: Media[] | undefined) => (items ?? []).map((m) => m.url?.tri
 export type BackendProjectRow = {
   _id?: string;
   project_name?: string;
+  city?: string;
   developer_name?: string;
   locality?: string;
   sub_region?: string;
@@ -37,11 +39,23 @@ export type BackendProjectRow = {
 };
 
 /** The record of GET /Inventory/project/{id} (the fields read). */
+type BackendLabel = { label?: string } | null | undefined;
+
+/** The developer embedded in a project record (the public fields read; it also holds bank details). */
+export type BackendDeveloper = {
+  _id?: string;
+  general_information?: { developer_name?: string; description?: string; estd_year?: string | number };
+  media?: { images?: Media[] };
+  contact_details?: { address?: { city?: BackendLabel; state?: BackendLabel }[] };
+};
+
 export type BackendProjectDetail = {
   project?: {
     general_information?: {
-      developer_id?: { general_information?: { description?: string } } | string;
+      developer_id?: BackendDeveloper | string;
       projectBrochure_fileID?: string;
+      logo?: string;
+      reraIDs?: { rera_id?: string; rera_link?: string; rera_image?: string }[];
     };
     locality_and_address?: {
       coordinates?: { latitude?: string | number; longitude?: string | number };
@@ -51,7 +65,17 @@ export type BackendProjectDetail = {
     amenities?: string[];
     media?: { images?: Media[]; amenities?: Media[]; sample_flats?: Media[]; videos?: Media[] };
     configuration?: { bhk?: string; unit_plan?: string }[];
-    price_range?: { name?: string; minArea?: string; maxArea?: string }[];
+    price_range?: {
+      name?: string;
+      minArea?: string;
+      maxArea?: string;
+      minArea_search?: string | number;
+      maxArea_search?: string | number;
+      saleMin_search?: number | string;
+      saleMax_search?: number | string;
+      rentalMin_search?: number | string;
+      rentalMax_search?: number | string;
+    }[];
     similar_projects?: { value?: string }[];
   };
 };
@@ -87,7 +111,7 @@ function possessionOf(status: ProjectStatus, iso: string | undefined): { year?: 
   return status === "rtm" ? { label: `Completed ${when}` } : { year: date.getUTCFullYear(), label: `Possession ${when}` };
 }
 
-/** A list row in the UI's shape. Rows carry no city, so the caller says which one they were searched in. */
+/** Prefer the project's own city; older responses fall back to the search city. */
 export function toProject(row: BackendProjectRow, city: string, statusOverride?: ProjectStatus): Project {
   const status = statusOverride ?? STATUSES[(row.status ?? "").trim().toLowerCase()] ?? "uc";
   const possession = possessionOf(status, row.possession);
@@ -97,7 +121,7 @@ export function toProject(row: BackendProjectRow, city: string, statusOverride?:
     id: String(row._id ?? ""),
     name: (row.project_name ?? "").trim(),
     developer: (row.developer_name ?? "").trim(),
-    city,
+    city: row.city?.trim() || city,
     locality: (row.locality || row.sub_region || "").trim(),
     status,
     possessionYear: possession.year,
@@ -124,16 +148,66 @@ export function toProject(row: BackendProjectRow, city: string, statusOverride?:
   };
 }
 
-const cdnBrochure = (key: string) => `https://cdn.rezide.in/images/${encodeURIComponent(key)}`;
+const cdnBrochure = (key: string) => `${CDN_ORIGIN}/images/${encodeURIComponent(key)}`;
 
 /** Unit plans per BHK, with the areas from the project's price ranges. */
-function toConfigurationPlans(project: NonNullable<BackendProjectDetail["project"]>): ProjectConfiguration[] {
+/** A positive amount, or undefined (the backend sends 0 or nothing when there's none). */
+const amount = (n: unknown) => {
+  const v = typeof n === "string" ? Number(n.replace(/,/g, "")) : n;
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
+};
+
+/** Per-configuration area, sale and rent ranges (and unit plans), from a detail record or a /Inventory/project/ids row. */
+export function toConfigurationPlans(project: Pick<NonNullable<BackendProjectDetail["project"]>, "price_range" | "configuration">): ProjectConfiguration[] {
   return (project.price_range ?? []).flatMap((range) => {
     const bhk = range.name?.trim();
     if (!bhk) return [];
     const plans = (project.configuration ?? []).filter((c) => c.bhk?.trim() === bhk && c.unit_plan).map((c) => cdnImage(c.unit_plan as string));
-    return [{ bhk, areaMin: firstNumber(range.minArea), areaMax: firstNumber(range.maxArea), unitPlans: [...new Set(plans)] }];
+    return [
+      {
+        bhk,
+        areaMin: amount(range.minArea_search) ?? firstNumber(range.minArea),
+        areaMax: amount(range.maxArea_search) ?? firstNumber(range.maxArea),
+        saleMin: amount(range.saleMin_search),
+        saleMax: amount(range.saleMax_search),
+        rentMin: amount(range.rentalMin_search),
+        rentMax: amount(range.rentalMax_search),
+        unitPlans: [...new Set(plans)],
+      },
+    ];
   });
+}
+
+/** RERA registrations with a real id, as rezide.in lists them (blank and "N/A" ids are left out). */
+function toReras(project: NonNullable<BackendProjectDetail["project"]>): ProjectRera[] {
+  return (project.general_information?.reraIDs ?? []).flatMap((r) => {
+    const id = r.rera_id?.trim();
+    if (!id || id.toLowerCase() === "n/a") return [];
+    const link = r.rera_link?.trim();
+    const qr = r.rera_image?.trim();
+    return [{ id, link: link && /^https?:\/\//i.test(link) ? link : undefined, qr: qr ? uploadUrl(qr) : undefined }];
+  });
+}
+
+/** The developer's public profile: name, logo, year founded and office cities. Never its bank or contact records. */
+function toDeveloperProfile(project: NonNullable<BackendProjectDetail["project"]>, base: Project, city: string): DeveloperProfile | undefined {
+  const dev = project.general_information?.developer_id;
+  if (!dev || typeof dev !== "object") return undefined;
+  const info = dev.general_information ?? {};
+  const offices = dev.contact_details?.address ?? [];
+  const head = offices[0];
+  const headquarters = [head?.city?.label?.trim(), head?.state?.label?.trim()].filter(Boolean).join(", ");
+  const logoKey = dev.media?.images?.find((i) => i.label === "Developer Logo")?.url?.trim() || project.general_information?.logo?.trim();
+  const established = String(info.estd_year ?? "").trim();
+  return {
+    id: dev._id,
+    name: info.developer_name?.trim() || base.developer,
+    headquarters: headquarters || city,
+    description: info.description?.trim() ?? "",
+    logo: logoKey ? uploadUrl(logoKey) : undefined,
+    established: /^\d{4}$/.test(established) ? established : undefined,
+    cities: [...new Set(offices.map((a) => a.city?.label?.trim()).filter((c): c is string => !!c))],
+  };
 }
 
 /** A row with the detail record's fields added. */
@@ -145,8 +219,6 @@ export function withProjectDetail(base: Project, detail: BackendProjectDetail): 
   const lat = Number(coords?.latitude);
   const lng = Number(coords?.longitude);
   const city = address?.city ? cityLabel(address.city.trim()) : base.city;
-  const developer = p.general_information?.developer_id;
-  const description = typeof developer === "object" ? developer.general_information?.description?.trim() : undefined;
   const brochure = p.general_information?.projectBrochure_fileID;
   const photos = [...urls(p.media?.images), ...urls(p.media?.sample_flats)];
   return {
@@ -162,31 +234,48 @@ export function withProjectDetail(base: Project, detail: BackendProjectDetail): 
     amenityImages: urls(p.media?.amenities),
     videoUrl: p.media?.videos?.[0]?.url?.trim() || undefined,
     configurationPlans: toConfigurationPlans(p),
+    reras: toReras(p),
     brochureUrl: brochure ? cdnBrochure(brochure) : base.brochureUrl,
-    developerProfile: description ? { name: base.developer, headquarters: city, description } : undefined,
+    developerProfile: toDeveloperProfile(p, base, city),
   };
 }
 
 const tiersOf = (c: ProjectSearchCriteria) => BUDGET_TIERS.filter((t) => c.budget.includes(t.id));
 
-/** The filter body rezide.in sends to /Inventory/project/filter/new. Text and localities go together, and any of them can match. */
+/**
+ * The filter body rezide.in sends to /Inventory/project/filter/new. As there, the Location
+ * dialog's localities go in `subRegions` (any of them matches) and the search text on its
+ * own, so the backend requires both.
+ */
 export function toProjectFilters(c: ProjectSearchCriteria) {
   const tiers = tiersOf(c);
   const min = tiers.length ? Math.min(...tiers.map((t) => t.min)) : 0;
   const max = tiers.length ? Math.max(...tiers.map((t) => t.max)) : Infinity;
-  const text = c.localities.length ? c.localities : c.q.trim() ? [c.q.trim()] : [];
   return {
     page: c.page,
     pageSize: c.perPage,
     city: [toBackendCity(c.city)],
-    project_names_localities_subRegions: text,
+    project_names_localities_subRegions: c.q.trim() ? [c.q.trim()] : [],
+    subRegions: c.localities,
     project_age: c.status.map((s) => STATUS_FILTERS[s]),
     views: c.views,
     ...(min > 0 ? { budget_min: [min] } : {}),
     ...(Number.isFinite(max) ? { budget_max: [max] } : {}),
+    sortBy: PROJECT_SORT_BY[c.sort],
     ids: [] as string[],
   };
 }
+
+/** The backend's sortBy values, as rezide.in sends them. */
+const PROJECT_SORT_BY: Record<ProjectSortKey, string> = {
+  latest: "Latest",
+  "price-asc": "Sale Price Low to High",
+  "price-desc": "Sale Price High to Low",
+  "plot-asc": "Plot Area (Low to High)",
+  "plot-desc": "Plot Area (High to Low)",
+  "yield-asc": "Rental Yield (Low to High)",
+  "yield-desc": "Rental Yield (High to Low)",
+};
 
 /** Whether a project's prices touch any chosen budget tier. */
 export function inChosenBudgets(p: Project, c: ProjectSearchCriteria) {

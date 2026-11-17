@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { defaultProjectCriteria } from "@/features/search/criteria";
 import { api } from "@/lib/api/client";
 import { sendProjectEnquiry } from "@/services/mutations";
+import type { ProjectSortKey } from "@/types/models";
 import { toAreaRange, toBhkOptions, toProject, toProjectFilters, withProjectDetail } from "@/services/project-mapper";
 import { findListingProject, getProjectDetail, resetProjectCache, searchProjects } from "@/services/projects";
 
@@ -100,6 +101,49 @@ describe("mapping", () => {
     });
     expect(JSON.stringify(project)).not.toMatch(/BANKSECRET|PANSECRET/);
   });
+
+  it("reads rezide.in's plan ranges, RERA registrations and developer profile", () => {
+    const rich = {
+      project: {
+        ...detail.project,
+        general_information: {
+          logo: "projlogo",
+          reraIDs: [
+            { rera_id: " P51800005229 ", rera_link: "https://maharerait.maharashtra.gov.in/public/project/view/7040", rera_image: "qr1" },
+            { rera_id: "N/A" },
+            { rera_id: "P2", rera_link: "javascript:alert(1)" },
+          ],
+          developer_id: {
+            _id: "65116bbd32a52c26604a9511",
+            general_information: { developer_name: "Oberoi Realty", description: "Founded 1998.", estd_year: "1998" },
+            media: { images: [{ label: "Developer Logo", url: "devlogo" }] },
+            contact_details: { address: [{ city: { label: "Mumbai" }, state: { label: "Maharashtra" } }, { city: { label: "Thane" } }, { city: { label: "Mumbai" } }] },
+            account_details: { bank: "BANKSECRET" },
+          },
+        },
+        price_range: [{ name: "3 BHK", minArea_search: "1367", maxArea_search: "1496", saleMin_search: 56100000, saleMax_search: 92000000, rentalMin_search: 200000, rentalMax_search: 0 }],
+      },
+    };
+    const project = withProjectDetail(toProject(row(), ""), rich);
+    expect(project.configurationPlans).toEqual([
+      { bhk: "3 BHK", areaMin: 1367, areaMax: 1496, saleMin: 56100000, saleMax: 92000000, rentMin: 200000, rentMax: undefined, unitPlans: [] },
+    ]);
+    expect(project.reras).toEqual([
+      { id: "P51800005229", link: "https://maharerait.maharashtra.gov.in/public/project/view/7040", qr: "https://api.rezide.in/v1/admin/file/upload/qr1" },
+      // A link that isn't http(s) is dropped.
+      { id: "P2", link: undefined, qr: undefined },
+    ]);
+    expect(project.developerProfile).toEqual({
+      id: "65116bbd32a52c26604a9511",
+      name: "Oberoi Realty",
+      headquarters: "Mumbai, Maharashtra",
+      description: "Founded 1998.",
+      logo: "https://api.rezide.in/v1/admin/file/upload/devlogo",
+      established: "1998",
+      cities: ["Mumbai", "Thane"],
+    });
+    expect(JSON.stringify(project)).not.toMatch(/BANKSECRET/);
+  });
 });
 
 describe("filters", () => {
@@ -111,12 +155,24 @@ describe("filters", () => {
       pageSize: 9,
       city: ["Bangalore"],
       project_names_localities_subRegions: ["Lodha"],
+      subRegions: [],
       project_age: ["Under Construction", "Ready to Move", "New Launch"],
       views: ["Sea View"],
       budget_min: [100000000],
       budget_max: [250000000],
+      sortBy: "Latest",
       ids: [],
     });
+  });
+
+  it("sends rezide.in's sort values", () => {
+    const sortBy = (sort: ProjectSortKey) => toProjectFilters(defaultProjectCriteria({ sort })).sortBy;
+    expect(sortBy("price-asc")).toBe("Sale Price Low to High");
+    expect(sortBy("price-desc")).toBe("Sale Price High to Low");
+    expect(sortBy("plot-asc")).toBe("Plot Area (Low to High)");
+    expect(sortBy("plot-desc")).toBe("Plot Area (High to Low)");
+    expect(sortBy("yield-asc")).toBe("Rental Yield (Low to High)");
+    expect(sortBy("yield-desc")).toBe("Rental Yield (High to Low)");
   });
 
   it("leaves out an open-ended budget's missing bound", () => {
@@ -137,7 +193,44 @@ describe("backend reads", () => {
   it("searches with one page request, using the backend's total", async () => {
     backend.onPost("/Inventory/project/filter/new").reply(200, { data: [row()], result_count: 20 });
     await expect(searchProjects(defaultProjectCriteria({ city: "Mumbai", perPage: 9 }))).resolves.toMatchObject({ total: 20, pageCount: 3, items: [{ name: "Lodha Venezia" }] });
-    expect(backend.history.post).toHaveLength(1);
+    // The page request, then one batched request for the cards' configuration ranges.
+    expect(backend.history.post.map((r) => r.url)).toEqual(["/Inventory/project/filter/new", "/Inventory/project/ids"]);
+  });
+
+  it("adds each card's configuration ranges from one batched request, copying no private fields", async () => {
+    backend.onPost("/Inventory/project/filter/new").reply(200, { data: [row()], result_count: 1 });
+    backend.onPost("/Inventory/project/ids").reply((config) => {
+      expect(JSON.parse(config.data)).toEqual({ projectIds: ["66f3ca67d7f5683ae57720fa"] });
+      return [
+        200,
+        {
+          data: [
+            {
+              _id: "66f3ca67d7f5683ae57720fa",
+              general_information: { developer_id: { account_details: { bank: "BANKSECRET" } } },
+              price_range: [
+                { name: "2 BHK", minArea_search: "688", maxArea_search: "688", saleMin_search: "8200000", saleMax_search: "9200000", rentalMin_search: "", rentalMax_search: "" },
+                { name: "3 BHK", minArea_search: "811", maxArea_search: "1007", saleMin_search: "9202000", saleMax_search: "13700000" },
+              ],
+            },
+          ],
+        },
+      ];
+    });
+    const { items } = await searchProjects(defaultProjectCriteria());
+    expect(items[0].configurationPlans).toEqual([
+      { bhk: "2 BHK", areaMin: 688, areaMax: 688, saleMin: 8200000, saleMax: 9200000, rentMin: undefined, rentMax: undefined, unitPlans: [] },
+      { bhk: "3 BHK", areaMin: 811, areaMax: 1007, saleMin: 9202000, saleMax: 13700000, rentMin: undefined, rentMax: undefined, unitPlans: [] },
+    ]);
+    expect(JSON.stringify(items)).not.toMatch(/BANKSECRET/);
+  });
+
+  it("still lists the projects when the configuration ranges can't be loaded", async () => {
+    backend.onPost("/Inventory/project/filter/new").reply(200, { data: [row()], result_count: 1 });
+    backend.onPost("/Inventory/project/ids").reply(500);
+    const { items } = await searchProjects(defaultProjectCriteria());
+    expect(items).toHaveLength(1);
+    expect(items[0].configurationPlans).toBeUndefined();
   });
 
   it("marks results as New Launch only when that's all that was asked for", async () => {
@@ -157,11 +250,14 @@ describe("backend reads", () => {
     expect(backend.history.post).toHaveLength(2);
   });
 
-  it("requires both the text and the locality", async () => {
-    backend.onPost("/Inventory/project/filter/new").reply(200, { result_count: 2, data: [row({ _id: "a" }), row({ _id: "b", project_name: "Other" })] });
-    const result = await searchProjects(defaultProjectCriteria({ q: "Venezia", localities: ["Parel"] }));
-    expect(result.items.map((p) => p.id)).toEqual(["a"]);
-    expect(JSON.parse(backend.history.post[0].data).project_names_localities_subRegions).toEqual(["Parel"]);
+  it("sends the text and the Location dialog's localities separately, as rezide.in does", async () => {
+    backend.onPost("/Inventory/project/filter/new").reply(200, { result_count: 1, data: [row({ _id: "a" })] });
+    const result = await searchProjects(defaultProjectCriteria({ q: "Venezia", localities: ["Parel", "Worli"] }));
+    expect(result).toMatchObject({ total: 1 });
+    expect(backend.history.post).toHaveLength(1);
+    const body = JSON.parse(backend.history.post[0].data);
+    expect(body.project_names_localities_subRegions).toEqual(["Venezia"]);
+    expect(body.subRegions).toEqual(["Parel", "Worli"]);
   });
 
   it("checks separate budget tiers itself", async () => {
@@ -239,4 +335,9 @@ describe("backend reads", () => {
       source: "Rezide.in contact widget",
     });
   });
+});
+
+it("keeps a project's actual city when fetched under another search city",()=>{
+  expect(toProject({_id:'pune-project',project_name:'Pune Project',city:'Pune'},'Mumbai').city).toBe('Pune');
+  expect(toProject({_id:'old-project',city:'  '},'Mumbai').city).toBe('Mumbai');
 });

@@ -1,0 +1,2 @@
+/** Accept direct arrays or the backend's { data: [] } envelope; malformed payloads become empty rails. */
+export const responseArray = <T,>(value: unknown): T[] => Array.isArray(value) ? value as T[] : value && typeof value === "object" && "data" in value && Array.isArray(value.data) ? value.data as T[] : [];

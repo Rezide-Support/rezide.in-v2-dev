@@ -1,3 +1,4 @@
+import { CDN_ORIGIN } from "@/lib/api/origins";
 import type {
   Facing,
   Furnishing,
@@ -79,7 +80,7 @@ export type BackendListing = {
     project?: {
       _id?: string;
       general_information?: { project_name?: string };
-      locality_and_address?: { coordinates?: { latitude?: number | string; longitude?: number | string } };
+      locality_and_address?: { coordinates?: { latitude?: number | string; longitude?: number | string }; address?: { locality?: string; sub_region?: string; city?: string } };
       media?: { images?: MediaItem[]; sample_flats?: MediaItem[] };
     };
   };
@@ -106,11 +107,11 @@ export type BackendListingPage = { data?: BackendListing[]; result_sale?: number
 /* ---------------- Helpers ---------------- */
 
 /** Listing photos and videos live on the Rezide CDN under their key. */
-const cdn = (key: string, ext: "jpeg" | "mp4") => (/^https?:\/\//.test(key) ? key : `https://cdn.rezide.in/images/${key}.${ext}`);
+const cdn = (key: string, ext: "jpeg" | "mp4") => (/^https?:\/\//.test(key) ? key : `${CDN_ORIGIN}/images/${key}.${ext}`);
 export const cdnImage = (key: string) => cdn(key, "jpeg");
 
 /** Where a listing's brochure PDF lives on the CDN, as rezide.in links it. */
-export const brochureUrlFor = (listingId: string) => `https://cdn.rezide.in/images/${encodeURIComponent(listingId)}_brochure.pdf`;
+export const brochureUrlFor = (listingId: string) => `${CDN_ORIGIN}/images/${encodeURIComponent(listingId)}_brochure.pdf`;
 
 /** Shown for the few listings with no photo at all. */
 export const PLACEHOLDER_IMAGE = "/images/listing-placeholder.jpg";
@@ -182,7 +183,8 @@ function photosOf(raw: BackendListing): string[] {
   const own = urls(raw.images?.apartment);
   if (own.length) return own;
   const project = raw.listing_details?.project;
-  const media = typeof project === "object" ? project.media : undefined;
+  // The backend sends `project: null` on some listings, and typeof null is "object".
+  const media = project && typeof project === "object" ? project.media : undefined;
   const flats = urls(media?.sample_flats);
   if (flats.length) return flats;
   return urls(media?.images);
@@ -237,7 +239,8 @@ export function toProperty(raw: BackendListing): Property {
   const furnishing = FURNISHINGS.find((f) => f === furnishingName);
   const areaType = (d.area_type ?? "").toLowerCase();
   const photos = photosOf(raw);
-  const project = typeof d.project === "object" ? d.project : undefined;
+  const project = d.project && typeof d.project === "object" ? d.project : undefined;
+  const projectAddress = project?.locality_and_address?.address;
   // Few listings have their own coordinates; the rest are where their project is.
   const projectSpot = project?.locality_and_address?.coordinates;
   const lat = num(address.latitude) || num(projectSpot?.latitude);
@@ -283,7 +286,7 @@ export function toProperty(raw: BackendListing): Property {
     images: photos.length ? photos : [PLACEHOLDER_IMAGE],
     photoSource: urls(raw.images?.apartment).length ? "listing" : urls(project?.media?.sample_flats).length ? "sample-flat" : urls(project?.media?.images).length ? "project" : "placeholder",
     availability: named(c.availablility_status) || undefined,
-    locationLabel: d.listing_location?.trim() || undefined,
+    locationLabel: d.listing_location?.trim() || [projectAddress?.locality, projectAddress?.sub_region].filter(Boolean).join(", ") || undefined,
     ratePerSqft: hidden ? undefined : num(c.avg_rate_per_sqft),
     coords: lat && lng ? [lat, lng] : [0, 0],
     realtorId: raw.broker_and_agent?.broker_id ?? "",
@@ -365,6 +368,10 @@ const SORT_BY: Record<SortKey, string> = {
   latest: "Latest",
   "price-asc": "Price (Low to High)",
   "price-desc": "Price (High to Low)",
+  "rate-asc": "Avg. Rate psf. (Low to High)",
+  "rate-desc": "Avg. Rate psf. (High to Low)",
+  // The backend sorts area as text ("998" before "5432"), so searchListings sorts these itself.
+  "area-asc": "Area (Low to High)",
   "area-desc": "Area (High to Low)",
 };
 

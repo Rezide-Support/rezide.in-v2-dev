@@ -103,9 +103,9 @@ function CompareTable({ group, entries }: { group: CompareGroup; entries: Compar
 
   return (
     <div className="overflow-x-auto rounded-[20px] border border-rez-smoke">
-      <table className="w-full min-w-[640px] table-fixed border-collapse text-left text-sm">
+      <table style={{ minWidth: 220 + entries.length * 220 }} className="w-full table-fixed border-collapse text-left text-sm">
         <colgroup>
-          <col className="w-[180px] md:w-[220px]" />
+          <col className="w-[112px] sm:w-[180px] md:w-[220px]" />
           {entries.map((e) => (
             <col key={e.item.id} />
           ))}

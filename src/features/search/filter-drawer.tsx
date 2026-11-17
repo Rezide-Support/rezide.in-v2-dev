@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ToggleChip } from "@/components/common/chip";
 import { NativeSelect } from "@/components/common/native-select";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,8 @@ const MAX_LOCALITIES = 40;
 
 /**
  * The drawer's locality options: the localities that have listings (most listings
- * first), keeping any already chosen. Until the counts arrive, only the chosen ones.
+ * first). Chosen ones keep their place; a chosen one outside the list goes at the end.
+ * Until the counts arrive, only the chosen ones.
  */
 export function localityOptions(c: PropertySearchCriteria, facets?: PropertyFacets["facets"]): string[] {
   if (!facets) return c.localities;
@@ -37,7 +39,16 @@ export function localityOptions(c: PropertySearchCriteria, facets?: PropertyFace
     .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
     .map(([name]) => name)
     .slice(0, MAX_LOCALITIES);
-  return [...new Set([...c.localities, ...ranked])];
+  return [...new Set([...ranked, ...c.localities])];
+}
+
+/**
+ * `next` in the order already on screen: options shown before keep their place
+ * (even if their count changes) and new ones are added at the end, so chips
+ * don't jump while the user is choosing.
+ */
+export function keepOrder(shown: readonly string[], next: readonly string[]): string[] {
+  return [...new Set([...shown, ...next])];
 }
 
 /** `localities` replaces the built-in list (see localityOptions). */
@@ -151,7 +162,13 @@ export function FilterDrawer({
       areaMin: undefined,
       areaMax: undefined,
     });
-  const groups = filterGroups(criteria, localityOptions(criteria, facets));
+  // Locality chips hold their places while the drawer is open: choosing an option changes
+  // the counts (and so the ranking), but the chips shouldn't move under the user's finger.
+  const scope = open ? `${criteria.city}|${criteria.intent}|${criteria.category}` : "";
+  const [shown, setShown] = useState({ scope, names: [] as string[] });
+  const localities = keepOrder(shown.scope === scope ? shown.names : [], localityOptions(criteria, facets));
+  if (shown.scope !== scope || localities.length !== shown.names.length) setShown({ scope, names: localities });
+  const groups = filterGroups(criteria, localities);
   const areaLabel = areaGroupLabel(criteria);
   const renderGroup = (g: Group) => (
     <fieldset key={g.key} className="border-b border-rez-smoke py-[22px]">

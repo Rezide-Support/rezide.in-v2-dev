@@ -1,21 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronDown, LayoutGrid, QrCode } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-import { EmptyState } from "@/components/common/feedback";
-import { Segmented } from "@/components/common/segmented";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AmenityTile } from "@/features/properties/detail/amenity-icon";
-import { Chip, NotYetButton, SectionHeading } from "@/features/properties/detail/detail-ui";
+import { Chip, SectionHeading } from "@/features/properties/detail/detail-ui";
 import { formatAreaRange, formatPriceRange, formatRupees } from "@/features/properties/detail/format";
 import { PROJECT_STATUS_LABEL } from "@/lib/constants";
 import { formatNumber } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import type { Project, ProjectConfiguration } from "@/types/models";
+import type { Project } from "@/types/models";
+import { V1Title } from "./v1-ui";
 
-/** Radix builds element ids from tab values, so they must not contain spaces ("2 BHK" → "2-bhk"). */
-const tabValue = (label: string) => label.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
+export { ConfigurationPlans } from "./configuration-plans";
 
 /* Sections of the v1 project page, top to bottom. */
 
@@ -65,133 +60,92 @@ export function ProjectSummary({ project: p }: { project: Project }) {
   );
 }
 
-export function ConfigurationPlans({ project: p }: { project: Project }) {
-  const plans: ProjectConfiguration[] = p.configurationPlans ?? p.bhkOptions.map((b) => ({ bhk: b, areaMin: p.areaMin, areaMax: p.areaMax }));
-  const [kind, setKind] = useState<"unit" | "floor">("unit");
-  if (!plans.length) return null;
-  return (
-    <section aria-labelledby="config-heading" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SectionHeading id="config-heading">Configuration plans</SectionHeading>
-        <Segmented
-          label="Plan type"
-          appearance="solid"
-          size="sm"
-          value={kind}
-          onChange={setKind}
-          options={[
-            { value: "unit", label: "Unit Plan" },
-            { value: "floor", label: "Floor Plan" },
-          ]}
-          className="border border-black bg-white"
-        />
-      </div>
-      <Tabs defaultValue={tabValue(plans[0].bhk)} className="gap-4">
-        <TabsList aria-label="Configuration" className="flex h-auto flex-wrap justify-start gap-2 bg-transparent p-0 group-data-horizontal/tabs:h-auto">
-          {plans.map((c) => (
-            <TabsTrigger
-              key={c.bhk}
-              value={tabValue(c.bhk)}
-              className="h-10 flex-none rounded-md border-0 bg-rez-cloud px-4 text-sm font-medium text-rez-graphite after:hidden hover:text-black data-active:bg-black data-active:font-semibold data-active:text-rez-full-white data-active:shadow-none data-active:hover:text-rez-full-white"
-            >
-              {c.bhk}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {plans.map((c) => {
-          const images = kind === "unit" ? (c.unitPlans ?? []) : (c.floorPlans ?? []);
-          return (
-            <TabsContent key={c.bhk} value={tabValue(c.bhk)} className="grid grid-cols-1 items-center gap-6 md:grid-cols-[auto_minmax(0,1fr)]">
-              <dl className="flex flex-col gap-1 self-start rounded-md border border-rez-smoke px-4 py-3">
-                <dt className="text-[13px] text-rez-graphite">Area range</dt>
-                <dd className="text-base font-semibold">{formatAreaRange(c.areaMin, c.areaMax)}</dd>
-              </dl>
-              {images.length ? (
-                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {images.map((src, i) => (
-                    <li key={src} className="relative aspect-[4/3] overflow-hidden rounded-md border border-rez-smoke bg-white">
-                      <Image src={src} alt={`${c.bhk} ${kind} plan ${i + 1}`} fill sizes="(min-width: 768px) 25vw, 50vw" quality={70} className="object-contain" />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex flex-col items-center gap-2 py-6 text-center md:items-end md:text-right">
-                  <LayoutGrid className="size-6 text-rez-graphite md:hidden" aria-hidden />
-                  <p className="text-lg font-medium sm:text-2xl">No {kind === "unit" ? "Unit" : "Floor"} Plans Available</p>
-                  <p className="text-[13px] text-rez-graphite">The developer hasn&apos;t shared {kind} plans for {c.bhk} yet.</p>
-                </div>
-              )}
-            </TabsContent>
-          );
-        })}
-      </Tabs>
-    </section>
-  );
-}
-
+/** How many amenities show before "N More" (rezide.in shows 11, then the "More" tile). */
 const AMENITY_PREVIEW = 11;
 
+/** The amenity's icon, from the Rezide backend's icon set (by amenity name), as rezide.in shows it. */
+const amenityIcon = (name: string) => `https://api.rezide.in/v1/admin/repository/amenities/icon/${encodeURIComponent(name)}.svg`;
+
+/** "Project Amenities", as on rezide.in: icon cards, the first 11, then "N More / View". */
 export function ProjectAmenities({ project: p }: { project: Project }) {
-  const [open, setOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const all = p.amenities;
-  const more = all.length - AMENITY_PREVIEW;
-  const shown = open || more <= 0 ? all : all.slice(0, AMENITY_PREVIEW);
+  const hasMore = all.length > AMENITY_PREVIEW;
+  const shown = showAll ? all : all.slice(0, AMENITY_PREVIEW);
   return (
-    <section aria-labelledby="amen-heading" className="flex flex-col gap-6 sm:gap-10">
-      <SectionHeading id="amen-heading">Project amenities</SectionHeading>
-      {all.length === 0 ? (
-        <EmptyState icon="search" title="No amenities listed">
-          The developer hasn&apos;t listed amenities for this project yet.
-        </EmptyState>
-      ) : (
-        <ul id="project-amenities" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-8">
-          {shown.map((a) => (
-            <li key={a}>
-              <AmenityTile name={a} />
-            </li>
-          ))}
-          {more > 0 && (
-            <li>
-              <button
-                type="button"
-                onClick={() => setOpen((o) => !o)}
-                aria-expanded={open}
-                aria-controls="project-amenities"
-                className="flex h-full min-h-[112px] w-full flex-col items-center justify-center gap-1 rounded-lg border border-[#c9d8f5] bg-[#eef3fd] text-sm font-medium text-[#2a5bd7] focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60 focus-visible:outline-none"
-              >
-                {open ? "Show less" : `${more} More`}
-                <span className="flex items-center gap-1">
-                  View <ChevronDown className={cn("size-4 transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden />
-                </span>
-              </button>
-            </li>
-          )}
-        </ul>
-      )}
+    <section aria-labelledby="amen-heading" className="flex flex-col">
+      <V1Title id="amen-heading" className="mb-2 lg:my-10">
+        Project Amenities
+      </V1Title>
+      <ul id="project-amenities" className="grid grid-cols-3 gap-4 lg:grid-cols-6 lg:gap-8">
+        {shown.map((a) => (
+          <li key={a} className="rounded-xl bg-white text-black shadow">
+            <div className="grid items-center justify-center gap-4 p-5 text-center">
+              {/* The icons are SVGs served by the backend; the image optimiser doesn't take SVG. */}
+              <Image src={amenityIcon(a)} alt="" width={32} height={32} unoptimized className="m-auto size-8" />
+              <p className="text-xs lg:text-sm">{a}</p>
+            </div>
+          </li>
+        ))}
+        {hasMore && (
+          <li>
+            <button
+              type="button"
+              onClick={() => setShowAll((s) => !s)}
+              aria-expanded={showAll}
+              aria-controls="project-amenities"
+              className="flex size-full min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-lg border border-gray-300 bg-blue-50 text-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+            >
+              <span className="text-sm font-medium">{showAll ? "Show Less" : `${all.length - AMENITY_PREVIEW} More`}</span>
+              <span className="flex items-center gap-1 text-sm font-medium">
+                {showAll ? (
+                  <ChevronUp size={16} aria-hidden />
+                ) : (
+                  <>
+                    View <ChevronDown size={16} aria-hidden />
+                  </>
+                )}
+              </span>
+            </button>
+          </li>
+        )}
+      </ul>
     </section>
   );
 }
 
+/** "Project RERA Details", as on rezide.in: one card per registration, with its QR code and the regulator's page. */
 export function ReraDetails({ project: p }: { project: Project }) {
+  const reras = p.reras ?? [];
+  if (reras.length === 0) return null;
   return (
-    <section aria-labelledby="rera-heading" className="flex flex-col gap-6">
-      <SectionHeading id="rera-heading">Project RERA details</SectionHeading>
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-rez-smoke px-4 py-3">
-        <div className="flex items-center gap-4">
-          {/* No QR: the backend's RERA records aren't mapped here yet. */}
-          <span aria-hidden className="flex size-14 items-center justify-center rounded-md border border-dashed border-rez-steel text-rez-steel">
-            <QrCode className="size-8" strokeWidth={1.25} />
-          </span>
-          <div>
-            <p className="text-[15px] font-semibold">{p.reraId}</p>
-            <p className="text-[15px] text-rez-graphite">{p.name}</p>
-            <p className="text-xs text-rez-graphite">As provided by the developer.</p>
-          </div>
-        </div>
-        <NotYetButton variant="ghost" className="font-semibold tracking-[0.04em] text-[#2a5bd7] uppercase" message="RERA verification isn't connected in this prototype, so there are no registration details to show.">
-          View details
-        </NotYetButton>
-      </div>
+    <section aria-labelledby="rera-heading" className="flex flex-col">
+      <V1Title id="rera-heading" className="mb-2 lg:my-10">
+        <span className="lg:hidden">RERA Details</span>
+        <span className="hidden lg:inline">Project RERA Details</span>
+      </V1Title>
+      <ul>
+        {reras.map((r) => (
+          <li key={r.id} className="mb-2 rounded-xl border border-gray-300 bg-white shadow-sm">
+            <div className="flex items-center justify-between gap-3 p-2">
+              <div className="flex min-w-0 items-center gap-2">
+                {r.qr && <Image src={r.qr} alt={`QR code for RERA ${r.id}`} width={64} height={64} className="size-16 shrink-0 rounded object-contain" />}
+                <div className="min-w-0">
+                  <p className="text-base font-semibold break-all">{r.id}</p>
+                  <p className="text-base font-semibold text-gray-500">{p.name}</p>
+                </div>
+              </div>
+              {r.link && (
+                <a href={r.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-sm font-semibold text-blue-600 sm:text-lg">
+                  <span className="hidden sm:inline">VIEW DETAILS</span>
+                  <span className="sm:hidden">VIEW</span>
+                  <span className="sr-only"> of RERA {r.id} (opens the regulator&apos;s site)</span>
+                </a>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

@@ -3,8 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import { Field } from "@/components/common/form-field";
+import { Input } from "@/components/ui/input";
+import { errorMessage } from "@/lib/api/client";
+import { personName } from "@/lib/validation";
+import { updateUserName } from "@/services/auth";
 import { Icon } from "@/components/brand/icon";
 import { ToggleChip } from "@/components/common/chip";
 import { DemoNotice, EmptyState, ErrorState, SampleBadge } from "@/components/common/feedback";
@@ -18,7 +27,7 @@ import { accountQueries } from "@/lib/queries";
 import { ACCOUNT_RECORDS_AVAILABLE } from "@/services/account";
 import { cn } from "@/lib/utils";
 import type { ActivityTab, Session } from "@/types/models";
-import { useSession } from "@/stores/session";
+import { useSession, useSessionStore } from "@/stores/session";
 import { AccountSidebar, OWNER_MENU, SEEKER_MENU, type AccountTab } from "./account-sidebar";
 import { ownerListingCard, ownerTotals, type ActivityRow } from "./presenters";
 
@@ -244,6 +253,94 @@ function Settings() {
   );
 }
 
+const nameSchema = z.object({ firstName: personName("first name"), lastName: personName("last name") });
+type NameValues = z.infer<typeof nameSchema>;
+
+/** Profile details, with first and last name editable (PUT /user/user/{id}, as rezide.in's profile form). */
+function Profile({ user, owner }: { user: Session["user"]; owner: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const queryClient = useQueryClient();
+  const syncUser = useSessionStore((s) => s.syncUser);
+  const name = `${user.firstName} ${user.lastName}`;
+  const form = useForm<NameValues>({
+    resolver: zodResolver(nameSchema),
+    values: { firstName: user.firstName, lastName: user.lastName },
+    mode: "onTouched",
+  });
+  const save = useMutation({
+    mutationFn: (v: NameValues) => updateUserName(user.id, v),
+    onSuccess: (record) => {
+      // The header and sidebar read this record (useSyncSessionUser); the session updates now too.
+      queryClient.setQueryData(accountQueries.user(user.id).queryKey, record);
+      syncUser(record);
+      setEditing(false);
+      toast.success("Update successfully!");
+    },
+    // As on rezide.in, the backend's message is shown and the user stays signed in.
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+  const e = form.formState.errors;
+  const cancel = () => {
+    form.reset({ firstName: user.firstName, lastName: user.lastName });
+    save.reset();
+    setEditing(false);
+  };
+
+  return (
+    <div className="flex flex-col gap-7 rounded-xl border border-rez-smoke p-5 sm:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-[18px]">
+          <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-black text-2xl font-bold text-rez-full-white sm:size-24">{initials(name)}</span>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[22px] font-semibold break-words">{name}</span>
+            <span className="text-[13px] font-medium text-rez-graphite">{owner ? "Property owner" : "Property seeker"}</span>
+          </div>
+        </div>
+        {!editing && (
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            <Icon name="pencil" size={16} />
+            Edit Profile
+          </Button>
+        )}
+      </div>
+
+      {editing ? (
+        <form noValidate onSubmit={form.handleSubmit((v) => save.mutate(v))} className="flex flex-col gap-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="First name" required error={e.firstName?.message}>
+              <Input autoComplete="given-name" autoFocus {...form.register("firstName")} />
+            </Field>
+            <Field label="Last name" required error={e.lastName?.message}>
+              <Input autoComplete="family-name" {...form.register("lastName")} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
+            <Button type="button" variant="secondary" onClick={cancel} disabled={save.isPending}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={save.isPending}>
+              {save.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </form>
+      ) : null}
+
+      <dl className="grid grid-cols-1 gap-x-10 gap-y-5 sm:grid-cols-2">
+        {[
+          ...(editing ? [] : [["First name", user.firstName], ["Last name", user.lastName]]),
+          ["Mobile number", formatPhone(user.phone)],
+          ["Email", user.email || "Not added"],
+        ].map(([l, v]) => (
+          <div key={l} className="flex flex-col gap-2 border-b border-rez-smoke pb-3.5">
+            <dt className="text-[13px] font-semibold text-rez-graphite">{l}</dt>
+            <dd className="text-base font-medium break-words">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
 export function AccountView() {
   const { session, status } = useSession();
   const params = useSearchParams();
@@ -290,7 +387,6 @@ export function AccountView() {
   const menu = owner ? OWNER_MENU : SEEKER_MENU;
   const requested = params.get("tab") as Tab | null;
   const tab: Tab = menu.some(([id]) => id === requested) ? (requested as Tab) : menu[0][0];
-  const name = `${session.user.firstName} ${session.user.lastName}`;
 
   const content = (() => {
     switch (tab) {
@@ -307,31 +403,7 @@ export function AccountView() {
       case "settings":
         return <Settings />;
       case "profile":
-        return (
-          <div className="flex flex-col gap-7 rounded-xl border border-rez-smoke p-7">
-            <div className="flex items-center gap-[18px]">
-              <span className="flex size-24 items-center justify-center rounded-full bg-black text-2xl font-bold text-rez-full-white">{initials(name)}</span>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[22px] font-semibold">{name}</span>
-                <span className="text-[13px] font-medium text-rez-graphite">{owner ? "Property owner" : "Property seeker"}</span>
-              </div>
-            </div>
-            <dl className="grid grid-cols-1 gap-x-10 gap-y-5 sm:grid-cols-2">
-              {[
-                ["First name", session.user.firstName],
-                ["Last name", session.user.lastName],
-                ["Mobile number", formatPhone(session.user.phone)],
-                ["Email", session.user.email || "Not added"],
-              ].map(([l, v]) => (
-                <div key={l} className="flex flex-col gap-2 border-b border-rez-smoke pb-3.5">
-                  <dt className="text-[13px] font-semibold text-rez-graphite">{l}</dt>
-                  <dd className="text-base font-medium break-words">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            <DemoNotice>Profile editing will be available once accounts are connected to the Rezide API.</DemoNotice>
-          </div>
-        );
+        return <Profile user={session.user} owner={owner} />;
     }
   })();
 

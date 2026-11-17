@@ -159,10 +159,13 @@ function SearchRow({
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") return setOpen(false);
-    if (!showList || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    if (!suggestions.length || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
     e.preventDefault();
+    setOpen(true);
     const step = e.key === "ArrowDown" ? 1 : -1;
-    setActive((i) => (i + step + suggestions.length) % suggestions.length);
+    const next = active < 0 ? (step === 1 ? 0 : suggestions.length - 1) : (active + step + suggestions.length) % suggestions.length;
+    setActive(next);
+    document.getElementById(`${listId}-${next}`)?.scrollIntoView({ block: "nearest" });
   };
 
   return (
@@ -197,11 +200,11 @@ function SearchRow({
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={showList}
-            aria-controls={listId}
+            aria-controls={showList ? listId : undefined}
             aria-activedescendant={
               showList && active >= 0 ? `${listId}-${active}` : undefined
             }
-            className="h-9 min-w-0 flex-1 bg-transparent px-2.5 text-[13px] outline-none placeholder:text-[#767a88] max-sm:placeholder:text-[12px] sm:h-12 sm:px-3 sm:text-[15px]"
+            className="h-9 min-w-0 flex-1 bg-transparent px-2.5 text-base outline-none placeholder:text-[#767a88] max-sm:placeholder:text-[12px] sm:h-12 sm:px-3 sm:text-[15px]"
           />
           {showList && (
             <ul
@@ -266,10 +269,10 @@ const TRUST_BADGES: Record<
   readonly (readonly [string, string])[]
 > = {
   homes: [
-    ["Real photos", "No fake listings"],
-    ["RERA-registered", "Realtors"],
-    ["NAR-India", "Members"],
-    ["Tech enabled", "On Rezide"],
+    // ["Real photos", "No fake listings"],
+    // ["RERA-registered", "Realtors"],
+    // ["NAR-India", "Members"],
+    // ["Tech enabled", "On Rezide"],
   ],
   other: [
     ["Real photos", "No fake listings"],
@@ -278,10 +281,10 @@ const TRUST_BADGES: Record<
     ["Tech enabled", "On Rezide"],
   ],
   projects: [
-    ["Curated Info.", "No fake listings"],
-    ["Recent Transactions", "Verified properties"],
-    ["RERA-registered", "All realtors"],
-    ["Tech enabled", "On Rezide"],
+    // ["Curated Info.", "No fake listings"],
+    // ["Recent Transactions", "Verified properties"],
+    // ["RERA-registered", "All realtors"],
+    // ["Tech enabled", "On Rezide"],
   ],
 };
 
@@ -313,13 +316,13 @@ function TrustShield() {
 
 function TrustBadges({ set }: { set: keyof typeof TRUST_BADGES }) {
   return (
-    <ul className="grid grid-cols-2 gap-x-6 gap-y-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-9">
+    <ul className="grid grid-cols-2 gap-x-6 gap-y-3 max-sm:rounded-xl max-sm:bg-black/65 max-sm:p-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-9">
       {TRUST_BADGES[set].map(([title, sub]) => (
         <li key={title} className="flex items-start gap-2 text-white">
           <TrustShield />
           <span className="flex flex-col leading-tight">
             <span className="text-[13px] font-semibold">{title}</span>
-            <span className="text-[10px] text-white/60">{sub}</span>
+            <span className="text-[11px] text-white">{sub}</span>
           </span>
         </li>
       ))}

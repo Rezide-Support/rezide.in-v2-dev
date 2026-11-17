@@ -18,7 +18,7 @@ export function SectionHeading({ id, children, className, as: As = "h2" }: { id?
 
 /** Light panel with a hairline border, used for the side cards. */
 export function DetailCard({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-xl border border-rez-smoke bg-rez-cream-warm p-4 shadow-rez-sm sm:p-[18px]", className)} {...props} />;
+ return <div className={cn("rounded-xl border border-rez-smoke bg-[#fafafa] p-4 shadow-rez-sm sm:p-[18px]", className)} {...props} />;
 }
 
 /** Uppercase card title (KEY FEATURES, VISIT DETAILS). */
@@ -31,9 +31,9 @@ export function CardTitle({ children, id, className }: { children: ReactNode; id
 }
 
 /** Label above an underlined value (v1 field style). */
-export function UnderlinedField({ label, value, upper }: { label: string; value: ReactNode; upper?: boolean }) {
+export function UnderlinedField({ label, value, upper, center }: { label: string; value: ReactNode; upper?: boolean; center?: boolean }) {
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div className={cn("flex min-w-0 flex-col gap-2", center && "text-center")}>
       <dt className={cn(upper ? "text-[11px] font-semibold tracking-[0.04em] text-rez-arsenic uppercase sm:text-xs" : "text-[13px] text-rez-graphite")}>{label}</dt>
       <dd className="border-b border-rez-steel pb-1 break-words text-sm font-medium text-black sm:text-[15px]">{value}</dd>
     </div>

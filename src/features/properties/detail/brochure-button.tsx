@@ -52,7 +52,7 @@ export function BrochureButton({
       if (!response.ok) throw new Error("The brochure couldn't be loaded.");
       const data = await response.json();
       if (!data.url) { toast("There's no brochure for this listing yet."); return; }
-      const link = document.createElement("a"); link.href = data.url; link.download = `${listingId}_brochure.pdf`; document.body.appendChild(link); link.click(); link.remove();
+      const link = document.createElement("a"); link.href = data.url; link.download = `${listingId}_brochure.pdf`; link.target = "_blank"; link.rel = "noopener noreferrer"; document.body.appendChild(link); link.click(); link.remove();
     } catch { toast.error("The brochure couldn't be loaded. Please try again."); }
     finally { setLoading(false); }
   }}>{label}</Button>;

@@ -1,4 +1,6 @@
-import { api } from "@/lib/api/client";
+import { BACKEND_ID_PATTERN } from "@/lib/ids";
+import { cache } from "react";
+import { ApiError, api } from "@/lib/api/client";
 import { defaultPropertyCriteria, serializePropertyCriteria } from "@/features/search/criteria";
 import { groupProperties, propertyFacets, searchProperties, type MapArea } from "@/features/search/match";
 import {
@@ -43,6 +45,8 @@ const emptyPage = (c: PropertySearchCriteria): Paginated<Property> => ({
 
 /** Server only: one page of listings from the backend, in the UI's shape. */
 export async function searchListings(criteria: PropertySearchCriteria): Promise<Paginated<Property>> {
+  // The backend sorts area as text ("998" before "5432"): sort the city's listings here instead.
+  if (criteria.sort === "area-asc" || criteria.sort === "area-desc") return searchProperties(await indexFor(criteria), criteria);
   // The backend's project_id filter misses listings, so projects are searched by name.
   const projectNames = criteria.projects.length ? (await getProjectsByIds(criteria.projects, criteria.city)).items.map((p) => p.name) : [];
   if (criteria.projects.length && projectNames.length === 0) return emptyPage(criteria);
@@ -66,7 +70,8 @@ const SIMILAR_COUNT = 3;
  * Server only: one listing for the detail page, with similar listings (same
  * purpose in the same locality). A missing listing rejects with the backend's 404.
  */
-export async function getListingDetail(id: string): Promise<PropertyDetail> {
+export const getListingDetail = cache(async (id: string): Promise<PropertyDetail> => {
+  if (!BACKEND_ID_PATTERN.test(id)) throw new ApiError("This listing does not exist.", 404);
   const { data } = await api.get<BackendListing>(`/inventory/Listing/${encodeURIComponent(id)}`);
   const property = toProperty(data);
   const [nearby, brochureUrl, realtor, { project, projectStock }] = await Promise.all([
@@ -79,7 +84,7 @@ export async function getListingDetail(id: string): Promise<PropertyDetail> {
   ]);
   const similar = (nearby?.items ?? []).filter((s) => s.id !== property.id).slice(0, SIMILAR_COUNT);
   return { property: { ...property, brochureUrl }, realtor, similar, project, projectStock };
-}
+});
 
 /**
  * The listing's brochure on the Rezide CDN, where rezide.in downloads it from, if it

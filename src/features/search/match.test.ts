@@ -84,6 +84,23 @@ describe("property matching over the fixed inventory", () => {
     expect(asc).toEqual([...asc].sort((a, b) => a - b));
     const area = search({ sort: "area-desc" }).items.map((p) => p.areaSqft);
     expect(area).toEqual([...area].sort((a, b) => b - a));
+    const areaUp = search({ sort: "area-asc" }).items.map((p) => p.areaSqft);
+    expect(areaUp).toEqual([...areaUp].sort((a, b) => a - b));
+  });
+
+  it("sorts by rate per sq ft, putting listings without a rate last", () => {
+    const rate = (p: { price: number; areaSqft: number }) => p.price / p.areaSqft;
+    const up = search({ sort: "rate-asc" }).items.map(rate);
+    expect(up).toEqual([...up].sort((a, b) => a - b));
+    const down = search({ sort: "rate-desc" }).items.map(rate);
+    expect(down).toEqual([...down].sort((a, b) => b - a));
+
+    const withRate = { ...PROPERTIES[0], id: "z-rated", price: 1000, areaSqft: 10 };
+    const noArea = { ...PROPERTIES[0], id: "a-no-area", price: 1000, areaSqft: 0 };
+    const hidden = { ...PROPERTIES[0], id: "b-hidden", price: 0, areaSqft: 10 };
+    const c = defaultPropertyCriteria({ city: PROPERTIES[0].city, intent: PROPERTIES[0].intent, category: PROPERTIES[0].category, sort: "rate-asc" });
+    const ids = searchProperties([noArea, hidden, withRate], c).items.map((p) => p.id);
+    expect(ids).toEqual(["z-rated", "a-no-area", "b-hidden"]);
   });
 
   it("paginates and clamps out-of-range pages", () => {

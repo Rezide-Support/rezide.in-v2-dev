@@ -39,12 +39,26 @@ const matchesCount = (value: number | undefined, options: string[]) => {
 const inList = (value: string | undefined, options: string[]) =>
   options.length === 0 || (!!value && options.some((o) => norm(o) === norm(value)));
 
+/**
+ * A chosen locality, matched as the backend's own filter (project_names_localities) matches it,
+ * so the map's list finds what the list view finds: the listing's sub-region ("Parel") or finer
+ * locality ("Lower Parel"), or the name in its location line or project name.
+ */
+function inLocalities(p: Property, options: string[]): boolean {
+  if (options.length === 0) return true;
+  return options.some((o) => {
+    const v = norm(o);
+    if (!v) return false;
+    return [p.locality, p.subRegion, p.localityName].some((f) => !!f && norm(f) === v) || [p.locationLabel, p.projectName].some((f) => !!f && norm(f).includes(v));
+  });
+}
+
 export function matchesProperty(p: Property, c: PropertySearchCriteria): boolean {
   if (norm(p.city) !== norm(c.city)) return false;
   if (p.intent !== c.intent) return false;
   if (p.category !== c.category) return false;
   if (!matchesText(c.q, [p.title, p.locality, p.projectName, p.unitType, p.city])) return false;
-  if (!inList(p.locality, c.localities)) return false;
+  if (!inLocalities(p, c.localities)) return false;
   if (!inList(p.unitType, c.unitTypes)) return false;
   if (!matchesCount(p.bhk, c.bhk)) return false;
   if (!inList(p.furnishing, c.furnishing)) return false;
@@ -62,16 +76,45 @@ export function matchesProperty(p: Property, c: PropertySearchCriteria): boolean
   return true;
 }
 
+/**
+ * Rate per sq ft as the card shows it: the backend's own rate when it has one (the
+ * one its rate sort uses), else price ÷ area. Null when the price is withheld or unknown.
+ */
+const ratePsf = (p: Property) => {
+  if (p.priceHidden || p.price <= 0) return null;
+  if (p.ratePerSqft && p.ratePerSqft > 0) return p.ratePerSqft;
+  return p.areaSqft > 0 ? p.price / p.areaSqft : null;
+};
+
+/**
+ * Orders by a number, ascending or descending. Listings without one (area 0,
+ * withheld price) always go last, so a "Low to High" list doesn't open on blanks.
+ */
+const byNumber = (value: (p: Property) => number | null, dir: 1 | -1) => (a: Property, b: Property) => {
+  const x = value(a);
+  const y = value(b);
+  if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
+  return (x - y) * dir;
+};
+const positive = (n: number) => (n > 0 ? n : null);
+
 export function sortProperties(list: Property[], sort: PropertySearchCriteria["sort"]): Property[] {
   const out = [...list];
   const byId = (a: Property, b: Property) => a.id.localeCompare(b.id);
+  const sortBy = (compare: (a: Property, b: Property) => number) => out.sort((a, b) => compare(a, b) || byId(a, b));
   switch (sort) {
     case "price-asc":
       return out.sort((a, b) => a.price - b.price || byId(a, b));
     case "price-desc":
       return out.sort((a, b) => b.price - a.price || byId(a, b));
+    case "rate-asc":
+      return sortBy(byNumber(ratePsf, 1));
+    case "rate-desc":
+      return sortBy(byNumber(ratePsf, -1));
+    case "area-asc":
+      return sortBy(byNumber((p) => positive(p.areaSqft), 1));
     case "area-desc":
-      return out.sort((a, b) => b.areaSqft - a.areaSqft || byId(a, b));
+      return sortBy(byNumber((p) => positive(p.areaSqft), -1));
     default:
       return out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || byId(a, b));
   }

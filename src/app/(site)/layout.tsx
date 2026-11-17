@@ -12,7 +12,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
       </main>
       {/* The path is request data on dynamic routes, so the choice streams; the full footer is the fallback. */}
       <Suspense fallback={<SiteFooter />}>
-        <FooterSwitch full={<SiteFooter />} slim={<SlimFooter />} realtor={<SiteFooter realtorMobile />} />
+        <FooterSwitch full={<SiteFooter />} slim={<SlimFooter />} />
       </Suspense>
     </>
   );

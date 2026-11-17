@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Icon } from "@/components/brand/icon";
 import { RemovableChip } from "@/components/common/chip";
@@ -23,7 +23,7 @@ import { usePreferencesStore } from "@/stores/preferences";
 import type { Intent, PropertyCategory, PropertySearchCriteria, ResultsView } from "@/types/models";
 import {
   PER_PAGE_OPTIONS,
-  SORT_OPTIONS,
+  sortOptionsFor,
   areaRangeLabel,
   countActiveFilters,
   parsePropertyCriteria,
@@ -33,6 +33,7 @@ import { FilterDrawer, filterGroups } from "./filter-drawer";
 import { LocalityGrid, ProjectGrid, groupByLocality, groupByProject } from "./grouped-views";
 import { matchesText, type MapArea } from "./match";
 import type { MapView } from "./leaflet-map";
+import { LoadMore } from "./load-more";
 import { MapExplorer } from "./results-map";
 import { useUrlCriteria } from "./use-url-criteria";
 
@@ -151,7 +152,16 @@ export function PropertySearch() {
   const [mapArea, setMapArea] = useState<{ city: string; area: MapArea } | null>(null);
   const mapList = useRef<HTMLDivElement>(null);
   const area = isMap && mapArea?.city === criteria.city ? mapArea.area : undefined;
-  const query = useQuery({ ...propertyQueries.search(criteria, area), enabled: !showGroups && (!isMap || !!area) });
+  const query = useQuery({ ...propertyQueries.search(criteria, area), enabled: !showGroups && !isMap });
+  // The map's list loads 10 at a time as it scrolls, rather than in numbered pages.
+  const mapQuery = useInfiniteQuery({ ...propertyQueries.mapList(criteria, area ?? [0, 0, 0, 0]), enabled: isMap && !!area });
+  const mapPages = mapQuery.data?.pages;
+  const mapData = useMemo(() => {
+    if (!mapPages?.length) return undefined;
+    const items = mapPages.flatMap((p) => p.items);
+    // Everything loaded so far reads as one page: "Showing 1 – 30 of 606".
+    return { items, total: mapPages[0].total, page: 1, perPage: Math.max(1, items.length), pageCount: 1 };
+  }, [mapPages]);
   const grouped = useQuery({
     ...propertyQueries.groups(
       { ...criteria, q: "", localities: view === "loc" ? [] : criteria.localities, projects: [] },
@@ -171,12 +181,14 @@ export function PropertySearch() {
   // Per-option counts for the filter drawer, computed by the API.
   const facets = useQuery({ ...propertyQueries.facets(criteria), enabled: drawerOpen });
 
-  const data = query.data;
+  const data = isMap ? mapData : query.data;
+  const listQuery = isMap ? mapQuery : query;
   const filterCount = countActiveFilters(criteria) - (drilledLoc ? 1 : 0) - (drilledProj ? 1 : 0);
   const chips = activeChips(criteria, update).filter(
     (c) => !(drilledLoc && c.key === `localities:${drilledLoc}`) && !(drilledProj && c.key === `projects:${drilledProj}`),
   );
-  const pending = (showGroups ? grouped.isFetching : query.isFetching) || isNavigating;
+  // Loading the next 10 on the map doesn't dim the list already shown.
+  const pending = (showGroups ? grouped.isFetching : isMap ? mapQuery.isFetching && !mapQuery.isFetchingNextPage : query.isFetching) || isNavigating;
 
 
   const submit = (e: FormEvent) => {
@@ -332,8 +344,8 @@ export function PropertySearch() {
   };
 
   const listResults = (variant: "grid" | MapCard): ReactNode => {
-    if (query.isError && !data) {
-      return <ErrorState message="The listings service didn't respond." onRetry={() => query.refetch()} />;
+    if (listQuery.isError && !data) {
+      return <ErrorState message="The listings service didn't respond." onRetry={() => listQuery.refetch()} />;
     }
     if (!data) {
       return (
@@ -362,15 +374,26 @@ export function PropertySearch() {
             </li>
           ))}
         </ul>
-        <Pagination
-          page={data.page}
-          pageCount={data.pageCount}
-          onChange={(page) => {
-            update({ page });
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            mapList.current?.scrollTo({ top: 0 });
-          }}
-        />
+        {isMap ? (
+          <LoadMore
+            hasMore={!!mapQuery.hasNextPage}
+            loading={mapQuery.isFetchingNextPage}
+            failed={mapQuery.isFetchNextPageError}
+            onLoad={() => void mapQuery.fetchNextPage()}
+            shown={data.items.length}
+            total={data.total}
+          />
+        ) : (
+          <Pagination
+            page={data.page}
+            pageCount={data.pageCount}
+            onChange={(page) => {
+              update({ page });
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              mapList.current?.scrollTo({ top: 0 });
+            }}
+          />
+        )}
       </>
     );
   };
@@ -450,14 +473,15 @@ export function PropertySearch() {
         {/* Desktop: map and results fill the screen below the header (76px + 1px border); the results scroll in their panel. */}
         {/* Dual-screen: map on one screen, results on the other (see fold-x / fold-y in globals.css). */}
         <div className="grid grid-cols-1 lg:h-[calc(100dvh-77px)] lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[minmax(0,1fr)] fold-x:h-auto! fold-x:grid-cols-[var(--seg-0-width)_var(--seg-1-width)]! fold-x:grid-rows-none! fold-x:gap-x-(--hinge-width) fold-y:h-auto! fold-y:grid-cols-1! fold-y:grid-rows-none!">
-          <div className="relative h-[60vh] min-h-[360px] overflow-hidden bg-rez-cloud lg:h-full lg:min-h-0 fold-x:sticky fold-x:top-0 fold-x:h-dvh! fold-x:self-start fold-y:sticky fold-y:top-0 fold-y:z-10 fold-y:h-(--seg-0-height)! fold-y:min-h-0">
+          <div className="relative isolate h-[60svh] min-h-[360px] overflow-hidden bg-rez-cloud lg:h-full lg:min-h-0 fold-x:sticky fold-x:top-0 fold-x:h-dvh! fold-x:self-start fold-y:sticky fold-y:top-0 fold-y:z-10 fold-y:h-(--seg-0-height)! fold-y:min-h-0">
             {/* Keyed by city so choosing another city re-centres the map. */}
-            <MapExplorer key={criteria.city} city={criteria.city} intent={criteria.intent} category={criteria.category} onViewChange={onMapView} />
-            <div className="pointer-events-none absolute inset-x-4 top-4 z-[500] flex flex-wrap items-center gap-2.5">
+            <MapExplorer key={criteria.city} city={criteria.city} intent={criteria.intent} category={criteria.category} onViewChange={onMapView} highlightedId={highlighted} highlightedProperty={data?.items.find(property => property.id === highlighted)} onHover={setHighlighted} renderToolbar={({ focused, clearFocus }) => (
+            <div className="pointer-events-none absolute inset-x-4 top-4 z-[500] flex flex-col gap-2 sm:gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               <form
                 role="search"
                 onSubmit={submit}
-                className="pointer-events-auto flex h-[52px] max-w-[520px] min-w-0 flex-[1_1_280px] items-center gap-1 rounded-full bg-white pr-1.5 pl-[18px] shadow-rez-md focus-within:ring-2 focus-within:ring-rez-mocaccino"
+                className="pointer-events-auto flex h-[52px] max-sm:h-11 max-w-[520px] min-w-0 flex-1 items-center gap-1 rounded-full bg-white pr-1.5 pl-[18px] shadow-rez-md focus-within:ring-2 focus-within:ring-rez-mocaccino"
               >
                 <Icon name="search" size={18} />
                 <label htmlFor={inputId} className="sr-only">
@@ -478,24 +502,45 @@ export function PropertySearch() {
                 type="button"
                 onClick={() => setDrawerOpen(true)}
                 aria-label={filterCount ? `Filters, ${filterCount} applied` : "Filters"}
-                className="pointer-events-auto flex h-[52px] items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold shadow-rez-md hover:bg-rez-cloud"
+                className="pointer-events-auto flex h-[52px] shrink-0 items-center gap-2 rounded-full bg-white px-5 max-sm:size-11 max-sm:justify-center max-sm:px-0 text-sm font-semibold shadow-rez-md hover:bg-rez-cloud"
               >
                 <Icon name="sliders" size={18} />
-                Filters
+                <span className="max-sm:sr-only">Filters</span>
                 {filterCount > 0 && (
-                  <span className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-rez-mocaccino px-1.5 text-xs font-bold text-black">
+                  <span className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-rez-mocaccino px-1.5 text-xs font-bold text-black max-sm:hidden">
                     {filterCount}
                   </span>
                 )}
               </button>
               <Button
                 onClick={() => changeView("list")}
-                className="pointer-events-auto h-[52px] rounded-full px-5 text-[15px] shadow-rez-md"
+                aria-label="List View" className="pointer-events-auto h-[52px] shrink-0 rounded-full px-5 text-[15px] shadow-rez-md max-sm:size-11 max-sm:px-0"
               >
                 <Icon name="file-text" size={18} />
-                List View
+                <span className="max-sm:sr-only">List View</span>
               </Button>
+              {focused && <button type="button" onClick={clearFocus} aria-label="Exit area" className="pointer-events-auto flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-semibold shadow-rez-md hover:bg-rez-cloud max-sm:size-11 max-sm:px-0"><span aria-hidden>×</span><span className="max-sm:sr-only">Exit area</span></button>}
             </div>
+            {/* The applied filters, kept on the map (Homes / To Buy are at the top of the results panel). */}
+            <div className="flex flex-wrap items-center gap-2 empty:hidden">
+              {criteria.q && (
+                <RemovableChip label={`“${criteria.q}”`} onRemove={() => update({ q: "" })} className="pointer-events-auto h-10 shadow-rez-md">
+                  “{criteria.q}”
+                </RemovableChip>
+              )}
+              {chips.map((c) => (
+                <RemovableChip key={c.key} label={c.label} onRemove={c.remove} className="pointer-events-auto h-10 shadow-rez-md">
+                  {c.label}
+                </RemovableChip>
+              ))}
+              {(chips.length > 0 || criteria.q) && (
+                <button type="button" onClick={clearAll} className="pointer-events-auto h-10 rounded-full bg-white px-4 text-[13px] font-semibold underline underline-offset-4 shadow-rez-md hover:bg-rez-cloud">
+                  Clear all
+                </button>
+              )}
+            </div>
+            </div>
+            )} />
           </div>
           <div
             ref={mapList}
@@ -505,6 +550,38 @@ export function PropertySearch() {
               pending && data && "opacity-60",
             )}
           >
+            {/* The list view's Homes / To Buy choice, at the top of the map's results. */}
+            <div className="flex flex-wrap items-center gap-2.5 pb-3">
+              <label className="sr-only" htmlFor={`${inputId}-map-type`}>
+                Property type
+              </label>
+              <SearchSelect
+                id={`${inputId}-map-type`}
+                size="sm"
+                value={criteria.category}
+                onValueChange={(value) => changeCategory(value as PropertyCategory)}
+                className="border-black pl-[18px] text-sm font-bold"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </SearchSelect>
+              <label className="sr-only" htmlFor={`${inputId}-map-intent`}>
+                Buy or rent
+              </label>
+              <SearchSelect
+                id={`${inputId}-map-intent`}
+                size="sm"
+                value={criteria.intent}
+                onValueChange={(value) => changeIntent(value as Intent)}
+                className="border-black pl-[18px] text-sm font-bold"
+              >
+                <option value="buy">To Buy</option>
+                <option value="rent">To {cat.lease}</option>
+              </SearchSelect>
+            </div>
             <div className="px-0.5 pt-1 pb-4 text-sm [&_p]:text-sm">{summary}</div>
             {listResults(MAP_CARD)}
             <p className="mt-4 text-xs text-rez-graphite">
@@ -674,7 +751,7 @@ export function PropertySearch() {
                   value={criteria.sort}
                   onValueChange={(value) => update({ sort: value as PropertySearchCriteria["sort"] })} aria-label="Sort results"
                 >
-                  {SORT_OPTIONS.map((o) => (
+                  {sortOptionsFor(criteria.intent).map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>

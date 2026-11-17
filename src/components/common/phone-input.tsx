@@ -27,10 +27,12 @@ export const PhoneInput = forwardRef<HTMLInputElement, Omit<ComponentProps<"inpu
         type="tel"
         inputMode="numeric"
         autoComplete="tel-national"
-        maxLength={10}
         placeholder="10-digit mobile number"
         value={value}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 10))}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, "");
+          onChange(digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits.slice(0, 10));
+        }}
         className="min-w-0 flex-1 bg-transparent text-base font-medium tracking-[0.02em] outline-none placeholder:font-normal placeholder:tracking-normal placeholder:text-[#767a88]"
         {...props}
       />

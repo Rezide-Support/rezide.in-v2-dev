@@ -37,7 +37,7 @@
   --rez-white: #ffffff;
   --rez-full-white: #e0e0e0;
   --rez-cream: #fdf9f0;
-  --rez-cream-warm: #f9f7f3;
+  --rez-cream-warm: #fafafa;
 
   /* Grayscale accents */
   --rez-cloud: #edeff7;
@@ -300,6 +300,7 @@
 .rez-pin--cluster > span {
   transform: none;
 }
+.rez-pin-marker.is-active .rez-pin,
 .rez-pin-marker:hover .rez-pin,
 .rez-pin-marker:focus .rez-pin {
   background: #c18735;
@@ -354,6 +355,7 @@
   transform: rotate(45deg);
   box-shadow: 0 2px 5px #263b2a44;
 }
+.rez-pin-marker.is-active .rez-project-pin,
 .rez-pin-marker:hover .rez-project-pin,
 .rez-pin-marker:focus .rez-project-pin {
   background: #244e36;

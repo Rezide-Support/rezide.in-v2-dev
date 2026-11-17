@@ -37,6 +37,21 @@ type SavedState = {
 
 const same = (a: Pick<SavedItem, "kind" | "id">, b: Pick<SavedItem, "kind" | "id">) => a.kind === b.kind && a.id === b.id;
 
+/** Old versions allowed four items per group; retain the first three in saved order. */
+export function migrateSavedState(value: unknown): Pick<SavedState, "shortlist" | "compare"> {
+  const state = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const valid = (items: unknown): SavedItem[] => Array.isArray(items) ? items.filter((item): item is SavedItem => !!item && typeof item === "object" && ["property", "project"].includes(item.kind) && typeof item.id === "string" && typeof item.title === "string" && typeof item.savedAt === "string") : [];
+  const counts = { sale: 0, rent: 0, projects: 0 };
+  const seen = new Set<string>();
+  const compare = valid(state.compare).filter(item => {
+    const key = `${item.kind}:${item.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return ++counts[compareGroupOf(item)] <= COMPARE_LIMIT;
+  });
+  return { shortlist: valid(state.shortlist), compare };
+}
+
 export const useSavedStore = create<SavedState>()(
   persist(
     (set, get) => ({
@@ -57,7 +72,8 @@ export const useSavedStore = create<SavedState>()(
     }),
     {
       name: "rezide-saved",
-      version: 1,
+      version: 2,
+      migrate: migrateSavedState,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ shortlist: s.shortlist, compare: s.compare }),
     },
@@ -66,10 +82,6 @@ export const useSavedStore = create<SavedState>()(
 
 const subscribe = (cb: () => void) => useSavedStore.persist.onFinishHydration(cb);
 
-/**
- * Whether an item is in a list. Reads false until localStorage has been read,
- * so server and first client render agree.
- */
 /** The compare list, empty until localStorage has been read so server and first client render agree. */
 export function useCompareItems(): SavedItem[] {
   const hydrated = useSyncExternalStore(subscribe, () => useSavedStore.persist.hasHydrated(), () => false);
@@ -78,6 +90,7 @@ export function useCompareItems(): SavedItem[] {
 }
 const EMPTY: SavedItem[] = [];
 
+/** Whether an item is saved; reads false until hydration so the first renders agree. */
 export function useIsSaved(list: SavedList, kind: SavedKind, id: string) {
   const hydrated = useSyncExternalStore(subscribe, () => useSavedStore.persist.hasHydrated(), () => false);
   const on = useSavedStore((s) => s[list].some((x) => x.kind === kind && x.id === id));

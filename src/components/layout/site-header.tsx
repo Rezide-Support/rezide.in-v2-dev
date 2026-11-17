@@ -100,10 +100,11 @@ function DesktopNavList({ pathname }: { pathname: string }) {
       {NAV_ITEMS.map((item, i) => {
         const active = isNavItemActive(item, pathname);
         return (
-          <li key={item.id} className={cn("items-center", i < 2 ? "flex" : pathname === "/realtors" ? "hidden min-[1280px]:flex" : "hidden min-[1100px]:flex")}>
+          <li key={item.id} className={cn("items-center", i === 0 ? "flex" : i === 1 ? "hidden min-[880px]:flex" : "hidden min-[1280px]:flex")}>
             {item.separatorBefore && <span aria-hidden className="mx-1.5 h-[18px] w-px bg-rez-smoke" />}
             <Link
               href={item.href}
+              scroll={false}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative flex h-12 items-center px-[18px] text-[13px] tracking-[0.06em] uppercase transition-colors",
@@ -135,6 +136,7 @@ function MobileNavList({ pathname, onNavigate }: { pathname: string; onNavigate:
           <li key={item.id}>
             <Link
               href={item.href}
+              scroll={false}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
               className={cn(
@@ -162,8 +164,8 @@ function MobileNav({ onNavigate }: { onNavigate: () => void }) {
 function RealtorMobileHeader({ openMenu }: { openMenu: () => void }) {
   if (usePathname() !== "/realtors") return null;
   return <div className="realtor-mobile-header sm:hidden">
-    <div className="flex h-[101px] items-start justify-between border-b border-[#eaeaea] px-5 pt-10"><Link href="/" aria-label="Rezide home" className="flex h-11 w-[119px] items-center"><Image src="/images/realtors/logo-mobile.png" alt="Rezide" width={119} height={44} priority /></Link><div className="flex items-center gap-3"><AccountButton textOnly /><Button className="size-9 rounded-full p-0" aria-label="Open menu" aria-haspopup="dialog" onClick={openMenu}><Image src="/images/realtors/menu-mobile.svg" alt="" width={18} height={18} /></Button></div></div>
-    <div className="px-4"><HeaderCity fullWidth /></div>
+    <div className="flex min-h-16 items-center justify-between gap-3 border-b border-[#eaeaea] px-4 pb-4 pt-[max(16px,env(safe-area-inset-top))]"><Link href="/" aria-label="Rezide home" className="flex h-11 min-w-0 max-w-[119px] flex-1 items-center"><Image src="/images/realtors/logo-mobile.png" alt="Rezide" width={119} height={44} priority /></Link><div className="flex shrink-0 items-center gap-2"><AccountButton textOnly /><Button className="size-9 rounded-full p-0" aria-label="Open menu" aria-haspopup="dialog" onClick={openMenu}><Image src="/images/realtors/menu-mobile.svg" alt="" width={18} height={18} /></Button></div></div>
+    <div className="px-4"><HeaderCity variant="bar" fullWidth /></div>
   </div>;
 }
 
@@ -172,13 +174,13 @@ export function SiteHeader() {
   const close = () => setMenuOpen(false);
 
   return (
-    <header className="group/realtor-header relative z-20 border-b border-rez-smoke bg-white max-md:rounded-b-[20px] max-md:border-b-0 max-md:shadow-rez-sm max-sm:has-[.realtor-mobile-header]:-mb-6 max-sm:has-[.realtor-mobile-header]:overflow-hidden max-sm:has-[.realtor-mobile-header]:rounded-b-3xl max-sm:has-[.realtor-mobile-header]:border-0">
+    <header className="group/realtor-header relative z-20 border-b border-rez-smoke bg-white max-md:rounded-b-[20px] max-md:border-b-0 max-md:shadow-rez-sm max-sm:has-[.realtor-mobile-header]:rounded-b-3xl max-sm:has-[.realtor-mobile-header]:border-0">
       {/* /realtors on phones has its own header (logo, sign in, menu, city); it hides the standard bar below. */}
       <Suspense fallback={null}>
         <RealtorMobileHeader openMenu={() => setMenuOpen(true)} />
       </Suspense>
       <div className="mx-auto flex h-16 max-w-[1344px] items-center gap-2 px-4 max-sm:group-has-[.realtor-mobile-header]/realtor-header:hidden sm:gap-5 md:h-[76px] md:px-8">
-        <Link href="/" aria-label="Rezide home" className="flex shrink-0 items-center text-black">
+        +<Link href="/" scroll={false} aria-label="Rezide home" className="flex shrink-0 items-center text-black">
           <Logo height={16} className="sm:hidden" />
           <Logo height={24} className="hidden sm:block" />
         </Link>
@@ -207,7 +209,7 @@ export function SiteHeader() {
               <Button
                 variant="secondary"
                 aria-label="Open menu"
-                className="size-9 px-0 text-[13px] tracking-[0.06em] max-md:border-black max-md:bg-black max-md:text-white max-md:hover:bg-black/85 md:size-10 md:w-auto md:px-[18px] min-[1100px]:hidden min-[1100px]:group-has-[.realtor-mobile-header]/realtor-header:inline-flex min-[1280px]:group-has-[.realtor-mobile-header]/realtor-header:hidden"
+                className="size-9 px-0 text-[13px] tracking-[0.06em] max-md:border-black max-md:bg-black max-md:text-white max-md:hover:bg-black/85 md:size-10 md:w-auto md:px-[18px] min-[1280px]:hidden"
               >
                 <MenuIcon className="size-[18px] md:hidden" aria-hidden />
                 <span className="hidden md:inline">MENU</span>

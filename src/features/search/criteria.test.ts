@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   areaRangeLabel,
   countActiveFilters,
+  defaultProjectCriteria,
   defaultPropertyCriteria,
   parseProjectCriteria,
   parsePropertyCriteria,
   propertySearchHref,
   serializeProjectCriteria,
   serializePropertyCriteria,
+  sortOptionsFor,
 } from "./criteria";
 
 const parse = (qs: string) => parsePropertyCriteria(new URLSearchParams(qs));
@@ -54,6 +56,14 @@ describe("property search criteria ↔ URL", () => {
       view: "map",
     });
     expect(parsePropertyCriteria(serializePropertyCriteria(original))).toEqual(original);
+  });
+
+  it("offers rate per sq ft sorts for sale only, as rezide.in does", () => {
+    expect(sortOptionsFor("buy").map((o) => o.value)).toEqual(["latest", "price-asc", "price-desc", "rate-asc", "rate-desc", "area-asc", "area-desc"]);
+    expect(sortOptionsFor("rent").map((o) => o.value)).toEqual(["latest", "price-asc", "price-desc", "area-asc", "area-desc"]);
+    expect(parse("sort=rate-desc").sort).toBe("rate-desc");
+    expect(parse("intent=rent&sort=rate-desc").sort).toBe("latest");
+    expect(parse("intent=rent&sort=area-asc").sort).toBe("area-asc");
   });
 
   it("omits defaults so shared URLs stay short", () => {
@@ -104,7 +114,14 @@ describe("project search criteria ↔ URL", () => {
   });
 
   it("round-trips through the URL", () => {
-    const c = parseProjectCriteria(new URLSearchParams("city=Mumbai&q=Oberoi&status=rtm&loc=Worli&budget=luxury&view=Sea+View&year=2027&page=2"));
+    const c = parseProjectCriteria(new URLSearchParams("city=Mumbai&q=Oberoi&status=rtm&loc=Worli&budget=luxury&view=Sea+View&year=2027&sort=plot-desc&page=2"));
+    expect(c.sort).toBe("plot-desc");
     expect(parseProjectCriteria(serializeProjectCriteria(c))).toEqual(c);
+  });
+
+  it("reads the project sort, falling back to Latest", () => {
+    expect(parseProjectCriteria(new URLSearchParams("sort=yield-asc")).sort).toBe("yield-asc");
+    expect(parseProjectCriteria(new URLSearchParams("sort=junk")).sort).toBe("latest");
+    expect(serializeProjectCriteria(defaultProjectCriteria()).has("sort")).toBe(false);
   });
 });

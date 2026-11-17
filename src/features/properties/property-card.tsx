@@ -1,11 +1,14 @@
 "use client";
+import { BACKEND_ID_PATTERN } from "@/lib/ids";
 
 import Link from "next/link";
+import { priceLabel } from "./price-label";
+export { priceLabel } from "./price-label";
 import { Bath, BedDouble, Building2, Car, Phone, Sofa, Store } from "lucide-react";
 import { CoverImage } from "@/components/common/cover-image";
 import { SampleBadge } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
-import { formatArea, formatDate, formatPrice, formatRate, formatNumber } from "@/lib/format";
+import { formatArea, formatDate, formatRate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/types/models";
 import { Viewer } from "./detail/media-gallery";
@@ -15,10 +18,10 @@ import { BrochureButton } from "./detail/brochure-button";
 import { ListingWhatsAppButton } from "./detail/agent-card";
 import { LeadDialog } from "./detail/lead-dialog";
 import { PROPERTY_INTENTS } from "./detail/lead-form";
+import { RealtorProfilePopup } from "@/features/realtors/person-profile";
 
 export const propertyHref = (p: Pick<Property, "id">) => `/properties/${p.id}`;
-export const priceLabel = (p: Property) =>
-  p.priceHidden ? "Price on request" : formatPrice(p.price, { monthly: p.intent === "rent" });
+
 
 export function availabilityLabel(p: Pick<Property, "availability" | "availableFrom">, now = Date.now()) {
   const status = p.availability?.trim();
@@ -35,7 +38,7 @@ function VerificationPill({ property, small }: { property: Property; small?: boo
 /** Existing shared property card, restyled to match the Rezide listing card. */
 export function PropertyCard({ property: p, priority, layout = "stack" }: { property: Property; priority?: boolean; layout?: "stack" | "row" }) {
   const rent = p.intent === "rent", path = propertyHref(p);
-  const realListing = /^[a-f0-9]{24}$/i.test(p.id);
+  const realListing = BACKEND_ID_PATTERN.test(p.id);
   const canContact = !!p.realtorId && !!p.realtorFirmId;
   const photos = p.images.slice(0, 5);
   const office = p.category === "offices" || /office/i.test(p.unitType || p.specs[0]?.value || "");
@@ -48,12 +51,12 @@ export function PropertyCard({ property: p, priority, layout = "stack" }: { prop
   ];
   return <article className={cn("group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-rez-smoke bg-white shadow-[0_1px_3px_#0000001f]", layout === "row" && "md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]")}>
     <div className={cn("relative aspect-[16/9] shrink-0 bg-rez-cloud", layout === "row" && "md:aspect-auto md:min-h-[290px]")}>
-      <Viewer key={p.id} images={photos} label={p.title} cardHref={path} priority={priority} />
-      <span className="pointer-events-none absolute top-5 left-3 max-w-[calc(100%-132px)] rounded-[4px] bg-black px-3 py-1 text-[11px] font-semibold text-white sm:text-xs">{availabilityLabel(p)}</span>
+      <Viewer key={p.id} reserveBadgeSpace={!!p.photoSource && p.photoSource !== "listing" && p.photoSource !== "placeholder"} images={photos} label={p.title} cardHref={path} priority={priority} />
+      <span className="pointer-events-none absolute top-5 left-3 max-w-[calc(100%-148px)] rounded-[4px] bg-black px-3 py-1 text-[11px] font-semibold text-white sm:text-xs">{availabilityLabel(p)}</span>
       <div className="absolute top-5 right-3 flex gap-2">
-        <SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-7 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
-        <SaveIconButton list="compare" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-7 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
-        <ShareButton title={p.title} path={path} iconOnly className="size-7 rounded-full border-0 bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
+        <SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-9 sm:size-8 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
+        <SaveIconButton list="compare" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-9 sm:size-8 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
+        <ShareButton title={p.title} path={path} iconOnly className="size-9 sm:size-8 rounded-full border-0 bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
       </div>
       {p.photoSource && p.photoSource !== "listing" && p.photoSource !== "placeholder" && <SampleBadge className="pointer-events-none absolute right-3 bottom-3">{p.photoSource === "sample-flat" ? "Sample" : "Project photo"}</SampleBadge>}
     </div>
@@ -70,7 +73,7 @@ export function PropertyCard({ property: p, priority, layout = "stack" }: { prop
         <dl className="grid grid-cols-4 gap-1 rounded-[8px] bg-[#f4f4f6] px-2 py-2.5">
           {features.map(feature => <div key={feature.label} className="flex min-w-0 flex-col items-center gap-1 text-center"><dt><feature.Icon className="size-[22px] text-[#777783]" aria-hidden /><span className="sr-only">{feature.label}</span></dt><dd className="text-[10px] leading-snug [overflow-wrap:anywhere] sm:text-xs">{feature.value}</dd></div>)}
         </dl>
-        <div className="mt-auto flex justify-between gap-3 text-xs leading-snug text-rez-graphite"><div className="min-w-0"><p>Listing Realtor</p><p className="mt-0.5 text-[12px] font-semibold text-black [overflow-wrap:anywhere]">{p.realtorFirm || "Not provided"}</p></div><div className="shrink-0 text-right"><p>Last Updated</p><p className="mt-0.5 text-[12px] font-semibold text-black">{p.updatedAt && !Number.isNaN(Date.parse(p.updatedAt)) ? formatDate(p.updatedAt) : "Not provided"}</p></div></div>
+        <div className="mt-auto flex justify-between gap-3 text-xs leading-snug text-rez-graphite"><div className="min-w-0"><p>Listing Realtor</p><p className="mt-0.5 text-[12px] font-semibold text-black [overflow-wrap:anywhere]"><RealtorProfilePopup lookupId={p.realtorId} purpose={p.intent === "rent" ? "rent" : "sale"} label={p.realtorFirm || "Listing realtor"} /></p></div><div className="shrink-0 text-right"><p>Last Updated</p><p className="mt-0.5 text-[12px] font-semibold text-black">{p.updatedAt && !Number.isNaN(Date.parse(p.updatedAt)) ? formatDate(p.updatedAt) : "Not provided"}</p></div></div>
       </div>
       <div className="mt-auto grid grid-cols-2 gap-2.5 bg-[#f4f4f6] px-3 py-5">
         <ListingWhatsAppButton listingId={p.id} brokerId={realListing ? p.realtorId : ""} title={p.title} className="h-10 min-w-0 gap-2 rounded-[4px] border-rez-smoke bg-white px-2 text-sm" />
@@ -179,7 +182,7 @@ export function PropertyPhotoCard({
           ))}
         </div>
         <span className="truncate text-[13px] text-rez-graphite">
-          {p.locality}, {p.city}
+          {p.locationLabel || [p.locality, p.city].filter(Boolean).join(", ")}
         </span>
       </div>
     </article>

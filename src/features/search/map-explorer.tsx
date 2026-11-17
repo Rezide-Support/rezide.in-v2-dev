@@ -1,14 +1,19 @@
 "use client";
 
 import L from "leaflet";
-import { X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MAX_MAP_ZOOM, type MapItem } from "@/services/map-search";
-import type { Intent, LatLng, PropertyCategory } from "@/types/models";
+import type { Intent, LatLng, Property, PropertyCategory } from "@/types/models";
 import LeafletMap, { type MapPoint, type MapView } from "./leaflet-map";
 import { clusterArea, clusterMembers, distanceMetres, mapItemId, type ClusterFocus } from "./map-focus";
 import { escapeHtml, toMapPoints } from "./map-popup";
 import { mapStartFor, useMapMarkers } from "./use-map-markers";
+
+type ToolbarControls = { focused: boolean; clearFocus: () => void };
+function MapToolbar({ render, ...controls }: ToolbarControls & { render: (controls: ToolbarControls) => ReactNode }) {
+  return render(controls);
+}
 
 /** The search center: the city or a tapped spot. */
 type SearchCenter = { name: string; position: LatLng };
@@ -24,7 +29,12 @@ export default function MapExplorer({
   intent,
   category,
   onViewChange,
+  highlightedId, highlightedProperty, onHover, renderToolbar,
 }: {
+  highlightedId?: string | null;
+  highlightedProperty?: Property;
+  onHover?: (id: string | null) => void;
+  renderToolbar?: (controls: ToolbarControls) => ReactNode;
   city: string;
   intent: Intent;
   category: PropertyCategory;
@@ -76,6 +86,18 @@ export default function MapExplorer({
 
   const visible = useMemo(() => (focus ? clusterMembers(items, focus, focus) : items), [items, focus]);
   const points = useMemo(() => toMapPoints(visible, context, zoom >= MAX_MAP_ZOOM), [visible, context, zoom]);
+  // Spatial clusters omit their members. Reveal the hovered result at its known
+  // coordinates without zooming or changing the search bounds.
+  const displayPoints = useMemo(() => {
+    const property = highlightedProperty;
+    if (!property || points.some(point => point.id === property.id || point.listingIds?.includes(property.id))) return points;
+    const [lat, lng] = property.coords;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) return points;
+    return [...points, ...toMapPoints([{
+      type: "listing", listingId: property.id, title: property.title,
+      price: property.price, lat, lng, locality: property.locality, city: property.city,
+    }], context, false)];
+  }, [points, highlightedProperty, context]);
 
   const focusCluster = useCallback(
     (point: MapPoint) => {
@@ -153,7 +175,9 @@ export default function MapExplorer({
     <div role="region" aria-label="Property map" className="absolute inset-0 flex flex-col bg-white">
       <div className="relative min-h-0 flex-1">
         <LeafletMap
-          points={points}
+          points={displayPoints}
+          highlightedId={highlightedId}
+          onHover={onHover}
           initialView={start}
           fit={false}
           onViewChange={reportView}
@@ -163,17 +187,7 @@ export default function MapExplorer({
           className="rez-map absolute inset-0 z-0"
         />
 
-        {/* Below the search bar over the map. */}
-        {focus && (
-          <button
-            type="button"
-            onClick={clearFocus}
-            className="absolute top-[72px] right-4 z-[500] flex h-9 items-center gap-1.5 rounded-lg border border-rez-smoke bg-white px-2.5 text-xs font-semibold shadow-rez-sm hover:border-black"
-          >
-            <X aria-hidden className="size-4" />
-            Exit area
-          </button>
-        )}
+        {renderToolbar && <MapToolbar render={renderToolbar} focused={!!focus} clearFocus={clearFocus} />}
 
         {message && (
           <div

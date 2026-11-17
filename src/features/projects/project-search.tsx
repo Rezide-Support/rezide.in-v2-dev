@@ -8,14 +8,15 @@ import { EmptyState, ErrorState } from "@/components/common/feedback";
 import { MultiSelectDialog, type OptionGroup } from "@/components/common/multi-select-dialog";
 import { Pagination } from "@/components/common/pagination";
 import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/common/native-select";
-import { PER_PAGE_OPTIONS, parseProjectCriteria, serializeProjectCriteria } from "@/features/search/criteria";
+import { SearchSelect } from "@/components/common/search-select";
+import { PER_PAGE_OPTIONS, PROJECT_SORT_OPTIONS, parseProjectCriteria, serializeProjectCriteria } from "@/features/search/criteria";
 import { useUrlCriteria } from "@/features/search/use-url-criteria";
-import { BUDGET_TIERS, PROJECT_STATUS_LABEL, PROJECT_VIEWS, localitiesFor } from "@/lib/constants";
+import { BUDGET_TIERS, PROJECT_STATUS_LABEL, PROJECT_VIEWS } from "@/lib/constants";
 import { pluralize } from "@/lib/format";
 import { projectQueries } from "@/lib/queries";
 import { cn } from "@/lib/utils";
-import type { ProjectSearchCriteria, ProjectStatus } from "@/types/models";
+import type { ProjectSearchCriteria, ProjectSortKey, ProjectStatus } from "@/types/models";
+import { LocationDialog } from "./location-dialog";
 import { ProjectCard } from "./project-card";
 
 type FilterKey = "status" | "budget" | "localities" | "views" | "years";
@@ -28,37 +29,17 @@ const LABELS: Record<FilterKey, string> = {
   years: "Possession",
 };
 
-function groupsFor(key: FilterKey, city: string): OptionGroup[] {
+function groupsFor(key: Exclude<FilterKey, "localities">): OptionGroup[] {
   switch (key) {
     case "status":
       return [{ label: "Status", options: (Object.keys(PROJECT_STATUS_LABEL) as ProjectStatus[]).map((s) => ({ value: s, label: PROJECT_STATUS_LABEL[s] })) }];
     case "budget":
       return [{ label: "Budget", options: BUDGET_TIERS.map((t) => ({ value: t.id, label: `${t.label} · ${t.range}` })) }];
-    case "localities":
-      return localityGroups(city).map((g) => ({ label: g.label, options: g.items.map((l) => ({ value: l, label: l })) }));
     case "years":
       return [{ label: "Possession year", options: [2026, 2027, 2028, 2029, 2030].map((y) => ({ value: String(y), label: `Possession ${y}` })) }];
     default:
       return PROJECT_VIEWS.map((g) => ({ label: g.group, options: g.items.map((v) => ({ value: v, label: v })) }));
   }
-}
-
-/** Locality tabs in the Location dialog, as in the prototype (named regions for Mumbai). */
-const LOCALITY_REGIONS: Record<string, { label: string; items: string[] }[]> = {
-  Mumbai: [
-    { label: "Western Suburbs", items: ["Andheri West", "Goregaon East", "Bandra East"] },
-    { label: "Eastern Suburbs", items: ["Powai", "Chembur"] },
-    { label: "South Mumbai", items: ["Worli", "Mahalaxmi"] },
-    { label: "Thane", items: ["Thane West"] },
-  ],
-};
-
-function localityGroups(city: string) {
-  const all = localitiesFor(city);
-  const regions = LOCALITY_REGIONS[city]?.map((r) => ({ ...r, items: r.items.filter((l) => all.includes(l)) }));
-  const covered = new Set(regions?.flatMap((r) => r.items));
-  if (regions && all.every((l) => covered.has(l))) return regions.filter((r) => r.items.length);
-  return [{ label: "Localities", items: all }];
 }
 
 const valuesOf = (c: ProjectSearchCriteria, key: FilterKey): string[] =>
@@ -98,6 +79,8 @@ export function ProjectSearch() {
     ...projectQueries.search({ ...criteria, ...(openKey ? withValues(openKey, draft) : {}), page: 1 }),
     enabled: openKey !== null,
   });
+
+  const applyLabel = () => (preview.isFetching || !preview.data ? "Apply" : `Apply (${pluralize(preview.data.total, "project")})`);
 
   const keys: FilterKey[] = ["status", "budget", "localities", "views", "years"];
   const data = query.data;
@@ -208,16 +191,28 @@ export function ProjectSearch() {
               "Loading projects…"
             )}
           </p>
-          <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
-            Per page
-            <NativeSelect size="sm" value={criteria.perPage} onChange={(e) => update({ perPage: Number(e.target.value) })}>
-              {PER_PAGE_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </NativeSelect>
-          </label>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
+              Per page
+              <SearchSelect size="sm" value={criteria.perPage} onValueChange={(value) => update({ perPage: Number(value) })} aria-label="Projects per page">
+                {PER_PAGE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </SearchSelect>
+            </label>
+            <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
+              Sort by
+              <SearchSelect size="sm" value={criteria.sort} onValueChange={(value) => update({ sort: value as ProjectSortKey })} aria-label="Sort projects">
+                {PROJECT_SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </SearchSelect>
+            </label>
+          </div>
         </div>
 
         <div aria-busy={query.isFetching || isNavigating} className={cn("transition-opacity", (query.isFetching || isNavigating) && data && "opacity-60")}>
@@ -258,16 +253,24 @@ export function ProjectSearch() {
       </div>
 
       <MultiSelectDialog
-        open={openKey !== null}
+        open={openKey !== null && openKey !== "localities"}
         onOpenChange={(o) => !o && setOpenKey(null)}
         title={openKey ? LABELS[openKey] : ""}
-        groups={openKey ? groupsFor(openKey, criteria.city) : []}
+        groups={openKey && openKey !== "localities" ? groupsFor(openKey) : []}
         selected={openKey ? valuesOf(criteria, openKey) : []}
         onDraftChange={setDraft}
         onApply={(values) => openKey && update(withValues(openKey, values))}
-        applyLabel={() =>
-          preview.isFetching || !preview.data ? "Apply" : `Apply (${pluralize(preview.data.total, "project")})`
-        }
+        applyLabel={applyLabel}
+      />
+      {/* Location works as on rezide.in: region tabs, localities loaded from the backend as the list scrolls. */}
+      <LocationDialog
+        open={openKey === "localities"}
+        onOpenChange={(o) => !o && setOpenKey(null)}
+        city={criteria.city}
+        selected={criteria.localities}
+        onDraftChange={setDraft}
+        onApply={(values) => update({ localities: values })}
+        applyLabel={applyLabel}
       />
     </div>
   );

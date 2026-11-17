@@ -1,4 +1,5 @@
-import { backOff, expandBbox, readCache, shared, takeToken, writeCache, type BBox } from "./map-request-policy";
+import { BACKEND_ID_PATTERN } from "@/lib/ids";
+import { backOff, expandBbox, readCache, shared, withCallerAbort, takeToken, writeCache, type BBox } from "./map-request-policy";
 
 /*
  * Map markers from the Spatial Search API (v1): for the part of the map in view,
@@ -62,6 +63,7 @@ export type MapView = { bbox: BBox; zoom: number };
 
 /** Markers for the view. `fresh` skips the response cache ("Try again"). */
 export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = false } = {}): Promise<MapResult> {
+  signal?.throwIfAborted();
   const zoom = Math.round(view.zoom);
   const requestZoom = zoom >= MAX_MAP_ZOOM ? MAX_API_ZOOM : zoom;
   // Grouping depends only on zoom, so a response for larger bounds at the same zoom serves any view inside them.
@@ -76,8 +78,8 @@ export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = f
       limit: String(MAP_LIMIT),
     });
     const url = `${SPATIAL_API_URL}${ENDPOINT}?${params}`;
-    data = await shared(url, async () => {
-      await takeToken(signal);
+    data = await withCallerAbort(shared(url, async () => {
+      await takeToken();
       // No credentials: the service doesn't allow them cross-origin.
       const response = await fetch(url, { method: "GET" });
       if (response.status === 429) {
@@ -90,7 +92,7 @@ export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = f
       if (!body.data || !Array.isArray(body.data.items)) throw new Error("The map service returned an unexpected response.");
       writeCache(scope, fetchBbox, body.data);
       return body.data;
-    });
+    }), signal);
   }
   if (signal?.aborted) throw signal.reason;
   const [w, s, e, n] = view.bbox;
@@ -103,7 +105,7 @@ export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = f
 }
 
 /** A listing id the detail page can open (a backend _id); the service's short listing_id can't be. */
-export const openableListingId = (id: string | undefined) => (id && /^[a-f\d]{24}$/i.test(id) ? id : undefined);
+export const openableListingId = (id: string | undefined) => (id && BACKEND_ID_PATTERN.test(id) ? id : undefined);
 
 /** A marker's price, which the service passes through unconverted (number or text). */
 export function itemPrice(price: unknown): number | undefined {

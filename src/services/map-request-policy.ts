@@ -7,6 +7,17 @@
 
 export type BBox = [west: number, south: number, east: number, north: number];
 
+/** Cancel one subscriber's wait without cancelling the shared network request. */
+export function withCallerAbort<T>(pending: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return pending;
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+    if (signal.aborted) { pending.catch(() => undefined); abort(); return; }
+    signal.addEventListener("abort", abort, { once: true });
+    pending.then(value => { signal.removeEventListener("abort", abort); resolve(value); }, error => { signal.removeEventListener("abort", abort); reject(error); });
+  });
+}
+
 export const CACHE_TTL_MS = 2 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 60;
 /** Up to BURST requests back to back, then one per REFILL_MS (~30 a minute sustained). */

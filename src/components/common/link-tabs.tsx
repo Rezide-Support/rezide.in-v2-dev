@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { ScrollIndicator } from "./scroll-indicator";
 
 export type LinkTab = { href: string; label: ReactNode; active: boolean };
 
@@ -38,6 +39,7 @@ export function LinkTabs({
   const sizes = { md: "h-10 px-4 text-sm", lg: "h-11 px-5 text-sm sm:text-[15px]" };
   return (
     <nav aria-label={label} className={cn("max-w-full", className)}>
+      <ScrollIndicator disabled={wrap}>
       <ul
         className={cn(
           "inline-flex max-w-full items-center gap-0.5 rounded-full",
@@ -69,6 +71,7 @@ export function LinkTabs({
           </li>
         ))}
       </ul>
+      </ScrollIndicator>
     </nav>
   );
 }

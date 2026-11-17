@@ -31,6 +31,20 @@ export type DirectoryFirmDetail = DirectoryFirm & {
   addresses: string[];
   socials: { label: string; url: string }[];
 };
+export type DirectoryPersonDetail = DirectoryPerson & {
+  lookupId: string;
+  firstName: string;
+  firmId: string;
+  firmName: string;
+  since: string;
+  about: string;
+  subRegions: string[];
+  localities: string[];
+  projects: string[];
+  addresses: string[];
+  socials: { label: string; url: string }[];
+  maskedPhone: string;
+};
 export type DirectorySuggestion = { source: string; name: string; id: string; firmName: string };
 export type DirectoryFilters = { city?: string; subRegions: string[]; locality: string[]; projects: string[]; broker: string[]; specializations?: string[] };
 export const EMPTY_DIRECTORY_FILTERS: DirectoryFilters = { subRegions: [], locality: [], projects: [], broker: [] };

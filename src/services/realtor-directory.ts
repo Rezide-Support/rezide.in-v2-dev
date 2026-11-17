@@ -1,5 +1,6 @@
+import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { queryOptions } from "@tanstack/react-query";
-import { directoryBody, type DirectoryFilters, type DirectoryPage, type DirectorySuggestion, type DirectoryFirmDetail } from "@/features/realtors/directory-model";
+import { directoryBody, type DirectoryFilters, type DirectoryPage, type DirectorySuggestion, type DirectoryFirmDetail, type DirectoryPersonDetail } from "@/features/realtors/directory-model";
 import type { Paginated, Property } from "@/types/models";
 
 export type FirmListingPage = Paginated<Property> & { sale: number; rent: number };
@@ -10,7 +11,9 @@ export class DirectoryRequestError extends Error {
 /** Same-origin requests deliberately bypass the legacy Axios base URL and mock adapter. */
 export async function directoryRequest<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(path, { method: body === undefined ? "GET" : "POST", headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json" }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal });
-  const data = await response.json().catch(() => { throw new Error("The realtor service returned an invalid response."); });
+  const data = await response.json().catch(() => {
+    throw new DirectoryRequestError(response.ok ? "The realtor service returned an invalid response." : "The realtor request failed. Please try again.", response.ok ? 502 : response.status);
+  });
   if (!response.ok) throw new DirectoryRequestError(typeof data?.message === "string" ? data.message : "The realtor request failed.", response.status);
   return data;
 }
@@ -37,6 +40,8 @@ export async function loadAllFirms(filters: DirectoryFilters, signal?: AbortSign
   return firms;
 }
 export const directoryQueries = {
+  person: (lookupId: string) => queryOptions({ queryKey: ["realtor-directory", "person", lookupId], queryFn: ({ signal }) => directoryRequest<DirectoryPersonDetail>(`/api/brokers/person?lookupId=${encodeURIComponent(lookupId)}`, undefined, signal), enabled: BACKEND_ID_PATTERN.test(lookupId), staleTime: 60_000, retry: (attempt, error) => !(error instanceof DirectoryRequestError && error.status === 404) && attempt < 2 }),
+  personListings: (personId: string, purpose: "sale" | "rent", page: number) => queryOptions({ queryKey: ["realtor-directory", "person-listings", personId, purpose, page], queryFn: ({ signal }) => directoryRequest<FirmListingPage>(`/api/brokers/listings?broker_id=${encodeURIComponent(personId)}&purpose=${purpose}&page=${page}`, undefined, signal), enabled: BACKEND_ID_PATTERN.test(personId), staleTime: 60_000 }),
   profile: (name: string) => queryOptions({ queryKey: ["realtor-directory", "profile", name], queryFn: ({ signal }) => directoryRequest<DirectoryFirmDetail>(`/api/brokers/profile?name=${encodeURIComponent(name)}`, undefined, signal), staleTime: 60_000 }),
   listings: (firmId: string, purpose: "sale" | "rent", page: number) => queryOptions({ queryKey: ["realtor-directory", "listings", firmId, purpose, page], queryFn: ({ signal }) => directoryRequest<FirmListingPage>(`/api/brokers/listings?firm_id=${encodeURIComponent(firmId)}&purpose=${purpose}&page=${page}`, undefined, signal), enabled: !!firmId, staleTime: 60_000 }),
   firms: (filters: DirectoryFilters, page: number) => queryOptions({ queryKey: ["realtor-directory", "firms", filters, page], queryFn: ({ signal }) => loadFirmPage(filters, page, 6, signal), staleTime: 60_000 }),

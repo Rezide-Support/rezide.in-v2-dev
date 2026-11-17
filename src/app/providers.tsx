@@ -2,35 +2,16 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { FoldWatcher } from "@/components/layout/fold-watcher";
 import { configureAuth } from "@/lib/api/client";
+import { getQueryClient } from "@/lib/query-client";
+export { getQueryClient } from "@/lib/query-client";
 import { signInPathFor } from "@/lib/api/auth-redirect";
 import { useSessionStore } from "@/stores/session";
 import { useSyncSessionUser } from "@/features/auth/use-sync-session-user";
-
-let browserQueryClient: QueryClient | undefined;
-
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 30_000,
-        retry: 1,
-        refetchOnWindowFocus: false,
-      },
-    },
-  });
-}
-
-/** One client per server render; one shared client in the browser. */
-export function getQueryClient() {
-  if (typeof window === "undefined") return makeQueryClient();
-  browserQueryClient ??= makeQueryClient();
-  return browserQueryClient;
-}
 
 /**
  * AUTH SEAM. Connects the API client to the session: a 401 from the API ends
@@ -47,8 +28,7 @@ function AuthBridge() {
       configureAuth({
         onUnauthorized: () => {
           useSessionStore.getState().signOut();
-          getQueryClient().removeQueries({ queryKey: ["account"] });
-          getQueryClient().removeQueries({ queryKey: ["dashboard"] });
+
           const target = signInPathFor(window.location.pathname, window.location.search);
           if (target) router.replace(target);
         },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useId } from "react";
 import { EmptyState, ErrorState } from "@/components/common/feedback";
 import { Pagination } from "@/components/common/pagination";
 import { Segmented } from "@/components/common/segmented";
@@ -19,13 +20,14 @@ const serializeListings = (criteria: ReturnType<typeof parseListings>) => {
   return params;
 };
 
-export function FirmListings({ firmId }: { firmId: string }) {
+export function FirmListings({ firmId = "", brokerId = "", heading = "Firm Listings" }: { firmId?: string; brokerId?: string; heading?: string }) {
+  const headingId = useId();
   const { criteria, update } = useUrlCriteria(parseListings, serializeListings);
-  const query = useQuery(directoryQueries.listings(firmId, criteria.purpose, criteria.page));
+  const query = useQuery(brokerId ? directoryQueries.personListings(brokerId, criteria.purpose, criteria.page) : directoryQueries.listings(firmId, criteria.purpose, criteria.page));
   const data = query.data;
-  return <section className="mt-12" aria-labelledby="firm-listings-title" aria-busy={query.isFetching}>
+  return <section className="mt-12" aria-labelledby={headingId} aria-busy={query.isFetching}>
     <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <h2 id="firm-listings-title" className="text-2xl font-semibold">Firm Listings</h2>
+      <h2 id={headingId} className="text-2xl font-semibold">{heading}</h2>
       <Segmented label="Listing purpose" value={criteria.purpose} onChange={purpose => update({ purpose, page: 1 })} appearance="solid" options={[
         { value: "sale", label: `Available Sale${data ? ` (${data.sale})` : ""}` },
         { value: "rent", label: `Available Rental${data ? ` (${data.rent})` : ""}` },

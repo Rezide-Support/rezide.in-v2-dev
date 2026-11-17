@@ -1,6 +1,6 @@
 import axios, { type AxiosAdapter, type AxiosInstance } from "axios";
 import MockAdapter from "axios-mock-adapter";
-import { domainOf } from "@/lib/api/mocking";
+import { API_DOMAINS, domainOf } from "@/lib/api/mocking";
 import { registerHandlers } from "./handlers";
 
 /**
@@ -21,7 +21,7 @@ export function installMockApi(
   const mock = new MockAdapter(instance, { delayResponse: delay, onNoMatch: "throwException" });
   registerHandlers(mock);
   if (options.domains) {
-    const mocked = new Set(options.domains);
+    const mocked = new Set(options.domains.filter(domain => (API_DOMAINS as readonly string[]).includes(domain)));
     const mockAdapter = instance.defaults.adapter as AxiosAdapter;
     const realAdapter = axios.getAdapter(original);
     instance.defaults.adapter = (config) => (mocked.has(domainOf(config.url)) ? mockAdapter : realAdapter)(config);

@@ -1,3 +1,6 @@
+import { isBackendId } from "@/lib/ids";
+import { escapeHtml } from "@/lib/html";
+export { escapeHtml } from "@/lib/html";
 import { PHOTO_IDS, unsplash } from "@/content/media";
 import { propertyHref } from "@/features/properties/property-card";
 import { formatPrice } from "@/lib/format";
@@ -9,12 +12,10 @@ import { toMapPoint } from "./use-map-markers";
 
 /* Pin popups, as in GeoEstate's map. Built as HTML for Leaflet, so everything from the service is escaped. */
 
-export const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** What links in a popup need. */
 export type PopupContext = { city: string; intent: Intent; category: PropertyCategory };
 
-const isBackendId = (s: string) => /^[a-f\d]{24}$/i.test(s);
 
 /** A project's name. Its id is the name in some data and a raw id in the rest. */
 export const projectNameOf = (p: ProjectItem) => p.projectName?.trim() || (isBackendId(p.projectId) ? "" : p.projectId);
@@ -81,6 +82,9 @@ export function toMapPoints(items: MapItem[], context: PopupContext, atMaxZoom: 
   return [...spots.values()].map((group, index) => {
     const point = toMapPoint(group[0], index);
     const label = atMaxZoom && point.kind === "cluster" ? `${point.count} listings · at this exact spot` : point.label;
-    return { ...point, label, title: point.kind === "listing" ? point.title : label, popupHtml: popupHtml(group, context) };
+    const listingIds = group.flatMap(item => item.type === "listing"
+      ? item.listingId ? [item.listingId] : []
+      : item.type === "project" ? (item.listings ?? []).flatMap(listing => listing.listingId ? [listing.listingId] : []) : []);
+    return { ...point, listingIds, label, title: point.kind === "listing" ? point.title : label, popupHtml: popupHtml(group, context) };
   });
 }

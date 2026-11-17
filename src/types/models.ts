@@ -135,17 +135,32 @@ export type ProjectConfiguration = {
   bhk: string;
   areaMin: number;
   areaMax: number;
+  /** The configuration's sale and monthly-rent ranges (INR), as the v1 plan tabs show them. */
+  saleMin?: number;
+  saleMax?: number;
+  rentMin?: number;
+  rentMax?: number;
   /** Unit-plan images. None in the sample data. */
   unitPlans?: string[];
   /** Floor-plan images. None in the sample data. */
   floorPlans?: string[];
 };
 
+/** One RERA registration of a project, with its QR code and the regulator's page. */
+export type ProjectRera = { id: string; link?: string; qr?: string };
+
 export type DeveloperProfile = {
+  /** The developer's backend id (contact details are looked up by it). */
+  id?: string;
   name: string;
   /** e.g. "Mumbai, Maharashtra" */
   headquarters: string;
   description: string;
+  logo?: string;
+  /** Year founded, e.g. "1998". */
+  established?: string;
+  /** Cities of the developer's offices. */
+  cities?: string[];
 };
 
 export interface Project {
@@ -183,6 +198,8 @@ export interface Project {
   rentFrom?: number;
   rentTo?: number;
   configurationPlans?: ProjectConfiguration[];
+  /** RERA registrations with a real id (v1 "Project RERA details"). */
+  reras?: ProjectRera[];
   /** Amenity / clubhouse photos (v1 "Amenities" gallery tab). */
   amenityImages?: string[];
   /** View photos (v1 "Views" gallery tab). */
@@ -488,7 +505,7 @@ export interface OwnerListing {
 
 /* ---------- Search criteria ---------- */
 
-export type SortKey = "latest" | "price-asc" | "price-desc" | "area-desc";
+export type SortKey = "latest" | "price-asc" | "price-desc" | "rate-asc" | "rate-desc" | "area-asc" | "area-desc";
 /** list / map show listings; "loc" and "proj" group them by locality or project (prototype view tabs). */
 export type ResultsView = "list" | "map" | "loc" | "proj";
 
@@ -519,6 +536,9 @@ export interface PropertySearchCriteria {
   view: ResultsView;
 }
 
+/** Project result orders, as on rezide.in. */
+export type ProjectSortKey = "latest" | "price-asc" | "price-desc" | "plot-asc" | "plot-desc" | "yield-asc" | "yield-desc";
+
 export interface ProjectSearchCriteria {
   city: string;
   q: string;
@@ -527,6 +547,7 @@ export interface ProjectSearchCriteria {
   budget: string[];
   years: number[];
   views: string[];
+  sort: ProjectSortKey;
   page: number;
   perPage: number;
 }

@@ -1,3 +1,4 @@
+import { getQueryClient } from "@/lib/query-client";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { api } from "@/lib/api/client";
@@ -5,6 +6,7 @@ import {
   cityLabel,
   fetchCities,
   fetchCityId,
+  fetchRegionLocalities,
   fetchRegions,
   fetchSearchSuggestions,
   fetchSubRegionLocalities,
@@ -41,6 +43,7 @@ describe("toSuggestion", () => {
 describe("backend reads", () => {
   let backend: MockAdapter;
   beforeEach(() => {
+    getQueryClient().clear();
     backend = new MockAdapter(api);
   });
   afterEach(() => backend.restore());
@@ -82,8 +85,21 @@ describe("backend reads", () => {
     await expect(fetchSubRegionLocalities("s1")).resolves.toEqual([{ id: "l1", name: "Tunga Village" }]);
   });
 
+  it("loads a region's localities a page at a time, searched by name, as rezide.in's Location filter", async () => {
+    backend
+      .onGet("/repository/sub_region/by-region", { params: { region: "r1", page: 2, pageSize: 10, searchQuery: "and" } })
+      .reply(200, { totalCount: 12, data: [{ _id: "s1", name: "Andheri West " }, { _id: "s2", name: "" }, { name: "No id" }] });
+    await expect(fetchRegionLocalities("r1", "and", 2)).resolves.toEqual({ items: [{ id: "s1", name: "Andheri West" }], total: 12, page: 2 });
+  });
+
   it("doesn't call the backend for an empty box", async () => {
     await expect(fetchSearchSuggestions("   ")).resolves.toEqual([]);
     expect(backend.history.get).toHaveLength(0);
   });
+});
+
+it("shares the city-master request between names and ID lookups",async()=>{
+  const backend=new MockAdapter(api);getQueryClient().clear();
+  backend.onGet('/master/city/search').reply(200,{data:[{_id:'c1',label:'Mumbai'},{_id:'c2',label:'Bangalore'}]});
+  try {const[names,id]=await Promise.all([fetchCities(),fetchCityId('Bengaluru')]);expect(names).toContain('Bengaluru');expect(id).toBe('c2');expect(backend.history.get).toHaveLength(1)}finally{backend.restore();getQueryClient().clear()}
 });

@@ -1,4 +1,5 @@
 "use client";
+import { safeExternalUrl } from "@/lib/urls";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -309,14 +310,14 @@ function SocialGlyph({ name }: { name: keyof RealtorSocials }) {
 }
 
 export function SocialLinks({ socials, name }: { socials?: RealtorSocials; name: string }) {
-  const entries = (Object.keys(SOCIAL_LABEL) as (keyof RealtorSocials)[]).filter((k) => socials?.[k]);
+  const entries = (Object.keys(SOCIAL_LABEL) as (keyof RealtorSocials)[]).filter((k) => safeExternalUrl(socials?.[k]));
   if (!entries.length) return null;
   return (
     <ul className="flex flex-wrap justify-center gap-3" aria-label={`${name} on social media`}>
       {entries.map((k) => (
         <li key={k}>
           <a
-            href={socials![k]}
+            href={safeExternalUrl(socials?.[k])}
             target="_blank"
             rel="noopener noreferrer"
             className="flex size-10 items-center justify-center rounded-lg bg-black text-rez-full-white hover:bg-rez-arsenic"

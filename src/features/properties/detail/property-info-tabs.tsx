@@ -12,7 +12,6 @@ import type { Project, Property } from "@/types/models";
 import { AmenityTile } from "./amenity-icon";
 import { Connectivity } from "./connectivity";
 import { DashList, UnderlinedField } from "./detail-ui";
-import { formatFeet, roomArea } from "./format";
 import { propertyFields } from "./property-fields";
 
 const panel = "rounded-xl border border-rez-smoke bg-rez-cream-warm p-5 sm:p-10 lg:px-12 lg:py-10";
@@ -43,7 +42,6 @@ function LocalityPanel({ property: p }: { property: Property }) {
 
 /** v1 info tabs under the gallery. */
 export function PropertyInfoTabs({ property: p, project }: { property: Property; project?: Project | null }) {
-  const rooms = p.rooms ?? [];
   return (
     <Tabs defaultValue="property" className="min-w-0 gap-3">
       <TabsList
@@ -52,7 +50,6 @@ export function PropertyInfoTabs({ property: p, project }: { property: Property;
       >
         {[
           ["property", "Property"],
-          ["dimensions", "Dimensions"],
           ["amenities", "Amenities"],
           ["project", "Project"],
           ["locality", "Locality"],
@@ -70,28 +67,9 @@ export function PropertyInfoTabs({ property: p, project }: { property: Property;
       <TabsContent value="property" className={panel}>
         <dl className="grid grid-cols-2 gap-x-5 gap-y-6 sm:gap-x-11 sm:gap-y-9 md:grid-cols-3">
           {propertyFields(p).map((f) => (
-            <UnderlinedField key={f.label} label={f.label} value={f.value} upper />
+            <UnderlinedField key={f.label} label={f.label} value={f.value} upper center />
           ))}
         </dl>
-      </TabsContent>
-
-      <TabsContent value="dimensions" className={panel}>
-        {rooms.length ? (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {rooms.map((r) => (
-              <li key={r.name} className="flex flex-col gap-0.5 rounded-lg border border-rez-smoke bg-white px-4 py-3">
-                <span className="text-sm font-semibold">{r.name}</span>
-                <span className="text-[13px] text-rez-graphite">
-                  {formatFeet(r.length)} × {formatFeet(r.width)}
-                </span>
-                <span className="text-[13px] text-rez-graphite">{formatNumber(roomArea(r))} sq ft area</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <Empty>Room dimensions haven&apos;t been added for this listing.</Empty>
-        )}
-        {rooms.length > 0 && <p className="mt-4 text-xs text-rez-graphite">Sample dimensions, rounded to the nearest inch.</p>}
       </TabsContent>
 
       <TabsContent value="amenities" className={`${panel} flex flex-col gap-6`}>

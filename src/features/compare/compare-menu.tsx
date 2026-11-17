@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Scale } from "lucide-react";
 import { Icon } from "@/components/brand/icon";
 import { CoverImage } from "@/components/common/cover-image";
 import { Segmented } from "@/components/common/segmented";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { useCompareItems, useSavedStore, type CompareGroup } from "@/stores/saved";
 import { useSession } from "@/stores/session";
 import { COMPARE_TABS, compareHref, entryHref, entryImage, entrySummary, useCompareEntries, type CompareEntry } from "./compare-data";
@@ -40,7 +39,11 @@ export function CompareMenu() {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setOpen(false), CLOSE_DELAY);
   };
-  const hover = { onPointerEnter: show, onPointerLeave: hide };
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const hover = {
+    onPointerEnter: (event: PointerEvent) => { if (event.pointerType === "mouse") show(); },
+    onPointerLeave: (event: PointerEvent) => { if (event.pointerType === "mouse") hide(); },
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -90,17 +93,11 @@ export function CompareMenu() {
               }))}
             />
             <CompareList entries={entries.filter((e) => e.group === tab)} empty={COMPARE_TABS.find((t) => t.group === tab)!.empty} />
-            <Link
-              href={compareHref(tab)}
-              onClick={() => setOpen(false)}
-              aria-disabled={!entries.some((e) => e.group === tab)}
-              className={cn(
-                "flex h-10 items-center justify-center rounded-full bg-black text-sm font-semibold text-rez-full-white hover:bg-rez-arsenic",
-                !entries.some((e) => e.group === tab) && "pointer-events-none opacity-40",
-              )}
-            >
-              Compare
-            </Link>
+            {entries.some(e => e.group === tab) ? (
+              <Link href={compareHref(tab)} onClick={() => setOpen(false)} className="flex h-10 items-center justify-center rounded-full bg-black text-sm font-semibold text-rez-full-white hover:bg-rez-arsenic">Compare</Link>
+            ) : (
+              <span aria-disabled="true" className="flex h-10 items-center justify-center rounded-full bg-black text-sm font-semibold text-rez-full-white opacity-40">Compare</span>
+            )}
           </>
         )}
       </PopoverContent>

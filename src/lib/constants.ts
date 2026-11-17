@@ -85,7 +85,7 @@ export const categoryById = (id: PropertyCategory) =>
 export const UNIT_TYPES: Record<PropertyCategory, string[]> = {
   homes: ["Apartment", "Villa", "Independent House", "Penthouse", "Duplex", "Studio", "Independent Floor", "Row House"],
   // As the backend names them.
-  offices: ["Independent Office"],
+  offices: ["Independent Office", "Independent Building"],
   retail: ["Shop", "Showroom"],
   industrial: ["Warehouse", "Factory", "Industrial shed", "Cold storage", "Logistics park"],
   land: ["Residential Plot", "Commercial Plot", "Industrial Plot", "Farmhouse Land", "Agricultural Land"],
@@ -177,6 +177,9 @@ export const LANGUAGES = ["English", "Hindi", "Marathi", "Gujarati", "Tamil", "T
 
 /** OTP length used across every sign-in, sign-up and verification flow: the Rezide backend sends 4-digit codes. */
 export const OTP_LENGTH = 4;
+
+/** How many listings the map view's list loads at a time (more load as it scrolls). */
+export const MAP_PAGE_SIZE = 10;
 
 export type ContactType = "Customer" | "Broker" | "Developer" | "Vendor";
 

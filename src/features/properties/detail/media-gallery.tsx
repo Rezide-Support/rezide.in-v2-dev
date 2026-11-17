@@ -8,6 +8,7 @@ import { SampleBadge } from "@/components/common/feedback";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { thumbnailSrc } from "@/content/media";
 import { cn } from "@/lib/utils";
+import { ScrollIndicator } from "@/components/common/scroll-indicator";
 
 export type GalleryTab = {
   value: string;
@@ -19,10 +20,11 @@ export type GalleryTab = {
 };
 
 /** v1 media gallery: segmented tabs, large photo with counter + arrows, thumbnail strip. */
-export function MediaGallery({ tabs, title, className }: { tabs: GalleryTab[]; title: string; className?: string }) {
+export function MediaGallery({ tabs, title, className, caption }: { tabs: GalleryTab[]; title: string; className?: string; caption?: string }) {
   const first = tabs.find((t) => t.images.length)?.value ?? tabs[0].value;
   return (
     <Tabs defaultValue={first} className={cn("gap-2", className)}>
+      <ScrollIndicator>
       <TabsList
         aria-label="Media"
         className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-full border border-rez-smoke bg-white p-1 scrollbar-none group-data-horizontal/tabs:h-auto"
@@ -38,10 +40,11 @@ export function MediaGallery({ tabs, title, className }: { tabs: GalleryTab[]; t
           </TabsTrigger>
         ))}
       </TabsList>
+      </ScrollIndicator>
       {tabs.map((t) => (
         <TabsContent key={t.value} value={t.value} className="min-w-0">
           {t.images.length ? (
-            <Viewer images={t.images} label={`${title}: ${t.label.toLowerCase()}`} />
+            <Viewer images={t.images} label={`${title}: ${t.label.toLowerCase()}`} caption={caption} />
           ) : (
             <div className="flex aspect-[16/9] flex-col items-center justify-center gap-3 rounded-lg bg-rez-cloud px-6 text-center sm:aspect-[21/10]">
               <t.icon className="size-8 text-rez-graphite" aria-hidden />
@@ -54,7 +57,23 @@ export function MediaGallery({ tabs, title, className }: { tabs: GalleryTab[]; t
   );
 }
 
-export function Viewer({ images, label, cardHref, priority }: { images: string[]; label: string; cardHref?: string; priority?: boolean }) {
+export function Viewer({
+  images,
+  label,
+  cardHref,
+  priority,
+  reserveBadgeSpace = false,
+  caption,
+}: {
+  images: string[];
+  label: string;
+  cardHref?: string;
+  priority?: boolean;
+  /** Lifts the card's photo dots above a badge at the bottom (e.g. "Project photo"). */
+  reserveBadgeSpace?: boolean;
+  /** A line shown along the bottom of the gallery's photo. */
+  caption?: string;
+}) {
   const [index, setIndex] = useState(0);
   const [failedSrc, setFailedSrc] = useState("");
   const touchStart = useRef<number | null>(null);
@@ -84,7 +103,7 @@ export function Viewer({ images, label, cardHref, priority }: { images: string[]
     {n > 1 && <>
       <button type="button" onClick={() => go(index - 1)} aria-label={`Previous photo of ${label}`} className="absolute top-1/2 left-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-sm"><ArrowLeft className="size-4" strokeWidth={1.5} /></button>
       <button type="button" onClick={() => go(index + 1)} aria-label={`Next photo of ${label}`} className="absolute top-1/2 right-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-sm"><ArrowRight className="size-4" strokeWidth={1.5} /></button>
-      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2" aria-label="Choose photo">{images.map((src, i) => <button key={`${src}:${i}`} type="button" onClick={() => go(i)} aria-label={`Show photo ${i + 1} of ${label}`} aria-current={i === index ? "true" : undefined} className="flex size-5 items-center justify-center"><span className={cn("size-2 rounded-full", i === index ? "bg-white" : "bg-white/50")} /></button>)}</div>
+      <div className={cn("absolute inset-x-0 flex justify-center gap-2", reserveBadgeSpace ? "bottom-10" : "bottom-4")} aria-label="Choose photo">{images.map((src, i) => <button key={`${src}:${i}`} type="button" onClick={() => go(i)} aria-label={`Show photo ${i + 1} of ${label}`} aria-current={i === index ? "true" : undefined} className="flex size-5 items-center justify-center"><span className={cn("size-2 rounded-full", i === index ? "bg-white" : "bg-white/50")} /></button>)}</div>
     </>}
   </div>;
 
@@ -110,6 +129,7 @@ export function Viewer({ images, label, cardHref, priority }: { images: string[]
         <span className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white tabular-nums" aria-live="polite">
           {index + 1}/{n}
         </span>
+        {caption && <span className="absolute inset-x-0 bottom-0 bg-black/50 px-3 py-2 text-base text-white">{caption}</span>}
         {n > 1 && (
           <>
             <button
@@ -131,7 +151,7 @@ export function Viewer({ images, label, cardHref, priority }: { images: string[]
           </>
         )}
       </div>
-      {n > 1 && (
+      {n > 0 && (
         <ul className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" aria-label="Thumbnails">
           {images.map((src, i) => (
             <li key={src} className="w-[calc((100%-1.5rem)/4)] min-w-[88px] shrink-0">

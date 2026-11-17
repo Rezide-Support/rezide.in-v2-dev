@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { PropertyDetailView } from "@/features/properties/property-detail";
 import { DetailSkeleton } from "@/components/common/detail-skeleton";
-import { priceLabel } from "@/features/properties/property-card";
+import { priceLabel } from "@/features/properties/price-label";
 import { ApiError } from "@/lib/api/client";
 import { propertyQueries } from "@/lib/queries";
 import { fetchProperty } from "@/services/properties";
@@ -19,7 +19,8 @@ export async function generateMetadata({ params }: PageProps<"/properties/[id]">
       title: `${p.title}, ${p.locality}`,
       description: `${p.unitType} in ${p.locality}, ${p.city} · ${priceLabel(p)}`,
     };
-  } catch {
+  } catch (error) {
+    if (!(error instanceof ApiError && error.status === 404)) console.error("Property metadata failed", { id, status: error instanceof ApiError ? error.status : undefined });
     return { title: "Property not found" };
   }
 }

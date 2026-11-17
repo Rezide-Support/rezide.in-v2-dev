@@ -2,6 +2,8 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { useRouter } from "next/navigation";
+import { escapeHtml } from "@/lib/html";
 import { useEffect, useRef } from "react";
 import type { LatLng } from "@/types/models";
 
@@ -12,6 +14,8 @@ import type { LatLng } from "@/types/models";
  */
 export type MapPoint = {
   id: string;
+  /** Listing IDs represented by this pin, including grouped listings. */
+  listingIds?: string[];
   position: LatLng;
   label: string;
   title: string;
@@ -28,7 +32,6 @@ export type MapPoint = {
 /** The part of the map in view: [west, south, east, north], and the whole zoom level. */
 export type MapView = { bbox: [number, number, number, number]; zoom: number };
 
-const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** Wait for the map to settle (a zoom fires zoomend and moveend; wheel zooms fire several) before reporting the view. */
 const SETTLE_MS = 400;
@@ -96,6 +99,9 @@ export default function LeafletMap({
   onBackgroundClick?: (position: LatLng) => void;
   className?: string;
 }) {
+  const router = useRouter();
+  const routerRef = useRef(router);
+  useEffect(() => { routerRef.current = router; }, [router]);
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const layer = useRef<L.LayerGroup | null>(null);
@@ -124,6 +130,17 @@ export default function LeafletMap({
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(m);
+    // Delegate only ordinary same-origin link activations; modified clicks keep browser behavior.
+    const navigatePopup = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>(".leaflet-popup a[href]") : null;
+      if (!anchor || anchor.hasAttribute("download") || (anchor.target && anchor.target !== "_self")) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin || !["http:", "https:"].includes(url.protocol)) return;
+      event.preventDefault();
+      routerRef.current.push(`${url.pathname}${url.search}${url.hash}`);
+    };
+    m.getContainer().addEventListener("click", navigatePopup);
     layer.current = L.layerGroup().addTo(m);
     map.current = m;
     const start = initialViewRef.current;
@@ -155,6 +172,7 @@ export default function LeafletMap({
       observer.disconnect();
       onMapReadyRef.current?.(null);
       m.off("moveend", report);
+      m.getContainer().removeEventListener("click", navigatePopup);
       m.remove();
       map.current = null;
     };
@@ -177,7 +195,7 @@ export default function LeafletMap({
       // GeoEstate shows the price (or "N listings · tap to zoom") above the pin on hover.
       if (p.kind) marker.bindTooltip(escapeHtml(p.label), { direction: "top", offset: [0, -40] });
       if (p.popupHtml) marker.bindPopup(p.popupHtml, { className: "rez-map-popup", minWidth: 240, maxWidth: 290, offset: [0, -40] });
-      marker.on("click keypress", () => {
+      marker.on("click", () => {
         if (onPointClickRef.current) onPointClickRef.current(p);
         else if (p.kind === "cluster" || p.kind === "project") m.setView(p.position, Math.min(m.getZoom() + GROUP_ZOOM_STEP, MAX_ZOOM));
         else onSelectRef.current?.(p);
@@ -187,6 +205,12 @@ export default function LeafletMap({
       marker.addTo(group);
       // Keyboard users get the same card highlight as mouse users.
       const node = marker.getElement();
+      // Leaflet maps Enter to click; Space needs its own button-style activation.
+      node?.addEventListener("keydown", event => {
+        if (event.key !== " ") return;
+        event.preventDefault();
+        if (!event.repeat) marker.fire("click");
+      });
       node?.addEventListener("focus", () => onHoverRef.current?.(p.id));
       node?.addEventListener("blur", () => onHoverRef.current?.(null));
       markers.current.set(p.id, marker);
@@ -203,10 +227,16 @@ export default function LeafletMap({
   }, [points, fit]);
 
   useEffect(() => {
+    const activeIds = new Set(points.filter(point => point.id === highlightedId || point.listingIds?.includes(highlightedId ?? "")).map(point => point.id));
     markers.current.forEach((marker, id) => {
-      const node = marker.getElement()?.querySelector<HTMLElement>("[data-marker]");
+      const element = marker.getElement();
+      const on = activeIds.has(id);
+      element?.classList.toggle("is-active", on);
+      marker.setZIndexOffset(on ? 1000 : 0);
+      if (on) marker.openTooltip();
+      else marker.closeTooltip();
+      const node = element?.querySelector<HTMLElement>("[data-marker]");
       if (!node) return;
-      const on = id === highlightedId;
       node.style.background = on ? "#A3835F" : "#000";
       node.style.color = on ? "#000" : "#E0E0E0";
       marker.setZIndexOffset(on ? 1000 : 0);

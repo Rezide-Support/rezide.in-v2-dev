@@ -107,9 +107,9 @@ describe("mocking switch", () => {
   it("mocks only the listed domains and passes the rest to the real adapter", async () => {
     const real = vi.fn(async (config: InternalAxiosRequestConfig) => ({ status: 200, data: { real: true }, headers: {}, config, statusText: "OK" }));
     const instance = axios.create({ baseURL: "/api", adapter: real });
-    installMockApi(instance, { delayMs: 0, domains: ["properties"] });
-    const stats = await instance.get("/properties/stats", { params: { city: "Mumbai", intent: "buy", type: "homes" } });
-    expect(stats.data.total).toBeGreaterThan(0);
+    installMockApi(instance, { delayMs: 0, domains: ["account"] });
+    const stats = await instance.get("/account/visits", { params: { role: "seeker" } });
+    expect(stats.data.length).toBeGreaterThan(0);
     expect(real).not.toHaveBeenCalled();
     const enquiry = await instance.post("/enquiries", {});
     expect(enquiry.data).toEqual({ real: true });

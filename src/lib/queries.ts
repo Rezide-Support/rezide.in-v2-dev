@@ -1,4 +1,4 @@
-import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, keepPreviousData, queryOptions } from "@tanstack/react-query";
 import {
   fetchProject,
   fetchProjects,
@@ -18,6 +18,7 @@ import { fetchProperties, fetchProperty, fetchPropertyFacets, fetchPropertyGroup
 import {
   fetchCities,
   fetchCityId,
+  fetchRegionLocalities,
   fetchRegions,
   fetchSearchSuggestions,
   fetchSubRegionLocalities,
@@ -25,6 +26,8 @@ import {
   type SuggestionScope,
 } from "@/services/locations";
 import { fetchTransactions, type TransactionKind } from "@/services/transactions";
+import { fetchFloorPlans, fetchUnitPlans } from "@/services/project-plans";
+import { MAP_PAGE_SIZE } from "@/lib/constants";
 import { fetchProjectHome, fetchPropertyHome } from "@/services/home";
 import { fetchLandmarks, fetchLocalityPhoto } from "@/services/localities";
 import {
@@ -58,6 +61,7 @@ import type {
  */
 const CATALOG_STALE = 60_000;
 
+
 /** Registered transactions in a project (Rezide backend, never mocked). */
 export const transactionQueries = {
   recent: (projectId: string, kind: TransactionKind) =>
@@ -71,14 +75,26 @@ export const transactionQueries = {
 /** Cities and search suggestions from the Rezide backend (never mocked). */
 export const locationQueries = {
   /** The city master barely changes: fetch it once per visit. */
-  cities: () => queryOptions({ queryKey: ["locations", "cities"] as const, queryFn: fetchCities, staleTime: Infinity }),
+  cities: () => queryOptions({ queryKey: ["locations", "cities"] as const, queryFn: fetchCities, staleTime: 5 * 60_000 }),
   /* The region → sub-region → locality tree barely changes either. */
-  cityId: (city: string) => queryOptions({ queryKey: ["locations", "city-id", city] as const, queryFn: () => fetchCityId(city), staleTime: Infinity }),
+  cityId: (city: string) => queryOptions({ queryKey: ["locations", "city-id", city] as const, queryFn: () => fetchCityId(city), staleTime: 5 * 60_000 }),
   regions: (cityId: string) => queryOptions({ queryKey: ["locations", "regions", cityId] as const, queryFn: () => fetchRegions(cityId), staleTime: Infinity }),
   subRegions: (regionId: string) =>
     queryOptions({ queryKey: ["locations", "sub-regions", regionId] as const, queryFn: () => fetchSubRegions(regionId), staleTime: Infinity }),
   localities: (subRegionId: string) =>
     queryOptions({ queryKey: ["locations", "localities", subRegionId] as const, queryFn: () => fetchSubRegionLocalities(subRegionId), staleTime: Infinity }),
+  /** A region's localities, 10 at a time (more load as the list scrolls), searched by name. */
+  regionLocalities: (regionId: string, search: string) =>
+    infiniteQueryOptions({
+      queryKey: ["locations", "region-localities", regionId, search.trim().toLowerCase()] as const,
+      queryFn: ({ pageParam }) => fetchRegionLocalities(regionId, search.trim(), pageParam),
+      initialPageParam: 1,
+      getNextPageParam: (last, pages) => {
+        const loaded = pages.reduce((n, p) => n + p.items.length, 0);
+        return last.items.length > 0 && loaded < last.total ? last.page + 1 : undefined;
+      },
+      staleTime: 5 * 60_000,
+    }),
   suggestions: (query: string, city: string, scope: SuggestionScope = "all") =>
     queryOptions({
       queryKey: ["locations", "suggestions", scope, city, query.trim().toLowerCase()] as const,
@@ -94,6 +110,19 @@ export const propertyQueries = {
       // View mode does not change results, so it is not part of the key.
       queryKey: ["properties", "search", { ...c, view: undefined }, area ?? null] as const,
       queryFn: () => fetchProperties(c, area),
+      staleTime: CATALOG_STALE,
+      placeholderData: keepPreviousData,
+    }),
+  /**
+   * The map view's list: the listings in that part of the map, MAP_PAGE_SIZE at a time,
+   * the next batch loading as the list scrolls (no page numbers). Paging isn't in the key.
+   */
+  mapList: (c: PropertySearchCriteria, area: MapArea) =>
+    infiniteQueryOptions({
+      queryKey: ["properties", "map-list", { ...c, view: undefined, page: undefined, perPage: undefined }, area] as const,
+      queryFn: ({ pageParam }) => fetchProperties({ ...c, page: pageParam, perPage: MAP_PAGE_SIZE }, area),
+      initialPageParam: 1,
+      getNextPageParam: (last) => (last.page < last.pageCount ? last.page + 1 : undefined),
       staleTime: CATALOG_STALE,
       placeholderData: keepPreviousData,
     }),
@@ -134,6 +163,14 @@ export const homeQueries = {
     queryOptions({ queryKey: ["home", "properties", intent, city, category] as const, queryFn: () => fetchPropertyHome(intent, city, category), staleTime: CATALOG_STALE }),
   projects: (city: string, status: ProjectStatus) =>
     queryOptions({ queryKey: ["home", "projects", city, status] as const, queryFn: () => fetchProjectHome(city, status), staleTime: CATALOG_STALE }),
+};
+
+/** A project's unit plans (per configuration) and floor plans (per tower). Public backend reads. */
+export const projectPlanQueries = {
+  unit: (projectId: string, bhk: string) =>
+    queryOptions({ queryKey: ["project-plans", projectId, "unit", bhk] as const, queryFn: () => fetchUnitPlans(projectId, bhk), staleTime: 10 * 60_000 }),
+  floor: (projectId: string) =>
+    queryOptions({ queryKey: ["project-plans", projectId, "floor"] as const, queryFn: () => fetchFloorPlans(projectId), staleTime: 10 * 60_000 }),
 };
 
 export const projectQueries = {
@@ -196,7 +233,7 @@ export const firmQueries = {
 export const accountQueries = {
   /** One activity tab of a user (Rezide backend, never mocked). */
   activity: (tab: ActivityTab, user: ActivityUser) =>
-    queryOptions({ queryKey: ["account", "activity", tab, user.id] as const, queryFn: () => fetchActivity(tab, user) }),
+    queryOptions({ queryKey: ["account", "activity", tab, user.id, user.phone ?? ""] as const, queryFn: () => fetchActivity(tab, user) }),
   /** Which listings the user has shortlisted, for the Shortlist button. */
   shortlistIds: (userId: string) =>
     queryOptions({ queryKey: ["account", "shortlist-ids", userId] as const, queryFn: () => fetchShortlistIds(userId) }),
@@ -215,7 +252,7 @@ export const accountQueries = {
     }),
   listings: () => queryOptions({ queryKey: ["account", "listings"] as const, queryFn: fetchOwnerListings }),
   /** The signed-in user's record on the Rezide backend (name, phone, email). */
-  user: (id: string) => queryOptions({ queryKey: ["account", "user", id] as const, queryFn: () => fetchUser(id) }),
+  user: (id: string) => queryOptions({ queryKey: ["account", "user", id] as const, queryFn: () => fetchUser(id), staleTime: 5 * 60_000, refetchOnWindowFocus: false }),
 };
 
 /* Realtor CRM. Every key starts with "dashboard" so one invalidation refreshes the CRM after a write. */

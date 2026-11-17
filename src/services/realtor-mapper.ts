@@ -1,3 +1,4 @@
+import { sanitizePublicFirmRecord } from "@/features/realtors/public-mapper";
 import type { Firm, PostalAddress, Realtor, RealtorCredential } from "@/types/models";
 import { cityLabel } from "./locations";
 import { cdnImage, PLACEHOLDER_IMAGE } from "./property-mapper";
@@ -94,6 +95,7 @@ function firmCities(raw: BackendFirm): string[] {
 }
 
 export function toFirm(raw: BackendFirm): Firm {
+  raw = sanitizePublicFirmRecord(raw) as BackendFirm;
   const g = raw.general_information ?? {};
   const id = String(raw._id ?? "");
   const name = (g.firm_name ?? "").trim();
@@ -116,6 +118,8 @@ export function toFirm(raw: BackendFirm): Firm {
 }
 
 export function toRealtor(person: BackendPerson, raw: BackendFirm): Realtor {
+  raw = sanitizePublicFirmRecord(raw) as BackendFirm;
+  person = sanitizePublicFirmRecord({ _id: raw._id, general_information: raw.general_information, managers: [person] }).managers[0] as BackendPerson;
   const firm = toFirm(raw);
   const g = raw.general_information ?? {};
   const id = String(person._id ?? "");
@@ -136,8 +140,8 @@ export function toRealtor(person: BackendPerson, raw: BackendFirm): Realtor {
     since: yearOf(person.operating_since) || firm.since,
     teamSize: firm.teamSize,
     // Filled in per request: counting listings is a call for each person.
-    saleListings: 0,
-    rentalListings: 0,
+    saleListings: raw.total_listing_sale_count ?? 0,
+    rentalListings: raw.total_listing_rental_count ?? 0,
     city: cities[0] ?? "",
     cities,
     localities: labels(person.localities).length ? labels(person.localities) : labels(g.allLocalities),

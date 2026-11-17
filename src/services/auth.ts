@@ -62,6 +62,9 @@ export type BackendUser = {
   lastname?: string;
   phone?: string;
   email?: string;
+  salutation?: string;
+  email2?: string;
+  phone2?: string;
 };
 
 /** Some endpoints wrap the record in `{ data }`. */
@@ -102,6 +105,32 @@ export function toSession(body: unknown, input: VerifyOtpInput, now = Date.now()
 export async function fetchUser(id: string): Promise<BackendUser> {
   const { data } = await api.get(`${USER_URL}/${encodeURIComponent(id)}`);
   return unwrapUser(data);
+}
+
+/**
+ * Changes the user's first and last name with `PUT /user/user/{id}`, exactly as rezide.in's profile
+ * form (ProfileForm.tsx, editUser) does: the whole profile is sent, so the other fields go back as the
+ * backend has them and only the names change. Returns the updated record.
+ *
+ * The backend authenticates this with its `user_token` cookie (Domain=.rezide.in), which the browser
+ * sends only when the API is called through the site's own rezide.in domain: set
+ * NEXT_PUBLIC_API_BASE_URL=/v1/admin there (next.config.ts rewrites it to the backend), as rezide.in does.
+ */
+export async function updateUserName(id: string, name: { firstName: string; lastName: string }): Promise<BackendUser> {
+  const current = await fetchUser(id);
+  const body = {
+    salutation: current.salutation ?? "",
+    firstname: name.firstName.trim(),
+    lastname: name.lastName.trim(),
+    email: current.email ?? "",
+    phone: (current.phone ?? "").replace(/\+/g, ""),
+    email2: current.email2 ?? "",
+    phone2: (current.phone2 ?? "").replace(/\+/g, ""),
+  };
+  const { data } = await api.put(`${USER_URL}/${encodeURIComponent(id)}`, body);
+  const saved = unwrapUser(data);
+  // Some responses are only a message: fall back to what was sent.
+  return { ...current, ...body, ...(saved.firstname || saved.lastname ? saved : {}), _id: current._id ?? id };
 }
 
 /** Sends an OTP: the login OTP for sign-in, an SMS OTP otherwise. */

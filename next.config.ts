@@ -1,5 +1,41 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
+/**
+ * Content-Security-Policy. Allows exactly the origins the app loads:
+ * images from Unsplash, the Rezide CDN/backend and OpenStreetMap tiles; API
+ * calls to the Rezide backend and the spatial-search service; everything else
+ * from this origin. `'unsafe-inline'` is kept for scripts/styles because the
+ * App Router injects inline hydration scripts and Tailwind/Leaflet inject inline
+ * styles; a nonce-based policy is a future hardening. Dev adds `'unsafe-eval'`
+ * and websockets for Turbopack HMR.
+ */
+const csp = [
+  `default-src 'self'`,
+  `base-uri 'self'`,
+  `object-src 'none'`,
+  `frame-ancestors 'none'`,
+  `form-action 'self'`,
+  `img-src 'self' data: blob: https://images.unsplash.com https://cdn.rezide.in https://api.rezide.in https://tile.openstreetmap.org`,
+  `font-src 'self' data:`,
+  `style-src 'self' 'unsafe-inline'`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `connect-src 'self' https://api.rezide.in https://si.rezide.in${isDev ? " ws: wss:" : ""}`,
+  `worker-src 'self' blob:`,
+  ...(isDev ? [] : [`upgrade-insecure-requests`]),
+].join("; ");
+
+/** Security headers applied to every response (security audit A-9). */
+const securityHeaders = [
+  { key: "Content-Security-Policy", value: csp },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), payment=(), usb=(), geolocation=(self)" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+];
+
 /** Agent ids from before firm pages existed (`/realtors/<firm>-<agent>`). */
 const LEGACY_AGENT_IDS = [
   ["assetpro", "rukmani-iyer"],
@@ -16,6 +52,12 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.29"],
   cacheComponents: true,
   partialPrefetching: true,
+  // Don't advertise the framework (security audit A-9).
+  poweredByHeader: false,
+  // Security headers on every route (security audit A-9).
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -1,5 +1,6 @@
 "use client";
 
+import { clearPrivateQueries } from "@/lib/query-client";
 import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -31,10 +32,14 @@ export const useSessionStore = create<SessionState>()(
   persist(
     (set, get) => ({
       session: null,
-      signIn: (session) => set({ session }),
+      signIn: (session) => {
+        if (get().session?.user.id !== session.user.id) clearPrivateQueries();
+        set({ session });
+      },
       signOut: () => {
         const ended = get().session;
         set({ session: null });
+        clearPrivateQueries();
         // Tell the backend too, as rezide.in does. Checking `ended` first stops a 401 here from looping.
         if (ended) void logout().catch(() => undefined);
       },

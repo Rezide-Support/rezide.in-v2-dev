@@ -1,80 +1,38 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Logo } from "@/components/brand/logo";
 import { FOOTER_COLUMNS } from "@/lib/navigation";
-import { cn } from "@/lib/utils";
 
-/**
- * Site footer. On phones it follows the Figma layout (two link columns). `realtorMobile`
- * is the Realtor Corner's phone variant: its own logo artwork, spacing and colours,
- * applied on top of the default (later classes win in `cn`).
- */
-export function SiteFooter({ realtorMobile = false }: { realtorMobile?: boolean }) {
+/** Shared Figma footer for every public page. */
+export function SiteFooter() {
   return (
-    <footer className={cn("bg-black px-5 pt-8 pb-6 text-rez-full-white md:px-8 md:pt-14 md:pb-8", realtorMobile && "max-sm:pt-6")}>
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-12 max-sm:gap-9">
-        <div className={cn("flex flex-wrap justify-between gap-10", realtorMobile && "max-sm:gap-4")}>
-          <div className={cn("flex max-w-[340px] flex-col gap-7 max-sm:max-w-[250px] max-sm:gap-4", realtorMobile && "max-sm:max-w-none max-sm:gap-1")}>
-            <Link href="/" aria-label="Rezide home" className="text-rez-full-white">
-              {realtorMobile ? (
-                <>
-                  <span className="relative block h-[66px] w-[229px] max-w-full overflow-hidden sm:hidden">
-                    <Image src="/images/realtors/footer-logo-mobile.png" alt="Rezide" fill sizes="229px" className="object-cover" />
-                  </span>
-                  <Logo height={30} className="hidden sm:block" />
-                </>
-              ) : (
-                <Logo height={30} className="max-sm:h-6 max-sm:w-auto" />
-              )}
-            </Link>
-            <p
-              className={cn(
-                "text-[17px] leading-normal text-pretty text-rez-steel max-sm:text-[13px] max-sm:leading-snug",
-                realtorMobile && "max-sm:max-w-[300px] max-sm:text-sm max-sm:text-rez-full-white",
-              )}
-            >
-              The only place for you to browse 100% trusted and authentic properties.
-            </p>
-          </div>
-          <div className={cn("grid grid-cols-2 gap-x-6 gap-y-8 sm:flex sm:flex-wrap sm:gap-x-24 sm:gap-y-10", realtorMobile && "max-sm:w-full max-sm:gap-6")}>
-            {FOOTER_COLUMNS.map((col, i) => (
-              <ul
-                key={i}
-                className={cn(
-                  "flex min-w-0 flex-col gap-2 max-sm:pl-2 sm:min-w-[150px] sm:gap-5",
-                  i === FOOTER_COLUMNS.length - 1 && "max-sm:col-span-2 max-sm:grid max-sm:grid-cols-2 max-sm:gap-x-6 max-sm:gap-y-2 max-sm:pl-0 max-sm:[&>li]:pl-2",
-                  realtorMobile && "max-sm:gap-2.5 max-sm:p-2.5",
-                  // Keep the split last group in line with the columns above.
-                  realtorMobile && i === FOOTER_COLUMNS.length - 1 && "max-sm:gap-x-6 max-sm:px-0 max-sm:[&>li]:pl-2.5",
-                )}
-              >
-                {col.map((link) => (
-                  <li key={link.label}>
-                    {link.href ? (
-                      <Link href={link.href} className="text-base font-medium hover:text-rez-mocaccino max-sm:text-[15px] max-sm:font-normal">
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <span
-                        className={cn("text-base font-medium max-sm:text-[15px] max-sm:font-normal", realtorMobile && "max-sm:text-rez-cloud")}
-                        title="Content not yet published"
-                      >
-                        {link.label}
-                        <span className="sr-only"> (coming soon)</span>
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ))}
-          </div>
+    <footer className="bg-black px-5 py-10 text-white sm:px-8 lg:px-[60px] lg:py-20">
+      <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[minmax(260px,317px)_minmax(0,756px)] lg:justify-between lg:gap-12">
+        <div className="flex max-w-[317px] flex-col gap-3 text-sm font-medium text-[#afafaf] sm:text-base">
+          <Link href="/" aria-label="Rezide home" className="block w-fit">
+            <Image src="/images/footer-logo.png" alt="Rezide" width={251} height={66} className="h-auto w-[251px] max-w-full" />
+          </Link>
+          <p className="leading-normal">The only place for you to browse 100% trusted and authentic properties.</p>
+          <p className="leading-normal">© 2026 Rezide. All rights reserved.</p>
         </div>
-        <p className="text-center text-sm text-rez-steel max-sm:text-[15px]">© 2026 Rezide. All rights reserved.</p>
+        <nav aria-label="Footer" className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:gap-x-20">
+          {FOOTER_COLUMNS.map((column, index) => (
+            <ul key={index} className="flex min-w-0 flex-col gap-2.5 text-sm font-medium sm:text-base lg:p-2.5">
+              {column.map(link => (
+                <li key={link.label} className="leading-normal">
+                  {link.href ? (
+                    <Link href={link.href} className="hover:text-rez-mocaccino">{link.label}</Link>
+                  ) : (
+                    <span title="Content not yet published">{link.label}<span className="sr-only"> (coming soon)</span></span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ))}
+        </nav>
       </div>
     </footer>
   );
 }
-
 /** One-line footer for the customer workspace (account, listing wizard), as in the prototype. */
 export function SlimFooter() {
   return (

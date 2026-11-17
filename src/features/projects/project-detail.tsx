@@ -12,7 +12,7 @@ import { DetailCard, SectionHeading } from "@/features/properties/detail/detail-
 import { MediaGallery } from "@/features/properties/detail/media-gallery";
 import { Rail } from "@/features/properties/detail/rail";
 import { SaveActions } from "@/features/properties/detail/save-actions";
-import { Transactions } from "@/features/properties/detail/transactions";
+import { ProjectTransactions } from "./detail/project-transactions";
 import { projectSearchHref } from "@/features/search/criteria";
 import { projectQueries } from "@/lib/queries";
 import { AboutDeveloper } from "./detail/about-developer";
@@ -107,7 +107,7 @@ export function ProjectDetailView({ id }: { id: string }) {
 
           <div className="flex flex-col gap-10">
             <ReraDetails project={p} />
-            <Transactions title={p.name} path={path} projectId={p.id} toggle />
+            <ProjectTransactions projectId={p.id} name={p.name} path={path} />
           </div>
 
           <AboutDeveloper project={p} stats={developer} />

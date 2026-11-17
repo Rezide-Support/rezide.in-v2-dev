@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { api, ApiError } from "@/lib/api/client";
 import { matchesRealtor, paginate } from "@/features/search/match";
 import type { Firm, Intent, Paginated, Property, Realtor, RealtorSearchCriteria } from "@/types/models";
@@ -18,7 +19,7 @@ const PAGE_SIZE = 100;
 /** The most listings a firm or agent page lists per purpose. It has no server paging. */
 const MAX_LISTINGS = 100;
 /** Counting is a call per person, so a page's counts are fetched a few at a time. */
-const COUNT_CONCURRENCY = 8;
+
 
 export type Directory = {
   firms: Firm[];
@@ -65,41 +66,13 @@ export function realtorDirectory(now = Date.now()): Promise<Directory> {
 /** Empties the caches (tests). */
 export function resetRealtorCaches() {
   directoryCache = null;
-  countCache.clear();
+
 }
 
 /* ---------------- Listing counts ---------------- */
 
-type Counts = { sale: number; rent: number };
-
-const countCache = new Map<string, { at: number; counts: Promise<Counts> }>();
-
-function personCounts(brokerId: string, now = Date.now()): Promise<Counts> {
-  const hit = countCache.get(brokerId);
-  if (hit && now - hit.at < TTL_MS) return hit.counts;
-  const counts = api
-    .post<{ result_sale?: number; result_rent?: number }>("/inventory/Listing/mobile/filter/count", {}, { params: { broker_id: brokerId } })
-    .then(({ data }) => ({ sale: data.result_sale ?? 0, rent: data.result_rent ?? 0 }));
-  countCache.set(brokerId, { at: now, counts });
-  counts.catch(() => countCache.delete(brokerId));
-  return counts;
-}
-
-/** Counts a person's listings. A failed count reads as none, rather than failing the whole page. */
-async function withCounts(people: Realtor[]): Promise<Realtor[]> {
-  const out: Realtor[] = [];
-  for (let i = 0; i < people.length; i += COUNT_CONCURRENCY) {
-    const batch = people.slice(i, i + COUNT_CONCURRENCY);
-    const counted = await Promise.all(
-      batch.map(async (r) => {
-        const c = await personCounts(r.id).catch(() => ({ sale: 0, rent: 0 }));
-        return { ...r, saleListings: c.sale, rentalListings: c.rent };
-      }),
-    );
-    out.push(...counted);
-  }
-  return out;
-}
+/** Broker records already carry firm totals; never request a count per person. */
+async function withCounts(people: Realtor[]): Promise<Realtor[]> { return people; }
 
 const toSummary = (r: Realtor): AgentSummary => ({ realtor: r, saleCount: r.saleListings, rentCount: r.rentalListings });
 
@@ -128,7 +101,7 @@ export async function searchRealtors(c: RealtorSearchCriteria, page = 1, perPage
   const directory = await realtorDirectory();
   const byFirm = c.by === "firm";
   const matched = (byFirm ? principals(directory) : directory.people).filter((r) => matchesDirectory(r, c));
-  const result = paginate(matched, page, perPage);
+  const result = paginate(matched, page, Math.min(50, Math.max(1, perPage)));
   return byFirm ? result : { ...result, items: await withCounts(result.items) };
 }
 
@@ -150,13 +123,13 @@ async function listingsBy(param: { firm_id: string } | { broker_id: string }): P
   return [...sale, ...rent];
 }
 
-export async function getFirmDetail(firmId: string): Promise<FirmDetail> {
+export const getFirmDetail = cache(async (firmId: string): Promise<FirmDetail> => {
   const directory = await realtorDirectory();
   const firm = directory.firms.find((f) => f.id === firmId);
   if (!firm) throw notFound("firm");
   const [team, listings] = await Promise.all([withCounts(directory.people.filter((r) => r.firmId === firmId)), listingsBy({ firm_id: firmId })]);
   return { firm, team: team.map(toSummary), listings };
-}
+});
 
 async function detailOf(realtor: Realtor, directory: Directory): Promise<RealtorDetail> {
   // Colleagues first, then others in the same city, up to 8.
@@ -175,19 +148,19 @@ async function detailOf(realtor: Realtor, directory: Directory): Promise<Realtor
   };
 }
 
-export async function getRealtorDetail(id: string): Promise<RealtorDetail> {
+export const getRealtorDetail = cache(async (id: string): Promise<RealtorDetail> => {
   const directory = await realtorDirectory();
   const realtor = directory.people.find((r) => r.id === id);
   if (!realtor) throw notFound("realtor");
   return detailOf(realtor, directory);
-}
+});
 
-export async function getFirmAgentDetail(firmId: string, agentId: string): Promise<RealtorDetail> {
+export const getFirmAgentDetail = cache(async (firmId: string, agentId: string): Promise<RealtorDetail> => {
   const directory = await realtorDirectory();
   const realtor = directory.people.find((r) => r.firmId === firmId && r.slug === agentId);
   if (!realtor) throw notFound("realtor");
   return detailOf(realtor, directory);
-}
+});
 
 /** The realtor on a listing, when they're in the active directory. A directory failure never fails the listing. */
 export async function findRealtor(id: string): Promise<Realtor | null> {

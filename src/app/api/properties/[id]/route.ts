@@ -17,8 +17,8 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/prop
       return Response.json({ message: "This listing doesn't exist or is no longer live." }, { status: 404 });
     }
     if (!(error instanceof ApiError)) console.error(`GET /api/properties/${id} failed`, error);
-    const status = error instanceof ApiError && error.status >= 400 && error.status < 500 ? error.status : 502;
-    const message = error instanceof ApiError ? error.message : "Couldn't load this listing. Please try again.";
+    const status = error instanceof ApiError && [400, 404, 422].includes(error.status) ? error.status : 502;
+    const message = "Couldn't load this listing. Please try again.";
     return Response.json({ message }, { status });
   }
 }

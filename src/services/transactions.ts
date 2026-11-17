@@ -44,13 +44,17 @@ export type BackendTransaction = {
     transaction_date?: string;
     // The backend reuses these fields: for a sale, rate_per_month is the transaction
     // value and security_deposit the ready-reckoner value (as rezide.in labels them).
-    rate_per_month?: number;
-    security_deposit?: number;
-    rpsf?: number;
+    rate_per_month?: number | string;
+    security_deposit?: number | string;
+    rpsf?: number | string;
   };
 };
 
-const money = (n: unknown) => (typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined);
+/** A positive amount. Rental rows send rent, deposit and rate as text ("490891"), so strings are read too. */
+const money = (n: unknown) => {
+  const v = typeof n === "string" && n.trim() !== "" ? Number(n.replace(/[,\s?]/g, "")) : n;
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
+};
 const label = (l: Labelled) => l?.label?.trim() || undefined;
 
 export function toTransaction(raw: BackendTransaction, kind: TransactionKind): Transaction {

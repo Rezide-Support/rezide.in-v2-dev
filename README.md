@@ -4,7 +4,6 @@ Next.js rebuild of the client-supplied **Rezide.in prototype**. It covers the se
 
 > **Prototype build.** Every listing, project, realtor, account record and dashboard record is **sample data** served by an in-process mock API. **Sign-in and sign-up are live**: they use the Rezide backend's OTP endpoints, as rezide.in does. No other message, payment, upload or verification reaches a real service.
 
-
 ## Stack
 
 Next.js 16 (App Router, Cache Components, Turbopack) · TypeScript · Tailwind CSS v4 · shadcn/ui (Radix, retheme to Rezide tokens) · TanStack Query · Zustand · Axios (+ axios-mock-adapter) · React Hook Form + Zod · Leaflet (lazy-loaded) · Vitest + Testing Library.
@@ -138,6 +137,5 @@ Footer items without destinations (About Us, Careers, Blog, Help Centre, Support
 - In the realtor dashboard, edits (contacts, groups, team, firm and profile) are kept in memory by the mock API and reset on reload. File uploads record the file name only. Leads, Listing, Inventory, Marketing, Customisation, WhatsApp Templates, Integration, Subscription and Upload History are shown as unavailable.
 - The signed-in prototype swaps the header for a "Back to Rezide" bar on account pages; the build keeps the main navigation there.
 - Brand mocaccino (`#A3835F`) fails WCAG AA for small text on white, so text uses a darker `--rez-mocaccino-ink`; the brand hue is kept for bars, dots and large display text.
-#   r e z i d e . i n - v 2 
- 
+#   r e z i d e . i n - v 2  
  

@@ -1,3 +1,4 @@
+import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { ApiError } from "@/lib/api/client";
 import { parseProjectCriteria } from "@/features/search/criteria";
 import { getProjectsByIds, searchProjects } from "@/services/projects";
@@ -11,7 +12,7 @@ import { getProjectsByIds, searchProjects } from "@/services/projects";
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   try {
-    const ids = params.getAll("ids").filter((id) => /^[0-9a-f]{24}$/i.test(id)).slice(0, 100);
+    const ids = params.getAll("ids").filter((id) => BACKEND_ID_PATTERN.test(id)).slice(0, 100);
     if (params.has("ids")) return Response.json(await getProjectsByIds(ids, params.get("city") ?? ""));
     return Response.json(await searchProjects(parseProjectCriteria(params)));
   } catch (error) {

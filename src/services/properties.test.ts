@@ -3,14 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultPropertyCriteria } from "@/features/search/criteria";
 import { api } from "@/lib/api/client";
 import { PLACEHOLDER_IMAGE, toListingFilters, toProperty, toPropertyPage, type BackendListing } from "@/services/property-mapper";
-import { localityOptions } from "@/features/search/filter-drawer";
+import { keepOrder, localityOptions } from "@/features/search/filter-drawer";
 import { clearListingIndex } from "@/services/listing-index";
 import { getListingDetail, listingFacets, listingGroups, searchListings, searchListingsInArea } from "@/services/properties";
 
 /* The Rezide backend's listing search, answered here by a test double. Shapes follow live responses. */
 
 const listing = (over: Partial<BackendListing> = {}): BackendListing => ({
-  _id: "l1",
+  _id: "67f0e8445817e6ef8d80f822",
   listing_type: "home",
   createdAt: "2026-11-04T10:36:54.436Z",
   lastUpdate: "2026-11-04T16:08:19.031Z",
@@ -75,7 +75,7 @@ describe("toProperty", () => {
   it("maps a sale listing to the card's fields", () => {
     const p = toProperty(listing());
     expect(p).toMatchObject({
-      id: "l1",
+      id: "67f0e8445817e6ef8d80f822",
       title: "C - 601, Lodha Bellagio",
       category: "homes",
       intent: "buy",
@@ -131,6 +131,14 @@ describe("toProperty", () => {
     expect(toProperty(raw).images).toEqual(["https://cdn.rezide.in/images/flat1.jpeg"]);
     raw.listing_details!.project!.media = {};
     expect(toProperty(raw).images).toEqual([PLACEHOLDER_IMAGE]);
+  });
+
+  it("reads a listing whose project is null (the backend sends some)", () => {
+    const raw = listing({ images: { apartment: [] } });
+    (raw.listing_details as Record<string, unknown>).project = null;
+    const p = toProperty(raw);
+    expect(p.images).toEqual([PLACEHOLDER_IMAGE]);
+    expect(p.projectName).toBeUndefined();
   });
 
   it("shows the master's Bangalore as Bengaluru", () => {
@@ -226,28 +234,34 @@ describe("listing search", () => {
     expect(toProperty({ listing_type: "retail", listing_details: { unit_type: "Shop" } })).toMatchObject({ category: "retail", unitType: "Shop" });
   });
 
+  it("filters offices by Independent Office or Independent Building", () => {
+    const body = toListingFilters(defaultPropertyCriteria({ category: "offices", unitTypes: ["Independent Office", "Independent Building"] }));
+    expect(body).toMatchObject({ listing_type: ["office"], project_type: ["Independent Office", "Independent Building"] });
+    expect(toProperty({ listing_type: "office", listing_details: { unit_type: "Independent Building" } })).toMatchObject({ category: "offices", unitType: "Independent Building" });
+  });
+
   it("loads one listing with similar listings from its locality, never itself", async () => {
     const head = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
-    backend.onGet("/inventory/Listing/l1").reply(200, listing());
+    backend.onGet("/inventory/Listing/67f0e8445817e6ef8d80f822").reply(200, listing());
     backend.onPost("/inventory/Listing/mobile/all").reply((config) => {
       expect(JSON.parse(config.data)).toMatchObject({ city: ["Mumbai"], property_purpose: ["sale"], project_names_localities: ["Powai"] });
       return [200, { data: [listing(), listing({ _id: "l2" }), listing({ _id: "l3" })], result_sale: 3 }];
     });
-    const d = await getListingDetail("l1");
-    expect(d.property).toMatchObject({ id: "l1", title: "C - 601, Lodha Bellagio", price: 80000000 });
+    const d = await getListingDetail("67f0e8445817e6ef8d80f822");
+    expect(d.property).toMatchObject({ id: "67f0e8445817e6ef8d80f822", title: "C - 601, Lodha Bellagio", price: 80000000 });
     expect(d.similar.map((s) => s.id)).toEqual(["l2", "l3"]);
     expect(d).toMatchObject({ realtor: null, project: null });
     // The brochure exists on the CDN, where rezide.in links it.
-    expect(d.property.brochureUrl).toBe("https://cdn.rezide.in/images/l1_brochure.pdf");
-    expect(head).toHaveBeenCalledWith("https://cdn.rezide.in/images/l1_brochure.pdf", expect.objectContaining({ method: "HEAD" }));
+    expect(d.property.brochureUrl).toBe("https://cdn.rezide.in/images/67f0e8445817e6ef8d80f822_brochure.pdf");
+    expect(head).toHaveBeenCalledWith("https://cdn.rezide.in/images/67f0e8445817e6ef8d80f822_brochure.pdf", expect.objectContaining({ method: "HEAD" }));
   });
 
   it("still shows the listing when similar listings fail, and without a brochure when there's none", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 404 }));
-    backend.onGet("/inventory/Listing/l1").reply(200, listing());
+    backend.onGet("/inventory/Listing/67f0e8445817e6ef8d80f822").reply(200, listing());
     backend.onPost("/inventory/Listing/mobile/all").reply(500, { message: "down" });
-    const d = await getListingDetail("l1");
-    expect(d).toMatchObject({ property: { id: "l1" }, similar: [] });
+    const d = await getListingDetail("67f0e8445817e6ef8d80f822");
+    expect(d).toMatchObject({ property: { id: "67f0e8445817e6ef8d80f822" }, similar: [] });
     expect(d.property.brochureUrl).toBeUndefined();
   });
 
@@ -283,6 +297,24 @@ describe("filter counts and groups (from the city's listings)", () => {
     backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [powai3, powai2, parelHidden], result_sale: 3, result_rent: 0 });
   });
   afterEach(() => backend.restore());
+
+  it("sorts by area here, since the backend sorts area as text", async () => {
+    const small = listing({ _id: "small" });
+    small.listing_details!.area = "998.0";
+    const large = listing({ _id: "large" });
+    large.listing_details!.area = "5432";
+    backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [small, large], result_sale: 2, result_rent: 0 });
+    const down = await searchListings(defaultPropertyCriteria({ sort: "area-desc" }));
+    expect(down.items.map((p) => p.id)).toEqual(["large", "small"]);
+    const up = await searchListings(defaultPropertyCriteria({ sort: "area-asc" }));
+    expect(up.items.map((p) => p.id)).toEqual(["small", "large"]);
+    expect(up.total).toBe(2);
+  });
+
+  it("asks the backend to sort by rate per sq ft", () => {
+    expect(toListingFilters(defaultPropertyCriteria({ sort: "rate-asc" })).sortBy).toBe("Avg. Rate psf. (Low to High)");
+    expect(toListingFilters(defaultPropertyCriteria({ sort: "rate-desc" })).sortBy).toBe("Avg. Rate psf. (High to Low)");
+  });
 
   it("counts each option with every other group's choices kept", async () => {
     const f = await listingFacets(defaultPropertyCriteria({ bhk: ["3 BHK"] }));
@@ -359,12 +391,38 @@ describe("the map view's list", () => {
     await expect(searchListingsInArea(defaultPropertyCriteria({ bhk: ["2 BHK"] }), powai)).resolves.toMatchObject({ total: 1, items: [{ id: "two" }] });
     await expect(searchListingsInArea(defaultPropertyCriteria(), [80, 10, 81, 11])).resolves.toMatchObject({ total: 0, items: [], pageCount: 1 });
   });
+
+  it("finds a chosen locality as the list view does: by sub-region or by the finer locality", async () => {
+    const inParel = (id: string, locality?: string) => {
+      const l = listing({ _id: id, listing_address: { city: "Mumbai", subregion: "Parel", locality, latitude: 19.006, longitude: 72.828 } });
+      l.listing_details!.subregion = "Parel";
+      return l;
+    };
+    backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [inParel("lp", "Lower Parel"), inParel("p"), inView], result_sale: 3, result_rent: 0 });
+    const parelArea: [number, number, number, number] = [72.8, 18.95, 72.86, 19.02];
+    // "Lower Parel" is the first listing's locality; both have the sub-region "Parel".
+    await expect(searchListingsInArea(defaultPropertyCriteria({ localities: ["Lower Parel"] }), parelArea)).resolves.toMatchObject({ total: 1, items: [{ id: "lp" }] });
+    const parel = await searchListingsInArea(defaultPropertyCriteria({ localities: ["parel"] }), parelArea);
+    expect(parel.items.map((p) => p.id).sort()).toEqual(["lp", "p"]);
+  });
 });
 
 describe("drawer locality options", () => {
-  it("lists localities with listings, busiest first, keeping chosen ones", () => {
-    const c = defaultPropertyCriteria({ localities: ["Juhu"] });
-    expect(localityOptions(c, { localities: { Parel: 1, Powai: 5, Worli: 1 } } as never)).toEqual(["Juhu", "Powai", "Parel", "Worli"]);
-    expect(localityOptions(c, undefined)).toEqual(["Juhu"]);
+  it("lists localities with listings, busiest first, keeping chosen ones in place", () => {
+    const c = defaultPropertyCriteria({ localities: ["Juhu", "Parel"] });
+    // Parel stays where its count puts it; Juhu, outside the list, goes at the end.
+    expect(localityOptions(c, { localities: { Parel: 1, Powai: 5, Worli: 1 } } as never)).toEqual(["Powai", "Parel", "Worli", "Juhu"]);
+    expect(localityOptions(c, undefined)).toEqual(["Juhu", "Parel"]);
   });
+
+  it("keeps chips where they were shown when counts re-rank them", () => {
+    expect(keepOrder(["Parel", "Dadar West", "Worli"], ["Worli", "Parel", "Juhu"])).toEqual(["Parel", "Dadar West", "Worli", "Juhu"]);
+    expect(keepOrder([], ["Worli", "Parel"])).toEqual(["Worli", "Parel"]);
+  });
+});
+
+it("rejects malformed listing IDs before making backend calls", async () => {
+  const get=vi.spyOn(api,"get");
+  await expect(getListingDetail("../invalid")).rejects.toMatchObject({status:404});
+  expect(get).not.toHaveBeenCalled();
 });

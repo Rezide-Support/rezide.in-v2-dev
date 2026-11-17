@@ -2,6 +2,7 @@ import { AREA_BANDS, CATEGORIES, DEFAULT_CITY } from "@/lib/constants";
 import type {
   Intent,
   ProjectSearchCriteria,
+  ProjectSortKey,
   ProjectStatus,
   PropertyCategory,
   PropertySearchCriteria,
@@ -15,12 +16,19 @@ import type {
  */
 
 export const PER_PAGE_OPTIONS = [9, 18, 27, 36] as const;
-export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+/** Sort options and labels as on rezide.in. Rate per sq ft is offered for sale only, as there. */
+export const SORT_OPTIONS: { value: SortKey; label: string; saleOnly?: true }[] = [
   { value: "latest", label: "Latest" },
-  { value: "price-asc", label: "Price: low to high" },
-  { value: "price-desc", label: "Price: high to low" },
-  { value: "area-desc", label: "Largest area" },
+  { value: "price-asc", label: "Price: (Low to High)" },
+  { value: "price-desc", label: "Price: (High to Low)" },
+  { value: "rate-asc", label: "Avg. Rate psf. (Low to High)", saleOnly: true },
+  { value: "rate-desc", label: "Avg. Rate psf. (High to Low)", saleOnly: true },
+  { value: "area-asc", label: "Area (Low to High)" },
+  { value: "area-desc", label: "Area (High to Low)" },
 ];
+
+/** The sort options for buying or renting. */
+export const sortOptionsFor = (intent: Intent) => SORT_OPTIONS.filter((o) => intent === "buy" || !o.saleOnly);
 
 /** One acre in sq ft, used by the plot-size bands. */
 const ACRE = 43_560;
@@ -72,8 +80,9 @@ export const PROPERTY_ARRAY_FILTERS = Object.keys(ARRAY_KEYS) as PropertyArrayFi
 const isCategory = (v: string | null): v is PropertyCategory =>
   !!v && CATEGORIES.some((c) => c.id === v);
 const isIntent = (v: string | null): v is Intent => v === "buy" || v === "rent";
-const isSort = (v: string | null): v is SortKey =>
-  !!v && SORT_OPTIONS.some((o) => o.value === v);
+/** A sort offered for this intent (a rent search with a sale-only sort falls back to Latest). */
+const isSort = (v: string | null, intent: Intent): v is SortKey =>
+  !!v && sortOptionsFor(intent).some((o) => o.value === v);
 const isView = (v: string | null): v is ResultsView =>
   v === "list" || v === "map" || v === "loc" || v === "proj";
 
@@ -122,16 +131,17 @@ export function defaultPropertyCriteria(
 
 export function parsePropertyCriteria(params: ParamsLike): PropertySearchCriteria {
   const perPage = positiveInt(params.get("per"), 9);
+  const intent: Intent = isIntent(params.get("intent")) ? (params.get("intent") as Intent) : "buy";
   const criteria = defaultPropertyCriteria({
     city: params.get("city")?.trim() || DEFAULT_CITY,
-    intent: isIntent(params.get("intent")) ? (params.get("intent") as Intent) : "buy",
+    intent,
     category: isCategory(params.get("type")) ? (params.get("type") as PropertyCategory) : "homes",
     q: params.get("q")?.trim() ?? "",
     budgetMin: optionalAmount(params.get("min")),
     budgetMax: optionalAmount(params.get("max")),
     areaMin: optionalAmount(params.get("areaMin")),
     areaMax: optionalAmount(params.get("areaMax")),
-    sort: isSort(params.get("sort")) ? (params.get("sort") as SortKey) : "latest",
+    sort: isSort(params.get("sort"), intent) ? (params.get("sort") as SortKey) : "latest",
     page: positiveInt(params.get("page"), 1),
     perPage: (PER_PAGE_OPTIONS as readonly number[]).includes(perPage) ? perPage : 9,
     view: isView(params.get("view")) ? (params.get("view") as ResultsView) : "list",
@@ -190,6 +200,19 @@ export function countActiveFilters(c: PropertySearchCriteria): number {
 
 const isStatus = (v: string): v is ProjectStatus => v === "uc" || v === "rtm" || v === "nl";
 
+/** Project sort options and labels as on rezide.in's project list. */
+export const PROJECT_SORT_OPTIONS: { value: ProjectSortKey; label: string }[] = [
+  { value: "latest", label: "Latest" },
+  { value: "price-asc", label: "Price: (Low to High)" },
+  { value: "price-desc", label: "Price: (High to Low)" },
+  { value: "plot-asc", label: "Plot Area: (Low to High)" },
+  { value: "plot-desc", label: "Plot Area: (High to Low)" },
+  { value: "yield-asc", label: "Rental Yield: (Low to High)" },
+  { value: "yield-desc", label: "Rental Yield: (High to Low)" },
+];
+
+const isProjectSort = (v: string | null): v is ProjectSortKey => !!v && PROJECT_SORT_OPTIONS.some((o) => o.value === v);
+
 export function defaultProjectCriteria(
   overrides: Partial<ProjectSearchCriteria> = {},
 ): ProjectSearchCriteria {
@@ -201,6 +224,7 @@ export function defaultProjectCriteria(
     budget: [],
     years: [],
     views: [],
+    sort: "latest",
     page: 1,
     perPage: 9,
     ...overrides,
@@ -217,6 +241,7 @@ export function parseProjectCriteria(params: ParamsLike): ProjectSearchCriteria 
     budget: clean(params.getAll("budget")),
     years: clean(params.getAll("year")).map(Number).filter((y) => Number.isInteger(y) && y > 2000),
     views: clean(params.getAll("view")),
+    sort: isProjectSort(params.get("sort")) ? (params.get("sort") as ProjectSortKey) : "latest",
     page: positiveInt(params.get("page"), 1),
     perPage: (PER_PAGE_OPTIONS as readonly number[]).includes(perPage) ? perPage : 9,
   });
@@ -231,6 +256,7 @@ export function serializeProjectCriteria(c: ProjectSearchCriteria): URLSearchPar
   c.budget.forEach((v) => p.append("budget", v));
   c.years.forEach((v) => p.append("year", String(v)));
   c.views.forEach((v) => p.append("view", v));
+  if (c.sort !== "latest") p.set("sort", c.sort);
   if (c.perPage !== 9) p.set("per", String(c.perPage));
   if (c.page > 1) p.set("page", String(c.page));
   return p;

@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
-import { CredentialDialog, type CredentialKey } from "./credentials";
+import type { ReactNode } from "react";
+import type { CredentialKey } from "./credentials";
 
 const BADGES: { key: CredentialKey; label: string; sub: string }[] = [
   { key: "RERA", label: "RERA registered", sub: "Verified" },
@@ -12,11 +12,10 @@ const BADGES: { key: CredentialKey; label: string; sub: string }[] = [
 ];
 
 export function RealtorHero({ search }: { search?: ReactNode }) {
-  const [open, setOpen] = useState<CredentialKey | null>(null);
   return (
-    <section className="relative isolate flex min-h-[700px] items-center overflow-clip bg-black px-5 py-16 sm:min-h-[520px] sm:px-8 sm:py-16 lg:min-h-[700px] lg:py-24">
-      <Image src="/images/realtors/hero.png" alt="" fill priority sizes="100vw" quality={75} className="-z-20 hidden object-cover sm:block" />
-      <div aria-hidden className="absolute inset-0 -z-20 overflow-hidden sm:hidden">
+    <section className="relative isolate flex min-h-[min(480px,75svh)] items-center overflow-clip bg-black px-5 py-8 sm:min-h-[520px] sm:px-8 sm:py-16 lg:min-h-[700px] lg:py-24">
+      <Image src="/images/realtors/hero.png" alt="" fill priority sizes="100vw" quality={75} className="ken-burns -z-20 hidden object-cover sm:block" />
+      <div aria-hidden className="ken-burns absolute inset-0 -z-20 overflow-hidden sm:hidden">
         <Image src="/images/realtors/hero-mobile-base.png" alt="" fill priority sizes="640px" className="object-cover object-bottom" />
         <div className="absolute top-[-440px] left-[calc(50%-482px)] h-[1400px] w-[1114px]"><Image src="/images/realtors/hero-mobile.png" alt="" fill priority sizes="1114px" className="object-cover object-bottom" /></div>
       </div>
@@ -30,15 +29,14 @@ export function RealtorHero({ search }: { search?: ReactNode }) {
         <ul className="grid w-full grid-cols-[max-content_minmax(0,1fr)] gap-3 p-1 sm:max-w-[560px] sm:grid-cols-2 sm:gap-x-8 sm:gap-y-5 lg:flex lg:max-w-none lg:justify-center lg:gap-8">
           {BADGES.map(badge => (
             <li key={badge.key}>
-              <button type="button" onClick={() => setOpen(badge.key)} aria-haspopup="dialog" aria-label={`${badge.label}: why it matters`} className="flex items-center gap-3 text-left focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+              <div className="flex items-center gap-3 text-left">
                 <Image src="/images/realtors/shield.svg" width={24} height={24} alt="" />
                 <span className="flex min-w-0 flex-col gap-0.5"><span className="text-[clamp(11px,3.58vw,14px)] font-semibold text-white sm:text-xs md:text-[15px]">{badge.label}</span><span className="text-xs text-rez-cloud font-secondary sm:text-rez-space">{badge.sub}</span></span>
-              </button>
+              </div>
             </li>
           ))}
         </ul>
       </div>
-      <CredentialDialog credential={open} onClose={() => setOpen(null)} />
     </section>
   );
 }

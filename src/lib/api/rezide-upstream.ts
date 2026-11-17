@@ -1,12 +1,13 @@
+import { ProxyError } from "./proxy-error";
+export { ProxyError } from "./proxy-error";
+import { apiOrigin as origin } from "@/lib/api/origins";
 import "server-only";
 import { record, text } from "@/features/realtors/directory-model";
 
-const origin = () => (process.env.API_ORIGIN || "https://api.rezide.in").replace(/\/$/, "");
+
 const isTimeout = (error: unknown) => ["TimeoutError", "AbortError"].includes(text(record(error).name));
 
-export class ProxyError extends Error {
-  constructor(message: string, public status: number) { super(message); }
-}
+
 export async function upstream(path: string, body?: unknown, ttl = 0, admin = true): Promise<unknown> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -26,9 +27,12 @@ export async function upstream(path: string, body?: unknown, ttl = 0, admin = tr
   let result: unknown;
   try { result = await response.json(); } catch (error) {
     if (isTimeout(error)) throw new ProxyError("The realtor service timed out. Please retry.", 504);
-    throw new ProxyError(response.ok ? "The realtor service returned an invalid response." : `The realtor service returned HTTP ${response.status}.`, response.ok ? 502 : response.status);
+    throw new ProxyError(response.ok ? "The realtor service returned an invalid response." : "The service is unavailable. Please retry.", 502);
   }
-  if (!response.ok) throw new ProxyError(text(record(result).message) || `The realtor service returned HTTP ${response.status}.`, response.status);
+  if (!response.ok) {
+    console.error("Rezide upstream rejected request", { path, status: response.status });
+    throw new ProxyError(response.status === 404 ? "The requested resource was not found." : "The service is unavailable. Please retry.", response.status === 404 ? 404 : 502);
+  }
   if (result === null || typeof result !== "object") throw new ProxyError("The realtor service returned an invalid response.", 502);
   return result;
 }

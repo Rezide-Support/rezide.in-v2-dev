@@ -1,3 +1,5 @@
+import { getQueryClient } from "@/lib/query-client";
+import { responseArray } from "@/lib/arrays";
 import { api } from "@/lib/api/client";
 
 /*
@@ -19,15 +21,17 @@ export const cityLabel = (name: string) => DISPLAY_NAMES[name] ?? name;
 /** The city master's name for a shown city, for requests that filter by city: Bengaluru → Bangalore. */
 export const toBackendCity = (name: string) => BACKEND_NAMES[name] ?? name;
 
-/** Every city in the backend's city master (≈730), as shown names, without blanks or duplicates. */
-export async function fetchCities(): Promise<string[]> {
-  const { data } = await api.get<{ data?: { label?: string }[] }>("/master/city/search", {
-    params: { page: 1, pageSize: 5000 },
-  });
-  const names = (data.data ?? []).map((c) => c.label?.trim() ?? "").filter(Boolean);
-  return [...new Set(names.map(cityLabel))];
+type CityMasterRow = { _id?: string; value?: string; label?: string };
+/** Names and ID lookups share one raw city-master query and in-flight request. */
+export function fetchCityMaster(): Promise<CityMasterRow[]> {
+  return getQueryClient().ensureQueryData({queryKey:["locations","city-master"],staleTime:5*60_000,queryFn:async()=>{
+    const {data}=await api.get("/master/city/search",{params:{page:1,pageSize:5000}});
+    return responseArray<CityMasterRow>(data);
+  }});
 }
-
+export async function fetchCities(): Promise<string[]> {
+  return [...new Set((await fetchCityMaster()).map(row=>cityLabel(row.label?.trim() || "")).filter(Boolean))];
+}
 /** A place the backend knows by id, in the region → sub-region → locality tree. */
 export type GeoPlace = { id: string; name: string };
 
@@ -42,32 +46,40 @@ const toPlaces = (rows: { id?: string; name?: string }[]): GeoPlace[] => {
 
 /** The city master's id for a shown city, or null when it isn't in the master. */
 export async function fetchCityId(city: string): Promise<string | null> {
-  const { data } = await api.get<{ data?: { _id?: string; value?: string; label?: string }[] }>("/master/city/search", {
-    params: { page: 1, pageSize: 5000 },
-  });
-  const name = toBackendCity(city);
-  const row = data.data?.find((c) => c.label?.trim() === name);
+  const name=toBackendCity(city);
+  const row=(await fetchCityMaster()).find(row=>row.label?.trim()===name);
   return row?._id ?? row?.value ?? null;
 }
-
 type BackendPlace = { _id?: string; name?: string };
 
 /** A city's regions. Many cities have none yet. */
 export async function fetchRegions(cityId: string): Promise<GeoPlace[]> {
   const { data } = await api.get<{ data?: BackendPlace[] }>("/master/region", { params: { city: cityId } });
-  return toPlaces((data.data ?? []).map((r) => ({ id: r._id, name: r.name })));
+  return toPlaces(responseArray<BackendPlace>(data).map((r) => ({ id: r._id, name: r.name })));
+}
+
+/** One page of a region's localities (sub-regions), searched by name, as rezide.in's project Location filter loads them. */
+export type RegionLocalityPage = { items: GeoPlace[]; total: number; page: number };
+
+export async function fetchRegionLocalities(regionId: string, searchQuery: string, page: number, pageSize = 10): Promise<RegionLocalityPage> {
+  const { data } = await api.get<{ totalCount?: number; data?: BackendPlace[] }>("/repository/sub_region/by-region", {
+    params: { region: regionId, page, pageSize, searchQuery },
+  });
+  // Kept in the backend's order (pages must line up); empty names are dropped.
+  const items = responseArray<BackendPlace>(data).flatMap((r) => (r._id && r.name?.trim() ? [{ id: r._id, name: r.name.trim() }] : []));
+  return { items, total: Number(data?.totalCount) || 0, page };
 }
 
 export async function fetchSubRegions(regionId: string): Promise<GeoPlace[]> {
   const { data } = await api.post<BackendPlace[]>("/repository/sub_region/regions", { regions: [regionId] });
-  return toPlaces(data.map((r) => ({ id: r._id, name: r.name })));
+  return toPlaces(responseArray<BackendPlace>(data).map((r) => ({ id: r._id, name: r.name })));
 }
 
 export async function fetchSubRegionLocalities(subRegionId: string): Promise<GeoPlace[]> {
   const { data } = await api.post<{ _id?: string; general_information?: { locality_name?: string } }[]>("/repository/locality/sub-regions", {
     subRegions: [subRegionId],
   });
-  return toPlaces(data.map((l) => ({ id: l._id, name: l.general_information?.locality_name })));
+  return toPlaces(responseArray<{ _id?: string; general_information?: { locality_name?: string } }>(data).map((l) => ({ id: l._id, name: l.general_information?.locality_name })));
 }
 
 /** What a suggestion points at. The backend's `source` values, normalised. */
@@ -119,5 +131,5 @@ export async function fetchSearchSuggestions(
     `/repository/locality/search/list/${encodeURIComponent(text)}${SCOPE_SUFFIX[scope]}`,
     { params: city ? { city: toBackendCity(city) } : undefined },
   );
-  return (data.result ?? []).map(toSuggestion).filter((s) => s.name !== "");
+  return responseArray<BackendSuggestion>(data?.result).map(toSuggestion).filter((s) => s.name !== "");
 }

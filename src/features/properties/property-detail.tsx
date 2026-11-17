@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Images, LayoutGrid, Video } from "lucide-react";
-import { ErrorState, SampleBadge } from "@/components/common/feedback";
+import { Building2, Images, LayoutGrid } from "lucide-react";
+import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { propertySearchHref } from "@/features/search/criteria";
 import { categoryById } from "@/lib/constants";
@@ -77,8 +77,7 @@ export function PropertyDetailView({ id }: { id: string }) {
                 )}
               </p>
               <Chip>{rent ? "Rental" : "Sale"}</Chip>
-              <Chip tone="mint">{p.availableFrom ? `Available from ${formatDate(p.availableFrom)}` : "Available now"}</Chip>
-              <SampleBadge>Sample listing</SampleBadge>
+              <Chip tone="mint">{p.availability?.trim() || "Available"}</Chip>
             </div>
           </div>
           <div className="order-last lg:order-none">
@@ -99,25 +98,30 @@ export function PropertyDetailView({ id }: { id: string }) {
           </div>
         </header>
 
-        {/* ---------- Gallery + key features + visit details ---------- */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_330px]">
-          <MediaGallery
-            title={p.title}
-            tabs={[
-              { value: "photos", label: "Photos", icon: Images, images: p.images, empty: "Photos haven't been added yet." },
-              { value: "video", label: "Video", icon: Video, images: [], empty: "There's no walkthrough video for this listing yet." },
-              {
-                value: "complex",
-                label: "Complex",
-                icon: Building2,
-                images: p.category === "land" ? [] : (p.complexImages ?? []),
-                empty: "There are no building or complex photos for this listing.",
-              },
-              { value: "plans", label: "Plans", icon: LayoutGrid, images: p.planImages ?? [], empty: "Floor plans haven't been uploaded for this listing." },
-            ]}
-          />
+        {/* ---------- Gallery + info tabs (left) | cards (right) ---------- */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-start">
+          {/* LEFT column */}
+          <div className="flex min-w-0 flex-col gap-4">
+            <MediaGallery
+              title={p.title}
+              caption={p.unitType === "Studio" ? "Studio" : p.bhk ? `${p.bhk} BHK` : p.unitType}
+              tabs={[
+                { value: "photos", label: "Photos", icon: Images, images: p.images, empty: "Photos haven't been added yet." },
+                {
+                  value: "complex",
+                  label: "Complex",
+                  icon: Building2,
+                  images: p.category === "land" ? [] : (p.complexImages ?? []),
+                  empty: "There are no building or complex photos for this listing.",
+                },
+                ...(p.planImages?.length ? [{ value: "plans", label: "Plans", icon: LayoutGrid, images: p.planImages, empty: "Floor plans haven't been uploaded for this listing." }] : []),
+              ]}
+            />
+            <PropertyInfoTabs property={p} project={project} />
+          </div>
 
-          <aside className="flex flex-col gap-4" aria-label="Key features and visit details">
+          {/* RIGHT column */}
+          <aside className="flex flex-col gap-4" aria-label="Key features, visit details, project and realtor">
             <DetailCard className="flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3 border-b border-rez-smoke pb-4">
                 <CardTitle>Key features</CardTitle>
@@ -173,13 +177,7 @@ export function PropertyDetailView({ id }: { id: string }) {
                 </LeadDialog>
               </div>
             </DetailCard>
-          </aside>
-        </div>
 
-        {/* ---------- Info tabs + project / agent ---------- */}
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_330px]">
-          <PropertyInfoTabs property={p} project={project} />
-          <aside className="flex flex-col gap-4 lg:self-start" aria-label="Project and realtor">
             {project && <ProjectMiniCard project={project} stock={projectStock} />}
             <AgentCard
               realtor={realtor}

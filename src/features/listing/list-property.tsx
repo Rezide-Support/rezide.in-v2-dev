@@ -20,6 +20,7 @@ import { useListingDraftStore } from "@/stores/listing-draft";
 import { useSession, useSessionStore } from "@/stores/session";
 import type { ListingIntent } from "@/types/models";
 import { ListingWizard } from "./listing-wizard";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 const guestSchema = z.object({ firstName: personName("first name"), lastName: personName("last name"), phone: indianMobile });
 type GuestValues = z.infer<typeof guestSchema>;
@@ -191,8 +192,24 @@ export function ListProperty() {
           {status === "loading" || !draftHydrated ? <div className="h-[420px] w-full rounded-xl bg-white/10 md:w-[440px]" aria-busy="true" /> : <StartCard />}
         </div>
       </section>
+      
 
-      <section className="bg-white px-4 py-14 md:px-8 md:py-20">
+<div className="flex min-h-[350px] flex-col items-center justify-center bg-white px-4 text-center text-black">
+  <h1 className="text-5xl font-bold uppercase tracking-tight sm:text-7xl md:text-8xl">
+    Coming
+    <span className="block text-black/40">Soon.</span>
+  </h1>
+
+  <div className="mt-6 h-1 w-16 bg-black" />
+
+  <p className="mt-6 text-sm font-medium uppercase tracking-[0.25em] text-black/60">
+    Stay Tuned
+  </p>
+</div>
+
+
+
+      {/* <section className="bg-white px-4 py-14 md:px-8 md:py-20">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-9">
           <div className="flex flex-col gap-2.5">
             <h2 className="text-[30px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-[40px]">List free in 5 simple steps.</h2>
@@ -266,7 +283,8 @@ export function ListProperty() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
+      <SiteFooter />
     </>
   );
 }
