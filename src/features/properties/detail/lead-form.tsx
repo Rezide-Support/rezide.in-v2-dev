@@ -12,6 +12,7 @@ import { NativeSelect } from "@/components/common/native-select";
 import { PhoneInput } from "@/components/common/phone-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { API_MOCKING, ApiError, errorMessage } from "@/lib/api/client";
 import { localIsoDate } from "@/lib/format";
@@ -102,7 +103,7 @@ export function toListingEnquiry(v: LeadValues, listing: LeadListing): ListingEn
   const extra = v.message ? ` ${v.message}` : "";
   if (v.mode === "offer") {
     const amount = Number(v.offer.replace(/,/g, "")).toLocaleString("en-IN");
-    return { ...base, enquiryType: `I want to make an offer for ${listing.name}`, notes: `Offer: ₹ ${amount}.${extra}` };
+    return { ...base, enquiryType: "I want to make an offer", notes: `Offer: ₹ ${amount}.${extra}` };
   }
   if (v.mode === "visit") {
     const notes = `${name} wants to visit on ${dayMonthYear(v.date)} at ${v.slot} for ${listing.name}. Please contact them.${extra}`;
@@ -177,7 +178,7 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
       <div className={cn("flex flex-col gap-4", className)}>
         <p className="text-sm text-rez-graphite">Sign in to send this request to {recipient}.</p>
         <Button asChild>
-          <Link href={`/login?next=${encodeURIComponent(listing.path)}`}>Sign in to continue</Link>
+          <Link href={`/login?next=${encodeURIComponent(`${listing.path}?enquiry=${mode}`)}`}>Sign in to continue</Link>
         </Button>
       </div>
     );
@@ -229,16 +230,43 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
       </Field>
 
       {mode === "contact" && (
-        <Field label="What would you like?" required error={errors.intent?.message} labelClassName={labelClass}>
-          <NativeSelect wrapperClassName="w-full" className="h-12 rounded-lg font-medium" {...register("intent")}>
-            <option value="">Select</option>
-            {intents.map((i) => (
-              <option key={i} value={i}>
-                {i}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
+        <Controller
+          control={control}
+          name="intent"
+          render={({ field }) => (
+            <Select name={field.name} value={field.value} onValueChange={field.onChange}>
+              <Field label="What would you like?" required error={errors.intent?.message} labelClassName={labelClass}>
+                <SelectTrigger
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  className="h-12 w-full rounded-lg border-[#e4e4e4] bg-white px-4 text-left text-sm text-rez-graphite focus-visible:border-rez-mocaccino focus-visible:ring-rez-mocaccino/30"
+                >
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+              </Field>
+              <SelectContent
+                position="popper"
+                align="start"
+                sideOffset={4}
+                collisionPadding={12}
+                className="z-[70] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-rez-smoke bg-white p-1.5 text-rez-graphite shadow-rez-lg ring-0"
+              >
+                <SelectGroup>
+                  <SelectLabel className="px-2.5 py-2 text-sm font-semibold text-black">Select option</SelectLabel>
+                  {intents.map((intent) => (
+                    <SelectItem
+                      key={intent}
+                      value={intent}
+                      className="min-h-10 cursor-pointer rounded-lg px-2.5 py-2 text-[15px] whitespace-normal data-highlighted:bg-rez-cloud data-highlighted:text-black data-[state=checked]:bg-rez-cloud data-[state=checked]:font-medium data-[state=checked]:text-black"
+                    >
+                      {intent}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          )}
+        />
       )}
 
       {mode === "offer" && (

@@ -1,7 +1,5 @@
-import { publicApiOrigin } from "@/lib/api/origins";
 import { api } from "@/lib/api/client";
 import type { Enquiry, EnquiryInput, ListingDraft } from "@/types/models";
-import { toBackendPhone } from "./auth";
 
 /* Write endpoints. In mock mode these only update an in-memory store. Contract: docs/API.md. Auth: ./auth.ts. */
 
@@ -9,9 +7,6 @@ export async function createEnquiry(input: EnquiryInput) {
   const { data } = await api.post<Enquiry>("/enquiries", input);
   return data;
 }
-
-/** The Rezide backend's enquiry form, outside /v1/admin. rezide.in posts to it from the browser too. */
-const CONTACT_FORM_URL = `${publicApiOrigin()}/v1/contact/form`;
 
 /** A listing enquiry as rezide.in sends it. It goes to the listing's broker, so it is never mocked. */
 export type ListingEnquiry = {
@@ -25,17 +20,13 @@ export type ListingEnquiry = {
   notes?: string;
 };
 
-export async function sendListingEnquiry({ name, phone, firmId, brokerId, listingId, enquiryType, notes }: ListingEnquiry) {
-  const { data } = await api.post<{ message?: string }>(CONTACT_FORM_URL, {
+export async function sendListingEnquiry({ name, phone, listingId, enquiryType, notes }: ListingEnquiry) {
+  const { data } = await api.post<{ message?: string }>(`/api/properties/${encodeURIComponent(listingId)}/enquiry`, {
     name,
-    firm_id: firmId,
-    // In the shape rezide.in's phone field gives it.
-    phone: `+${toBackendPhone(phone)}`,
-    brokerId,
-    listing_id: listingId,
+    phone,
     enquiryType,
     ...(notes ? { notes } : {}),
-  });
+  }, { baseURL: "" });
   return data;
 }
 

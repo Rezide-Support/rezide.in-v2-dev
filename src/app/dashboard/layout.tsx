@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DashboardShell } from "@/features/dashboard/dashboard-shell";
+import { CustomerDashboardLayout } from "@/features/account/customer-dashboard-layout";
 
 export const metadata: Metadata = { title: { default: "Realtor dashboard", template: "%s · Rezide dashboard" }, robots: { index: false } };
 
@@ -10,5 +10,5 @@ export const metadata: Metadata = { title: { default: "Realtor dashboard", templ
 export const instant = false;
 
 export default function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return <CustomerDashboardLayout>{children}</CustomerDashboardLayout>;
 }

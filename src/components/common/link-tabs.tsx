@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { ScrollIndicator } from "./scroll-indicator";
 
 export type LinkTab = { href: string; label: ReactNode; active: boolean };
 
@@ -17,6 +16,10 @@ type LinkTabsProps = {
   /** Inactive text colour: "ink" (black, as in the hero) or "muted" (graphite). */
   tone?: "ink" | "muted";
   className?: string;
+  /** Classes for the inner <ul>, e.g. to stretch it full width on phones. */
+  listClassName?: string;
+  /** Classes for each <li>, e.g. `flex-1` for equal-width tabs. */
+  itemWrapClassName?: string;
   itemClassName?: string;
 };
 
@@ -34,21 +37,23 @@ export function LinkTabs({
   wrap,
   tone = "muted",
   className,
+  listClassName,
+  itemWrapClassName,
   itemClassName,
 }: LinkTabsProps) {
   const sizes = { md: "h-10 px-4 text-sm", lg: "h-11 px-5 text-sm sm:text-[15px]" };
   return (
     <nav aria-label={label} className={cn("max-w-full", className)}>
-      <ScrollIndicator disabled={wrap}>
       <ul
         className={cn(
           "inline-flex max-w-full items-center gap-0.5 rounded-full",
           wrap ? "flex-wrap" : "overflow-x-auto scrollbar-none",
           appearance !== "bare" && "bg-rez-cloud p-1",
+          listClassName,
         )}
       >
         {items.map((item) => (
-          <li key={item.href} className="shrink-0">
+          <li key={item.href} className={cn("shrink-0", itemWrapClassName)}>
             <Link
               href={item.href}
               scroll={false}
@@ -71,7 +76,6 @@ export function LinkTabs({
           </li>
         ))}
       </ul>
-      </ScrollIndicator>
     </nav>
   );
 }

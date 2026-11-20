@@ -10,7 +10,7 @@ export function ToggleChip({
   count,
   size = "md",
   ...props
-}: ComponentProps<"button"> & { pressed: boolean; count?: number; size?: "sm" | "md" | "lg" }) {
+}: ComponentProps<"button"> & { pressed: boolean; count?: number | null; size?: "sm" | "md" | "lg" }) {
   return (
     <button
       type="button"
@@ -28,7 +28,7 @@ export function ToggleChip({
       {children}
       {count !== undefined && (
         <span className={cn("text-[11px] font-semibold", pressed ? "text-rez-full-white/80" : "text-rez-graphite")}>
-          {count}
+          {count === null ? "—" : count}
         </span>
       )}
     </button>

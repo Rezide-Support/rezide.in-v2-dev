@@ -2,16 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import type { Project } from "@/types/models";
 import { formatPriceRange } from "./format";
 import { SaveIconButton } from "./save-actions";
+import { PropertyCardImageCarousel } from "../property-card-image-carousel";
 
 /** v1 right-column project card on a property page. */
 export function ProjectMiniCard({ project: p, stock }: { project: Project; stock?: { sale: number; rent: number } }) {
+  const [failedLogo, setFailedLogo] = useState<string>();
   return (
-    <article className="relative overflow-hidden rounded-xl border border-rez-smoke bg-white shadow-rez-sm">
+    <article className="group relative overflow-hidden rounded-xl border border-rez-smoke bg-white shadow-rez-sm">
       <div className="relative aspect-[4/3] bg-rez-cloud">
-        <Image src={p.images[0]} alt="" fill sizes="(min-width: 1024px) 330px, 100vw" quality={70} className="object-cover" />
+        <PropertyCardImageCarousel key={p.id} images={p.images} maxImages={p.images.length} label={p.name} href={`/projects/${p.id}`} />
         <div className="absolute top-2 right-2 z-10 flex gap-1.5 [&_button]:size-8 [&_button]:bg-white/90 [&_button]:hover:bg-white">
           <SaveIconButton list="shortlist" kind="project" id={p.id} title={p.name} />
           <SaveIconButton list="compare" kind="project" id={p.id} title={p.name} />
@@ -29,12 +32,12 @@ export function ProjectMiniCard({ project: p, stock }: { project: Project; stock
               {p.locality}, {p.city}
             </p>
           </div>
-          <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-full border border-rez-smoke text-[11px] font-bold">
-            {p.developer
+          <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-rez-smoke bg-white text-[11px] font-bold">
+            {p.logo && failedLogo !== p.logo ? <Image src={p.logo} alt={`${p.name} logo`} fill sizes="40px" className="object-contain p-1" onError={() => setFailedLogo(p.logo)} /> : <span aria-hidden>{p.developer
               .split(/\s+/)
               .map((w) => w[0])
               .slice(0, 2)
-              .join("")}
+              .join("")}</span>}
           </span>
         </div>
         <dl className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-rez-graphite">

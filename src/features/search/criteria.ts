@@ -9,6 +9,13 @@ import type {
   ResultsView,
   SortKey,
 } from "@/types/models";
+import {
+  SALE_BHK_ID_TO_LABEL,
+  SALE_BHK_URL_IDS,
+  SALE_EXIT_DIRECTIONS,
+  SALE_FURNISHING_OPTIONS,
+  RENT_BHK_URL_IDS,
+} from "./sale-filter-options";
 
 /**
  * Search criteria live in the URL so results are shareable and survive reloads.
@@ -71,11 +78,41 @@ const ARRAY_KEYS = {
   media: "media",
   facing: "facing",
   projects: "project",
+  availability: "availability",
+  buildingTypes: "building_type",
+  balconies: "no_of_balconies",
+  buildingAges: "building_age",
+  preferredApartment: "preffered_apartment",
+  floorRanges: "floor_range",
+  timeOnRezide: "time_on_rezide",
 } as const satisfies Partial<Record<keyof PropertySearchCriteria, string>>;
 
 export type PropertyArrayFilter = keyof typeof ARRAY_KEYS;
 
 export const PROPERTY_ARRAY_FILTERS = Object.keys(ARRAY_KEYS) as PropertyArrayFilter[];
+const ARRAY_ALIASES: Partial<Record<PropertyArrayFilter, string[]>> = {
+  unitTypes: ["project_type"],
+  bathrooms: ["no_of_bathrooms"],
+  parking: ["no_of_parkings"],
+  media: ["listing_with"],
+  facing: ["exit_direction"],
+};
+const SALE_URL_KEYS: Partial<Record<PropertyArrayFilter, string>> = {
+  unitTypes: "project_type",
+  bhk: "bhk",
+  furnishing: "furnishing",
+  bathrooms: "no_of_bathrooms",
+  parking: "no_of_parkings",
+  media: "listing_with",
+  facing: "exit_direction",
+  availability: "availability",
+  buildingTypes: "building_type",
+  balconies: "no_of_balconies",
+  buildingAges: "building_age",
+  preferredApartment: "preffered_apartment",
+  floorRanges: "floor_range",
+  timeOnRezide: "time_on_rezide",
+};
 
 const isCategory = (v: string | null): v is PropertyCategory =>
   !!v && CATEGORIES.some((c) => c.id === v);
@@ -117,6 +154,13 @@ export function defaultPropertyCriteria(
     media: [],
     facing: [],
     projects: [],
+    availability: [],
+    buildingTypes: [],
+    balconies: [],
+    buildingAges: [],
+    preferredApartment: [],
+    floorRanges: [],
+    timeOnRezide: [],
     budgetMin: undefined,
     budgetMax: undefined,
     areaMin: undefined,
@@ -136,18 +180,27 @@ export function parsePropertyCriteria(params: ParamsLike): PropertySearchCriteri
     city: params.get("city")?.trim() || DEFAULT_CITY,
     intent,
     category: isCategory(params.get("type")) ? (params.get("type") as PropertyCategory) : "homes",
-    q: params.get("q")?.trim() ?? "",
-    budgetMin: optionalAmount(params.get("min")),
-    budgetMax: optionalAmount(params.get("max")),
-    areaMin: optionalAmount(params.get("areaMin")),
-    areaMax: optionalAmount(params.get("areaMax")),
+    q: (params.get("q") ?? params.get("searchQuery"))?.trim() ?? "",
+    budgetMin: optionalAmount(params.get("minBudget") ?? params.get("min")),
+    budgetMax: optionalAmount(params.get("maxBudget") ?? params.get("max")),
+    areaMin: optionalAmount(params.get("minArea") ?? params.get("areaMin")),
+    areaMax: optionalAmount(params.get("maxArea") ?? params.get("areaMax")),
     sort: isSort(params.get("sort"), intent) ? (params.get("sort") as SortKey) : "latest",
     page: positiveInt(params.get("page"), 1),
     perPage: (PER_PAGE_OPTIONS as readonly number[]).includes(perPage) ? perPage : 9,
     view: isView(params.get("view")) ? (params.get("view") as ResultsView) : "list",
   });
   for (const key of PROPERTY_ARRAY_FILTERS) {
-    criteria[key] = clean(params.getAll(ARRAY_KEYS[key]));
+    const values = [ARRAY_KEYS[key], ...(ARRAY_ALIASES[key] ?? [])]
+      .flatMap((name) => params.getAll(name))
+      .flatMap((value) => value.split(","));
+    criteria[key] = clean(key === "bhk"
+      ? values.map((value) => SALE_BHK_ID_TO_LABEL[value] ?? value)
+      : key === "facing" && criteria.category === "homes"
+        ? values.map((value) => SALE_EXIT_DIRECTIONS.find((direction) => direction.label === value)?.value ?? value)
+        : key === "furnishing" && criteria.category === "homes"
+          ? values.map((value) => SALE_FURNISHING_OPTIONS.find((option) => option.label === value)?.value ?? value)
+          : values);
   }
   // An inverted budget range would match nothing; swap it so the intent is preserved.
   if (
@@ -169,14 +222,24 @@ export function serializePropertyCriteria(c: PropertySearchCriteria): URLSearchP
   p.set("city", c.city);
   p.set("intent", c.intent);
   p.set("type", c.category);
-  if (c.q) p.set("q", c.q);
+  if (c.q) p.set("searchQuery", c.q);
   for (const key of PROPERTY_ARRAY_FILTERS) {
-    for (const v of c[key]) p.append(ARRAY_KEYS[key], v);
+    const homeFilters = c.category === "homes";
+    const urlKey = homeFilters ? SALE_URL_KEYS[key] : undefined;
+    const values = key === "facing" && homeFilters
+      ? c.facing.map((value) => SALE_EXIT_DIRECTIONS.find((direction) => direction.label === value)?.value ?? value)
+      : key === "bhk" && homeFilters
+        ? c.bhk.map((value) => (c.intent === "rent" ? RENT_BHK_URL_IDS[value] : SALE_BHK_URL_IDS[value]) ?? value)
+        : key === "furnishing" && homeFilters
+          ? c.furnishing.map((value) => SALE_FURNISHING_OPTIONS.find((option) => option.label === value)?.value ?? value)
+        : c[key];
+    if (urlKey && values.length) p.set(urlKey, values.join(","));
+    else for (const v of values) p.append(ARRAY_KEYS[key], v);
   }
-  if (c.budgetMin !== undefined) p.set("min", String(c.budgetMin));
-  if (c.budgetMax !== undefined) p.set("max", String(c.budgetMax));
-  if (c.areaMin !== undefined) p.set("areaMin", String(c.areaMin));
-  if (c.areaMax !== undefined) p.set("areaMax", String(c.areaMax));
+  if (c.budgetMin !== undefined) p.set("minBudget", String(c.budgetMin));
+  if (c.budgetMax !== undefined) p.set("maxBudget", String(c.budgetMax));
+  if (c.areaMin !== undefined) p.set("minArea", String(c.areaMin));
+  if (c.areaMax !== undefined) p.set("maxArea", String(c.areaMax));
   if (c.sort !== "latest") p.set("sort", c.sort);
   if (c.perPage !== 9) p.set("per", String(c.perPage));
   if (c.page > 1) p.set("page", String(c.page));
@@ -197,6 +260,12 @@ export function countActiveFilters(c: PropertySearchCriteria): number {
 }
 
 /* ---------------- Projects ---------------- */
+
+/** A carpet area bound (sq ft) from the URL, or undefined. */
+const optionalArea = (v: string | null) => {
+  const n = Number(v);
+  return v && Number.isFinite(n) && n > 0 ? n : undefined;
+};
 
 const isStatus = (v: string): v is ProjectStatus => v === "uc" || v === "rtm" || v === "nl";
 
@@ -224,6 +293,10 @@ export function defaultProjectCriteria(
     budget: [],
     years: [],
     views: [],
+    projectTypes: [],
+    unitTypes: [],
+    bhk: [],
+    media: [],
     sort: "latest",
     page: 1,
     perPage: 9,
@@ -241,6 +314,12 @@ export function parseProjectCriteria(params: ParamsLike): ProjectSearchCriteria 
     budget: clean(params.getAll("budget")),
     years: clean(params.getAll("year")).map(Number).filter((y) => Number.isInteger(y) && y > 2000),
     views: clean(params.getAll("view")),
+    projectTypes: clean(params.getAll("ptype")),
+    unitTypes: clean(params.getAll("unit")),
+    bhk: clean(params.getAll("bhk")),
+    areaMin: optionalArea(params.get("amin")),
+    areaMax: optionalArea(params.get("amax")),
+    media: clean(params.getAll("with")),
     sort: isProjectSort(params.get("sort")) ? (params.get("sort") as ProjectSortKey) : "latest",
     page: positiveInt(params.get("page"), 1),
     perPage: (PER_PAGE_OPTIONS as readonly number[]).includes(perPage) ? perPage : 9,
@@ -256,6 +335,12 @@ export function serializeProjectCriteria(c: ProjectSearchCriteria): URLSearchPar
   c.budget.forEach((v) => p.append("budget", v));
   c.years.forEach((v) => p.append("year", String(v)));
   c.views.forEach((v) => p.append("view", v));
+  c.projectTypes.forEach((v) => p.append("ptype", v));
+  c.unitTypes.forEach((v) => p.append("unit", v));
+  c.bhk.forEach((v) => p.append("bhk", v));
+  if (c.areaMin !== undefined) p.set("amin", String(c.areaMin));
+  if (c.areaMax !== undefined) p.set("amax", String(c.areaMax));
+  c.media.forEach((v) => p.append("with", v));
   if (c.sort !== "latest") p.set("sort", c.sort);
   if (c.perPage !== 9) p.set("per", String(c.perPage));
   if (c.page > 1) p.set("page", String(c.page));

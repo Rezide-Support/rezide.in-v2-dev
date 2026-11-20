@@ -45,10 +45,10 @@ describe("listing enquiries, worded as on rezide.in", () => {
     expect(toListingEnquiry({ ...base, intent: "I want to visit the property" }, listing).enquiryType).toBe(" I want to visit the property");
   });
 
-  it("names the listing in an offer and keeps the amount in the notes", () => {
+  it("uses the offer interest and keeps the amount in the notes", () => {
     expect(toListingEnquiry({ ...base, mode: "offer", offer: "13500000", message: "Can close fast." }, listing)).toEqual({
       ...who,
-      enquiryType: "I want to make an offer for A-702, Satra",
+      enquiryType: "I want to make an offer",
       notes: "Offer: ₹ 1,35,00,000. Can close fast.",
     });
   });

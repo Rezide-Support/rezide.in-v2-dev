@@ -5,9 +5,8 @@ import { listingFacets } from "@/services/properties";
 /**
  * GET /api/properties/facets?<the /properties page's query string>
  *
- * Per-option counts for the filter drawer, computed on the server from the
- * city's live listings (src/services/listing-index.ts): the backend's
- * /filter/count endpoint only returns totals.
+ * The server uses the city's live listings to rank locality choices and asks
+ * the backend's /filter/count endpoint for authoritative sale-option counts.
  */
 export async function GET(request: Request) {
   const criteria = parsePropertyCriteria(new URL(request.url).searchParams);

@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Download, ExternalLin
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { projectPlanQueries } from "@/lib/queries";
+import { glideScroll } from "@/lib/smooth-scroll";
 import { cn } from "@/lib/utils";
 import type { UnitPlan } from "@/services/project-plans";
 import type { Project, ProjectConfiguration } from "@/types/models";
@@ -34,11 +35,13 @@ function SnapCarousel({ carousel, label, slides, className }: { carousel: Carous
   useEffect(() => {
     const el = track.current;
     if (!el || !el.clientWidth || Math.round(el.scrollLeft / el.clientWidth) === index) return;
-    if (typeof el.scrollTo === "function") el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+    // The same eased glide as the photo slider (the browser's smooth scroll is quicker and abrupt).
+    return glideScroll(el, index * el.clientWidth);
   }, [index]);
   const onScroll = () => {
     const el = track.current;
-    if (!el || !el.clientWidth) return;
+    // A glide (snapping paused) settles on its own slide: don't follow the slides it passes.
+    if (!el || !el.clientWidth || el.style.scrollSnapType === "none") return;
     const at = Math.round(el.scrollLeft / el.clientWidth);
     // Only once the snap settles on a slide, so a smooth scroll to a far slide isn't interrupted.
     if (at !== index && Math.abs(el.scrollLeft - at * el.clientWidth) < 2) go(at);

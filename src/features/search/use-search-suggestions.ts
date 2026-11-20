@@ -15,7 +15,7 @@ const MAX_SUGGESTIONS = 8;
  */
 export function useSearchSuggestions(input: string, { city, kinds }: { city: string; kinds: readonly SuggestionKind[] }) {
   const query = useDebouncedValue(input.trim(), 300);
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     ...locationQueries.suggestions(query, city),
     enabled: query !== "",
     // Keep the last list on screen while the next one loads, so it doesn't flicker per keystroke.
@@ -23,5 +23,5 @@ export function useSearchSuggestions(input: string, { city, kinds }: { city: str
   });
   const suggestions: SearchSuggestion[] =
     query === "" ? [] : (data ?? []).filter((s) => kinds.includes(s.kind)).slice(0, MAX_SUGGESTIONS);
-  return { suggestions, isFetching };
+  return { suggestions, isFetching, isError, refetch };
 }

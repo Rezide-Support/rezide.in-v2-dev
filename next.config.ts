@@ -4,9 +4,10 @@ const isDev = process.env.NODE_ENV === "development";
 
 /**
  * Content-Security-Policy. Allows exactly the origins the app loads:
- * images from Unsplash, the Rezide CDN/backend and OpenStreetMap tiles; API
+ * images from Unsplash, the Rezide CDN/backend, Google Maps and OpenStreetMap tiles; API
  * calls to the Rezide backend and the spatial-search service; everything else
- * from this origin. `'unsafe-inline'` is kept for scripts/styles because the
+ * from this origin. Google Maps (landmark map, directions iframe and place icons) as
+ * rezide.in uses it. `'unsafe-inline'` is kept for scripts/styles because the
  * App Router injects inline hydration scripts and Tailwind/Leaflet inject inline
  * styles; a nonce-based policy is a future hardening. Dev adds `'unsafe-eval'`
  * and websockets for Turbopack HMR.
@@ -17,12 +18,15 @@ const csp = [
   `object-src 'none'`,
   `frame-ancestors 'none'`,
   `form-action 'self'`,
-  `img-src 'self' data: blob: https://images.unsplash.com https://cdn.rezide.in https://api.rezide.in https://tile.openstreetmap.org`,
-  `font-src 'self' data:`,
-  `style-src 'self' 'unsafe-inline'`,
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  `connect-src 'self' https://api.rezide.in https://si.rezide.in${isDev ? " ws: wss:" : ""}`,
+  `img-src 'self' data: blob: https://images.unsplash.com https://cdn.rezide.in https://api.rezide.in https://tile.openstreetmap.org https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com`,
+  `font-src 'self' data: https://fonts.gstatic.com`,
+  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+  `script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com${isDev ? " 'unsafe-eval'" : ""}`,
+  `connect-src 'self' https://api.rezide.in https://si.rezide.in https://*.googleapis.com https://*.gstatic.com https://*.google.com${isDev ? " ws: wss:" : ""}`,
   `worker-src 'self' blob:`,
+  `media-src 'self' https://cdn.rezide.in https://api.rezide.in`,
+  // Preserve developer-hosted HTTPS tours as well as Google Maps and video embeds.
+  `frame-src https:`,
   ...(isDev ? [] : [`upgrade-insecure-requests`]),
 ].join("; ");
 
@@ -84,6 +88,8 @@ const nextConfig: NextConfig = {
       // The dashboard opens on Contacts. Redirecting here (not in a page) avoids rendering an empty segment.
       { source: "/dashboard", destination: "/dashboard/contacts", permanent: false },
       { source: "/homes", destination: "/", permanent: true },
+      { source: "/project/:id", destination: "/projects/:id", permanent: true },
+      { source: "/listing/:id", destination: "/properties/:id", permanent: true },
       { source: "/homes/lease", destination: "/homes/rent", permanent: true },
       { source: "/:category(offices|retail|industrial|land)/rent", destination: "/:category/lease", permanent: true },
     ];

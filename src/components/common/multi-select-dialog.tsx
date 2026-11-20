@@ -7,7 +7,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Segmented } from "./segmented";
 
-export type OptionGroup = { label: string; options: { value: string; label: string }[] };
+/** An Apply button's text: a spinner beside it while the live count loads, then the count. */
+export function ApplyContent({ label, loading }: { label: string; loading: boolean }) {
+  return (
+    <span className="flex items-center justify-center gap-2.5" aria-busy={loading}>
+      {loading && <Icon name="loader" size={18} className="animate-spin" />}
+      {label}
+      {loading && <span className="sr-only">, counting projects</span>}
+    </span>
+  );
+}
+
+export type OptionGroup ={ label: string; options: { value: string; label: string }[] };
 
 /**
  * Searchable multi-select in a dialog (prototype "msel"). Selection is a draft
@@ -22,6 +33,7 @@ export function MultiSelectDialog({
   onApply,
   applyLabel,
   onDraftChange,
+  countLoading = false,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -30,18 +42,23 @@ export function MultiSelectDialog({
   selected: string[];
   onApply: (values: string[]) => void;
   applyLabel: (draft: string[]) => string;
+  /** The live count is loading: Apply shows a spinner until it's in. */
+  countLoading?: boolean;
   /** Lets the parent preview results (e.g. a live count) for the unapplied draft. */
   onDraftChange?: (draft: string[]) => void;
 }) {
   const [draft, setDraft] = useState<string[]>(selected);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("0");
+  // Apply closes at once (no fade), so the results show straight away.
+  const [applied, setApplied] = useState(false);
 
   // Reset the draft each time the dialog opens.
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
+      setApplied(false);
       setDraft(selected);
       setQuery("");
       setTab("0");
@@ -62,7 +79,7 @@ export function MultiSelectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100dvh-48px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[560px]">
+      <DialogContent instantClose={applied} className="flex max-h-[calc(100dvh-48px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[560px]">
         <DialogHeader className="border-b border-rez-smoke px-7 pt-6 pb-[18px]">
           <DialogTitle className="text-[26px]">{title}</DialogTitle>
           <DialogDescription className="sr-only">Select one or more options, then apply.</DialogDescription>
@@ -115,11 +132,12 @@ export function MultiSelectDialog({
             size="xl"
             className="flex-1"
             onClick={() => {
+              setApplied(true);
               onApply(draft);
               onOpenChange(false);
             }}
           >
-            {applyLabel(draft)}
+            <ApplyContent label={applyLabel(draft)} loading={countLoading} />
           </Button>
         </DialogFooter>
       </DialogContent>

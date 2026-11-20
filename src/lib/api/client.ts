@@ -90,6 +90,14 @@ export function configureAuth(hooks: AuthHooks) {
 
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   await mockReady;
+  // Service credentials belong only on server-to-admin requests, never in the browser.
+  if (isServer && process.env.REQUEST_SERVICE_SECRET) {
+    const destination = new URL(api.getUri(config), API_SERVER_BASE_URL);
+    const backend = new URL(API_SERVER_BASE_URL);
+    if (destination.origin === backend.origin && destination.pathname.startsWith("/v1/admin/")) {
+      config.headers.set("x-request-service-secret", process.env.REQUEST_SERVICE_SECRET);
+    }
+  }
   const token = authHooks.getAccessToken?.();
   if (token && !config.headers.has("Authorization")) config.headers.set("Authorization", `Bearer ${token}`);
   if (isServer && authHooks.getServerHeaders) {

@@ -17,6 +17,15 @@ export const COMPARE_TABS: { group: CompareGroup; label: string; type: string; e
 
 export const compareHref = (group: CompareGroup) => `/compare?type=${COMPARE_TABS.find((t) => t.group === group)!.type}`;
 
+/** /compare showing just these projects (a project page's comparison), leaving the saved list alone. */
+export const pageCompareHref = (ids: string[]) => `/compare?type=projects&ids=${ids.map(encodeURIComponent).join(",")}`;
+
+/** The project ids a /compare link carries (?ids=a,b), up to three backend ids; null when it carries none. */
+export function pageCompareIds(param: string | null): string[] | null {
+  const ids = [...new Set((param ?? "").split(",").map((s) => s.trim()).filter((s) => /^[a-f0-9]{24}$/i.test(s)))].slice(0, 3);
+  return ids.length ? ids : null;
+}
+
 /** One compared item with its full details, once they've loaded. */
 export type CompareEntry = {
   item: SavedItem;
@@ -67,7 +76,7 @@ export function entrySummary(e: CompareEntry): string {
 
 /* ---------------- The compare table's rows ---------------- */
 
-type Row<T> = { label: string; value: (x: T) => string | number | undefined };
+export type Row<T> = { label: string; value: (x: T) => string | number | undefined };
 
 const orDash = (v: string | number | undefined) => (v === undefined || v === "" ? "—" : String(v));
 export const cellText = <T,>(row: Row<T>, x: T) => orDash(row.value(x));
@@ -122,3 +131,72 @@ export const PROJECT_ROWS: Row<Project>[] = [
   { label: "Total apartments", value: (p) => (p.units ? formatNumber(p.units) : undefined) },
   { label: "RERA ID", value: (p) => p.reraId },
 ];
+
+/* ---------------- "Compare this apartment" on a property page: grouped rows, as on rezide.in ---------------- */
+
+export type CompareSectionDef =
+  | { kind: "rows"; title: string; rows: Row<Property>[]; more?: Row<Property>[] }
+  | { kind: "photos"; title: string }
+  | { kind: "list"; title: string; items: (p: Property) => string[] };
+
+const availability = (p: Property) => (p.availableFrom ? formatDate(p.availableFrom) : "Ready to move");
+
+/** The sections of the property page's compare table. `more` rows sit behind "View More". */
+export function compareSections(group: "sale" | "rent"): CompareSectionDef[] {
+  const commercials: Row<Property>[] =
+    group === "rent"
+      ? [
+          { label: "Availability Date", value: availability },
+          { label: "Monthly Rent", value: (p) => priceLabel(p) },
+          { label: "Security Deposit", value: (p) => (p.securityDeposit ? formatPrice(p.securityDeposit) : undefined) },
+        ]
+      : [
+          { label: "Availability Date", value: availability },
+          { label: "Sale Price", value: (p) => priceLabel(p) },
+          { label: "Rate Psf.", value: (p) => (p.priceHidden ? undefined : formatRate(p.price, p.areaSqft)) },
+        ];
+  return [
+    { kind: "rows", title: "Commercials", rows: commercials },
+    {
+      kind: "rows",
+      title: "Location",
+      rows: [
+        { label: "City", value: (p) => p.city },
+        { label: "Locality", value: (p) => p.localityName ?? p.locality },
+        { label: "Complex Name", value: (p) => p.projectName },
+      ],
+    },
+    {
+      kind: "rows",
+      title: "Property Summary",
+      rows: [
+        { label: "Property type", value: (p) => p.unitType },
+        { label: "Age of Property", value: (p) => (p.ageYears === undefined ? undefined : p.ageYears === 0 ? "New" : pluralize(p.ageYears, "year")) },
+        { label: "Total Floors", value: (p) => count(p.totalFloors) },
+      ],
+      more: [
+        { label: "Unit no.", value: (p) => p.unitNo },
+        { label: "Apartment on floor", value: floorText },
+        { label: "Vastu (main door)", value: (p) => p.vastuEntry },
+        { label: "View / overlooking", value: (p) => p.view },
+      ],
+    },
+    {
+      kind: "rows",
+      title: "Property Configuration",
+      rows: [
+        { label: "Area Type", value: (p) => p.areaBasis },
+        { label: "Area", value: (p) => (p.areaSqft ? formatArea(p.areaSqft) : undefined) },
+      ],
+      more: [
+        { label: "Bedrooms", value: (p) => (p.bhk ? `${p.bhk} BHK` : undefined) },
+        { label: "Bathrooms", value: (p) => count(p.bathrooms) },
+        { label: "Balconies", value: (p) => count(p.balconies) },
+        { label: "Car parks", value: (p) => count(p.parking) },
+      ],
+    },
+    { kind: "photos", title: "Property Photos" },
+    { kind: "rows", title: "Furnishing", rows: [{ label: "Status", value: (p) => p.furnishing }] },
+    { kind: "list", title: "Apartment Amenities", items: (p) => p.amenities },
+  ];
+}

@@ -29,6 +29,12 @@ export function fetchCityMaster(): Promise<CityMasterRow[]> {
     return responseArray<CityMasterRow>(data);
   }});
 }
+/** A city's shown name from its city-master id (localities name their city by id). */
+export async function fetchCityName(cityId: string): Promise<string | undefined> {
+  const row = (await fetchCityMaster()).find((r) => r._id === cityId);
+  const name = row?.label?.trim();
+  return name ? cityLabel(name) : undefined;
+}
 export async function fetchCities(): Promise<string[]> {
   return [...new Set((await fetchCityMaster()).map(row=>cityLabel(row.label?.trim() || "")).filter(Boolean))];
 }

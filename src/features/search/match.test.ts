@@ -3,7 +3,7 @@ import { PROJECTS } from "@/mocks/fixtures/projects";
 import { PROPERTIES } from "@/mocks/fixtures/properties";
 import { REALTORS } from "@/mocks/fixtures/realtors";
 import { defaultProjectCriteria, defaultPropertyCriteria } from "./criteria";
-import { matchesText, paginate, parseMapArea, searchProjects, searchProperties, searchRealtors } from "./match";
+import { matchesText, paginate, parseMapArea, propertyFacets, searchProjects, searchProperties, searchRealtors } from "./match";
 
 const search = (o: Parameters<typeof defaultPropertyCriteria>[0]) =>
   searchProperties(PROPERTIES, defaultPropertyCriteria({ perPage: 36, ...o }));
@@ -54,6 +54,33 @@ describe("property matching over the fixed inventory", () => {
     expect(twoOrThree.total).toBe(search({ bhk: ["2 BHK"] }).total + search({ bhk: ["3 BHK"] }).total);
   });
 
+  it("matches rent 5+ BHK by its distinct bucket and recognizes Studio", () => {
+    const base = PROPERTIES[0];
+    const fiveBhk = { ...base, id: "rent-five", intent: "rent" as const, bhk: 5, bhkLabel: "5 BHK" };
+    const fivePlus = { ...base, id: "rent-five-plus", intent: "rent" as const, bhk: 5, bhkLabel: "5+ BHK" };
+    const studio = { ...base, id: "rent-studio", intent: "rent" as const, bhk: undefined, bhkLabel: "Studio", unitType: "Studio" };
+    const rentCriteria = defaultPropertyCriteria({ city: base.city, intent: "rent" });
+
+    expect(searchProperties([fiveBhk, fivePlus], { ...rentCriteria, bhk: ["5+ BHK"] }).items.map((p) => p.id)).toEqual(["rent-five-plus"]);
+    expect(searchProperties([studio], { ...rentCriteria, bhk: ["Studio"] }).items.map((p) => p.id)).toEqual(["rent-studio"]);
+  });
+
+  it("matches rent availability labels against their legacy numeric values", () => {
+    const listing = {
+      ...PROPERTIES[0],
+      intent: "rent" as const,
+      availability: "Immediately",
+      availabilityId: undefined,
+    };
+    const criteria = defaultPropertyCriteria({
+      city: listing.city,
+      intent: "rent",
+      category: listing.category,
+      availability: ["0"],
+    });
+    expect(searchProperties([listing], criteria).items).toHaveLength(1);
+  });
+
   it("ANDs different filter groups together", () => {
     const r = search({ localities: ["Worli"], bhk: ["3 BHK"] });
     expect(r.items.every((p) => p.locality === "Worli" && p.bhk === 3)).toBe(true);
@@ -77,6 +104,62 @@ describe("property matching over the fixed inventory", () => {
     const r = search({ projects: ["lodha-park"] });
     expect(r.total).toBeGreaterThan(0);
     expect(r.items.every((p) => p.projectId === "lodha-park")).toBe(true);
+  });
+
+  it("matches the added sale filters against listing fields", () => {
+    const base = PROPERTIES[0];
+    const listing = {
+      ...base,
+      unitType: "Apartment",
+      unitNo: "1402",
+      floor: 4,
+      ageYears: 2,
+      balconies: 2,
+      buildingType: "Gated Amenities",
+      availabilityId: "659302fcd10433fa2dbb7c8a",
+      availability: "Available",
+      furnishingLabel: "Semi Furnished",
+      facing: "East" as const,
+      listedAt: new Date().toISOString(),
+    };
+    const criteria = defaultPropertyCriteria({
+      city: listing.city,
+      intent: listing.intent,
+      category: listing.category,
+      unitTypes: ["Apartment"],
+      furnishing: ["650eb6b2a1a78c56b3fac96e"],
+      availability: ["659302fcd10433fa2dbb7c8a"],
+      buildingTypes: ["Gated Amenities"],
+      balconies: ["2"],
+      buildingAges: ["1 - 3 years"],
+      preferredApartment: ["7"],
+      facing: ["E"],
+      floorRanges: ["1 - 5"],
+      timeOnRezide: ["Less than 15 days"],
+    });
+
+    expect(searchProperties([listing], criteria).total).toBe(1);
+    expect(searchProperties([{ ...listing, unitNo: "1999" }], {
+      ...criteria,
+      preferredApartment: ["1"],
+    }).total).toBe(0);
+    expect(searchProperties([listing], { ...criteria, preferredApartment: ["8"] }).total).toBe(0);
+    expect(searchProperties([listing], { ...criteria, buildingAges: ["> 20"] }).total).toBe(0);
+  });
+
+  it("counts sale building-type options from the mapped building type", () => {
+    const listing = {
+      ...PROPERTIES[0],
+      buildingType: "Gated Amenities",
+    };
+    const criteria = defaultPropertyCriteria({
+      city: listing.city,
+      intent: listing.intent,
+      category: listing.category,
+    });
+    const result = propertyFacets([listing], criteria, { buildingTypes: ["Gated Amenities", "Standalone"] });
+    expect(result.facets.buildingTypes["Gated Amenities"]).toBe(1);
+    expect(result.facets.buildingTypes.Standalone).toBeUndefined();
   });
 
   it("sorts by price and area", () => {

@@ -44,7 +44,7 @@ describe("toTransaction", () => {
       config: undefined,
       areaSqft: undefined,
       ratePerSqft: undefined,
-      value: undefined,
+      value: 0,
       readyReckoner: undefined,
     });
   });

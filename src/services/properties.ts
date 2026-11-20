@@ -1,7 +1,8 @@
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
+import { uniqueGalleryPhotos } from "@/lib/listing-media";
 import { cache } from "react";
 import { ApiError, api } from "@/lib/api/client";
-import { defaultPropertyCriteria, serializePropertyCriteria } from "@/features/search/criteria";
+import { serializePropertyCriteria, type PropertyArrayFilter } from "@/features/search/criteria";
 import { groupProperties, propertyFacets, searchProperties, type MapArea } from "@/features/search/match";
 import {
   BATHROOM_OPTIONS,
@@ -12,11 +13,30 @@ import {
   PARKING_OPTIONS,
   UNIT_TYPES,
 } from "@/lib/constants";
+import {
+  SALE_AGE_OPTIONS,
+  SALE_AVAILABILITY_OPTIONS,
+  SALE_BHK_OPTIONS,
+  SALE_BALCONY_OPTIONS,
+  SALE_BATHROOM_OPTIONS,
+  SALE_BUILDING_TYPES,
+  SALE_EXIT_DIRECTIONS,
+  SALE_FLOOR_OPTIONS,
+  SALE_FURNISHING_OPTIONS,
+  SALE_PARKING_OPTIONS,
+  SALE_PREFERRED_APARTMENT_OPTIONS,
+  SALE_PROPERTY_TYPES,
+  SALE_TIME_OPTIONS,
+  RENT_AVAILABILITY_OPTIONS,
+  RENT_BHK_OPTIONS,
+  RENT_TIME_OPTIONS,
+} from "@/features/search/sale-filter-options";
 import type { Paginated, Property, PropertySearchCriteria } from "@/types/models";
 import type { PropertyDetail, PropertyFacets, PropertyGroupBy, PropertyGroups } from "./catalog";
 import { listingIndex } from "./listing-index";
 import { findListingProject, getProjectsByIds } from "./projects";
 import { findRealtor } from "./realtors";
+import { toRealtor, type BackendPerson } from "./realtor-mapper";
 import {
   brochureUrlFor,
   toListingFilters,
@@ -34,6 +54,35 @@ import {
  */
 
 const isServer = typeof window === "undefined";
+const FACET_COUNT_CONCURRENCY = 6;
+const FACET_COUNT_TTL = 60_000;
+const FACET_COUNT_CACHE_LIMIT = 500;
+
+const HOME_FACET_COUNT_KEYS = [
+  "localities",
+  "unitTypes",
+  "bhk",
+  "furnishing",
+  "bathrooms",
+  "parking",
+  "media",
+  "facing",
+  "availability",
+  "buildingTypes",
+  "balconies",
+  "buildingAges",
+  "preferredApartment",
+  "floorRanges",
+  "timeOnRezide",
+] as const satisfies readonly PropertyArrayFilter[];
+
+const facetCountCache = new Map<string, { expiresAt: number; promise: Promise<number> }>();
+let activeFacetCounts = 0;
+const waitingFacetCounts: Array<() => void> = [];
+
+export function clearFacetCountCache() {
+  facetCountCache.clear();
+}
 
 const emptyPage = (c: PropertySearchCriteria): Paginated<Property> => ({
   items: [],
@@ -54,6 +103,114 @@ export async function searchListings(criteria: PropertySearchCriteria): Promise<
   return toPropertyPage(data, criteria);
 }
 
+/** Server only: the Rezide filter-count endpoint used by the sale filter drawer. */
+export async function countPropertyListings(criteria: PropertySearchCriteria, projectNames: string[] = []): Promise<number> {
+  const filters = {
+    ...toListingFilters({ ...criteria, page: 1, perPage: 9 }, projectNames),
+    sortBy: undefined,
+  };
+  const { data } = await api.post<{ result_sale?: number | string; result_rent?: number | string }>(
+    "/inventory/Listing/mobile/filter/count",
+    filters,
+  );
+  const total = Number(criteria.intent === "rent" ? data.result_rent : data.result_sale);
+  if (!Number.isSafeInteger(total) || total < 0) {
+    throw new ApiError("The listings service returned an invalid result count.", 502);
+  }
+  return total;
+}
+
+function cachedFacetCount(
+  criteria: PropertySearchCriteria,
+  key: PropertyArrayFilter,
+  value: string,
+  projectNames: string[],
+): Promise<number> {
+  const optionCriteria = { ...criteria, [key]: [value], page: 1, perPage: 9 };
+  const cacheKey = JSON.stringify({
+    ...toListingFilters(optionCriteria, projectNames),
+    sortBy: undefined,
+  });
+  const now = Date.now();
+  const cached = facetCountCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) return cached.promise;
+  if (cached) facetCountCache.delete(cacheKey);
+
+  const promise = withFacetCountSlot(() => countPropertyListings(optionCriteria, projectNames));
+  facetCountCache.set(cacheKey, { expiresAt: now + FACET_COUNT_TTL, promise });
+  if (facetCountCache.size > FACET_COUNT_CACHE_LIMIT) {
+    const oldest = facetCountCache.keys().next();
+    if (!oldest.done) facetCountCache.delete(oldest.value);
+  }
+  void promise.catch(() => {
+    if (facetCountCache.get(cacheKey)?.promise === promise) facetCountCache.delete(cacheKey);
+  });
+  return promise;
+}
+
+function withFacetCountSlot<T>(request: () => Promise<T>): Promise<T> {
+  return (async () => {
+    if (activeFacetCounts >= FACET_COUNT_CONCURRENCY) {
+      await new Promise<void>((resolve) => waitingFacetCounts.push(resolve));
+    } else {
+      activeFacetCounts++;
+    }
+    try {
+      return await request();
+    } finally {
+      const next = waitingFacetCounts.shift();
+      if (next) next();
+      else activeFacetCounts--;
+    }
+  })();
+}
+
+async function applyHomeFacetCounts(
+  criteria: PropertySearchCriteria,
+  localFacets: PropertyFacets,
+  options: Partial<Record<PropertyArrayFilter, string[]>>,
+  projectNames: string[],
+): Promise<PropertyFacets> {
+  const localityValues = Object.entries(localFacets.facets.localities)
+    .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
+    .slice(0, 40)
+    .map(([name]) => name);
+  const valuesByKey: Partial<Record<PropertyArrayFilter, string[]>> = {
+    ...options,
+    localities: [...new Set([...localityValues, ...criteria.localities])],
+  };
+  const facets = { ...localFacets.facets };
+  const unavailable: NonNullable<PropertyFacets["unavailable"]> = {};
+  const countsToFetch = HOME_FACET_COUNT_KEYS.flatMap((key) =>
+    (valuesByKey[key] ?? []).map((value) => ({ key, value })),
+  );
+  for (const key of HOME_FACET_COUNT_KEYS) facets[key] = { ...facets[key] };
+
+  let next = 0;
+  await Promise.all(Array.from(
+    { length: Math.min(FACET_COUNT_CONCURRENCY, countsToFetch.length) },
+    async () => {
+      while (next < countsToFetch.length) {
+        const { key, value } = countsToFetch[next++];
+        try {
+          facets[key][value] = await cachedFacetCount(criteria, key, value, projectNames);
+        } catch (error) {
+          delete facets[key][value];
+          unavailable[key] ??= {};
+          unavailable[key]![value] = true;
+          console.error(`Could not load home filter count for ${key}=${value}`, error);
+        }
+      }
+    },
+  ));
+
+  return {
+    ...localFacets,
+    facets,
+    ...(Object.keys(unavailable).length ? { unavailable } : {}),
+  };
+}
+
 const toParams = (sp: URLSearchParams) => {
   const out: Record<string, string | string[]> = {};
   for (const key of new Set(sp.keys())) {
@@ -63,28 +220,71 @@ const toParams = (sp: URLSearchParams) => {
   return out;
 };
 
-/** How many similar listings the detail page shows. */
-const SIMILAR_COUNT = 3;
+/** Candidate limit for other units in this project. */
+const SIMILAR_COUNT = 10;
 
 /**
  * Server only: one listing for the detail page, with similar listings (same
- * purpose in the same locality). A missing listing rejects with the backend's 404.
+ * BHK, purpose and project). A missing listing rejects with the backend's 404.
  */
 export const getListingDetail = cache(async (id: string): Promise<PropertyDetail> => {
   if (!BACKEND_ID_PATTERN.test(id)) throw new ApiError("This listing does not exist.", 404);
   const { data } = await api.get<BackendListing>(`/inventory/Listing/${encodeURIComponent(id)}`);
+  if (!data || typeof data !== "object" || !data._id) throw new ApiError("Couldn't load this listing.", 502);
   const property = toProperty(data);
+  const bhkIdOf = (listing: BackendListing) => typeof listing.listing_details?.bhk === "object"
+    ? listing.listing_details.bhk?._id
+    : listing.listing_details?.bhk;
+  const bhkId = bhkIdOf(data);
+  const unit = data.listing_details?.unit_no;
+  const combined = unit && typeof unit === "object" && Array.isArray(unit.combineWith) ? unit.combineWith.slice(0, 10) : [];
   const [nearby, brochureUrl, realtor, { project, projectStock }] = await Promise.all([
-    searchListings(
-      defaultPropertyCriteria({ city: property.city, intent: property.intent, category: property.category, localities: [property.locality], perPage: SIMILAR_COUNT + 1 }),
-    ).catch(() => null),
+    property.projectId && bhkId ? api.post<BackendListingPage>("/inventory/Listing/mobile/all", {
+      bhk: bhkId,
+      page: 1, pageSize: SIMILAR_COUNT, property_purpose: property.intent === "rent" ? "rent" : "sale",
+      // The existing backend supports searching project names; still verify IDs below.
+      ...(property.projectName ? { project_names_localities: [property.projectName] } : {}),
+    }).then(response => response.data).catch(() => null) : Promise.resolve(null),
     findBrochure(property.id),
-    findRealtor(property.realtorId),
-    findListingProject(property.projectId, property.city),
+    listingBroker(property.realtorId, property.realtorFirm).catch(() => findRealtor(property.realtorId)),
+    property.projectHidden ? Promise.resolve({ project: null, projectStock: undefined }) : findListingProject(property.projectId, property.city),
   ]);
-  const similar = (nearby?.items ?? []).filter((s) => s.id !== property.id).slice(0, SIMILAR_COUNT);
-  return { property: { ...property, brochureUrl }, realtor, similar, project, projectStock };
+  const combinedProperties = await Promise.all(combined.map(async number => {
+    if (!unit || typeof unit !== "object" || !unit.project_id || !unit.tower_name) return null;
+    try {
+      const response = await api.post<{ data?: { config_id?: string } }>("/Inventory/unit/specific", { project_id: unit.project_id, tower_name: unit.tower_name, unit_number: String(number) });
+      const configId = response.data?.data?.config_id;
+      return configId ? toProperty({ ...data, listing_details: { ...data.listing_details, unit_no: { ...unit, config_id: configId } } }) : null;
+    } catch { return null; }
+  }));
+  const seen = new Set<string>([property.id]);
+  const similar = (Array.isArray(nearby?.data) ? nearby.data : [])
+    .filter(item => item && bhkIdOf(item) === bhkId)
+    .map(toProperty)
+    .filter(item => {
+      if (!item.id || seen.has(item.id) || item.projectId !== property.projectId || item.intent !== property.intent) return false;
+      seen.add(item.id);
+      return true;
+    })
+    .slice(0, SIMILAR_COUNT);
+  const planPhotos = uniqueGalleryPhotos([...(property.planPhotos ?? []), ...combinedProperties.flatMap(p => p?.planPhotos ?? [])]);
+  return { property: { ...property, brochureUrl,
+    realtorFirmId: realtor?.firmId || property.realtorFirmId,
+    contactPersonId: realtor?.id,
+    rooms: [...(property.rooms ?? []), ...combinedProperties.flatMap((p, index) => (p?.rooms ?? []).map(room => ({ ...room, name: `Unit ${combined[index]} · ${room.name}` })))],
+    planImages: planPhotos.map(photo => photo.url),
+    planPhotos,
+  }, realtor, similar, project, projectStock };
 });
+
+/** The listing's broker response is consumed directly; only public person fields leave the server. */
+async function listingBroker(id: string, firmName: string) {
+  if (!BACKEND_ID_PATTERN.test(id)) return null;
+  const { data } = await api.get<{ firm_id?: string; agent?: BackendPerson; manager?: BackendPerson }>(`/brokers/get-broker/${encodeURIComponent(id)}`);
+  const person = data?.agent?._id ? data.agent : data?.manager;
+  if (!person?._id) return findRealtor(id);
+  return toRealtor(person, { _id: data.firm_id, general_information: { firm_name: firmName }, managers: [person] });
+}
 
 /**
  * The listing's brochure on the Rezide CDN, where rezide.in downloads it from, if it
@@ -116,19 +316,39 @@ export async function searchListingsInArea(criteria: PropertySearchCriteria, are
 }
 
 /**
- * Server only: per-option counts for the filter drawer ("disjunctive": each count
- * keeps every other group's choices). Localities are the ones that have listings.
+ * Server only: disjunctive filter counts. Sale options use the backend count
+ * endpoint; locality choices come from the cached city listing index.
  */
 export async function listingFacets(criteria: PropertySearchCriteria): Promise<PropertyFacets> {
-  return propertyFacets(await indexFor(criteria), criteria, {
-    unitTypes: UNIT_TYPES[criteria.category],
-    bhk: BHK_OPTIONS,
-    furnishing: FURNISHING_OPTIONS,
-    bathrooms: BATHROOM_OPTIONS,
-    parking: PARKING_OPTIONS,
+  const saleHomes = criteria.intent === "buy" && criteria.category === "homes";
+  const rentHomes = criteria.intent === "rent" && criteria.category === "homes";
+  const homeDirectory = saleHomes || rentHomes;
+  const options: Partial<Record<PropertyArrayFilter, string[]>> = {
+    unitTypes: homeDirectory ? SALE_PROPERTY_TYPES.map(({ value }) => value) : UNIT_TYPES[criteria.category],
+    bhk: rentHomes ? RENT_BHK_OPTIONS : saleHomes ? SALE_BHK_OPTIONS : BHK_OPTIONS,
+    furnishing: homeDirectory ? SALE_FURNISHING_OPTIONS.map(({ value }) => value) : FURNISHING_OPTIONS,
+    bathrooms: homeDirectory ? SALE_BATHROOM_OPTIONS : BATHROOM_OPTIONS,
+    parking: homeDirectory ? SALE_PARKING_OPTIONS : PARKING_OPTIONS,
     media: MEDIA_OPTIONS,
-    facing: FACING_OPTIONS,
-  });
+    facing: homeDirectory ? SALE_EXIT_DIRECTIONS.map(({ value }) => value) : FACING_OPTIONS,
+    availability: saleHomes
+      ? SALE_AVAILABILITY_OPTIONS.map(({ value }) => value)
+      : rentHomes ? RENT_AVAILABILITY_OPTIONS.map(({ value }) => value) : [],
+    buildingTypes: homeDirectory ? SALE_BUILDING_TYPES : [],
+    balconies: homeDirectory ? SALE_BALCONY_OPTIONS : [],
+    buildingAges: homeDirectory ? SALE_AGE_OPTIONS.map(({ value }) => value) : [],
+    preferredApartment: homeDirectory ? SALE_PREFERRED_APARTMENT_OPTIONS : [],
+    floorRanges: homeDirectory ? SALE_FLOOR_OPTIONS.map(({ value }) => value) : [],
+    timeOnRezide: saleHomes
+      ? SALE_TIME_OPTIONS
+      : rentHomes ? RENT_TIME_OPTIONS.map(({ value }) => value) : [],
+  };
+  const localFacets = propertyFacets(await indexFor(criteria), criteria, options);
+  if (!homeDirectory) return localFacets;
+  const projectNames = criteria.projects.length
+    ? (await getProjectsByIds(criteria.projects, criteria.city)).items.map((project) => project.name)
+    : [];
+  return applyHomeFacetCounts(criteria, localFacets, options, projectNames);
 }
 
 /** Server only: matching listings summarised per locality or per project (the Location / Projects views). */
@@ -145,6 +365,16 @@ export async function fetchPropertyFacets(criteria: PropertySearchCriteria): Pro
   if (isServer) return listingFacets(criteria);
   const { data } = await api.get<PropertyFacets>("/api/properties/facets", { baseURL: "", params: filterParams(criteria) });
   return data;
+}
+
+/** Result count for the sale filter drawer, using the backend's dedicated count endpoint. */
+export async function fetchPropertyCount(criteria: PropertySearchCriteria): Promise<number> {
+  if (isServer) return countPropertyListings(criteria);
+  const { data } = await api.get<{ total: number }>("/api/properties/count", {
+    baseURL: "",
+    params: filterParams(criteria),
+  });
+  return data.total;
 }
 
 /** Location / Projects views: computed on the server; the browser asks /api/properties/groups. */

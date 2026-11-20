@@ -68,14 +68,7 @@ function HeroPhoto({ heroKey }: { heroKey: HeroKey }) {
         aria-hidden
         className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.42)_0%,rgba(0,0,0,.36)_50%,rgba(0,0,0,.48)_100%)]"
       />
-      <a
-        href={hero.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute bottom-2 left-1.5 z-10 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/90 hover:bg-black/85"
-      >
-        Photo by {hero.credit} on Unsplash
-      </a>
+      {/* No photo credit on any tab (properties or projects). */}
     </div>
   );
 }
@@ -159,13 +152,10 @@ function SearchRow({
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") return setOpen(false);
-    if (!suggestions.length || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    if (!showList || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
     e.preventDefault();
-    setOpen(true);
     const step = e.key === "ArrowDown" ? 1 : -1;
-    const next = active < 0 ? (step === 1 ? 0 : suggestions.length - 1) : (active + step + suggestions.length) % suggestions.length;
-    setActive(next);
-    document.getElementById(`${listId}-${next}`)?.scrollIntoView({ block: "nearest" });
+    setActive((i) => (i + step + suggestions.length) % suggestions.length);
   };
 
   return (
@@ -200,11 +190,11 @@ function SearchRow({
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={showList}
-            aria-controls={showList ? listId : undefined}
+            aria-controls={listId}
             aria-activedescendant={
               showList && active >= 0 ? `${listId}-${active}` : undefined
             }
-            className="h-9 min-w-0 flex-1 bg-transparent px-2.5 text-base outline-none placeholder:text-[#767a88] max-sm:placeholder:text-[12px] sm:h-12 sm:px-3 sm:text-[15px]"
+            className="h-9 min-w-0 flex-1 bg-transparent px-2.5 text-[13px] outline-none placeholder:text-[#767a88] max-sm:placeholder:text-[12px] sm:h-12 sm:px-3 sm:text-[15px]"
           />
           {showList && (
             <ul
@@ -257,7 +247,10 @@ function SearchRow({
 }
 
 /** On phones the hero's tab sets become one underlined row, as in the design. */
-const MOBILE_TABS = "max-sm:border-b max-sm:border-rez-smoke max-sm:[&>ul]:flex max-sm:[&>ul]:w-full max-sm:[&>ul]:flex-nowrap max-sm:[&>ul]:justify-between";
+const MOBILE_TABS = "max-sm:border-b max-sm:border-rez-smoke";
+/** Phones: the tabs share the row in equal columns, each label centred, as in the design. */
+const MOBILE_TAB_LIST = "max-sm:flex max-sm:w-full max-sm:flex-nowrap max-sm:gap-0 max-sm:p-0";
+const MOBILE_TAB_ITEM = "max-sm:flex max-sm:flex-1 max-sm:justify-center";
 const MOBILE_TAB = "max-sm:h-8 max-sm:rounded-none max-sm:px-0.5 max-sm:text-[12px] max-sm:font-medium max-sm:text-rez-graphite max-sm:aria-[current=page]:bg-transparent max-sm:aria-[current=page]:font-bold max-sm:aria-[current=page]:text-black max-sm:aria-[current=page]:shadow-[inset_0_-2px_0_var(--rez-mocaccino)]";
 
 /** Short labels for phones, where the full ones don't fit on one row. */
@@ -275,10 +268,10 @@ const TRUST_BADGES: Record<
     // ["Tech enabled", "On Rezide"],
   ],
   other: [
-    ["Real photos", "No fake listings"],
-    ["Owner-authorised", "Verified properties"],
-    ["RERA-registered", "All realtors"],
-    ["Tech enabled", "On Rezide"],
+    // ["Real photos", "No fake listings"],
+    // ["Owner-authorised", "Verified properties"],
+    // ["RERA-registered", "All realtors"],
+    // ["Tech enabled", "On Rezide"],
   ],
   projects: [
     // ["Curated Info.", "No fake listings"],
@@ -315,14 +308,21 @@ function TrustShield() {
 }
 
 function TrustBadges({ set }: { set: keyof typeof TRUST_BADGES }) {
+  const mobileBadges = set === "homes" ? TRUST_BADGES.other : TRUST_BADGES[set];
   return (
-    <ul className="grid grid-cols-2 gap-x-6 gap-y-3 max-sm:rounded-xl max-sm:bg-black/65 max-sm:p-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-9">
-      {TRUST_BADGES[set].map(([title, sub]) => (
-        <li key={title} className="flex items-start gap-2 text-white">
+    <ul className="mt-1 grid w-full grid-cols-2 gap-x-3 gap-y-3 sm:mt-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-9">
+      {TRUST_BADGES[set].map(([title, sub], index) => (
+        <li key={title} className="flex items-center gap-2 text-white">
           <TrustShield />
           <span className="flex flex-col leading-tight">
-            <span className="text-[13px] font-semibold">{title}</span>
-            <span className="text-[11px] text-white">{sub}</span>
+            <span className="text-[13px] font-semibold sm:text-[15px]">
+              <span className="sm:hidden">{mobileBadges[index]?.[0]}</span>
+              <span className="hidden sm:inline">{title}</span>
+            </span>
+            <span className="mt-0.5 text-[10px] text-white/70 sm:text-xs">
+              <span className="sm:hidden">{mobileBadges[index]?.[1]}</span>
+              <span className="hidden sm:inline">{sub}</span>
+            </span>
           </span>
         </li>
       ))}
@@ -351,10 +351,12 @@ export function PropertiesHeroView({
         tone="ink"
         wrap
         className={MOBILE_TABS}
+        listClassName={MOBILE_TAB_LIST}
+        itemWrapClassName={MOBILE_TAB_ITEM}
         itemClassName={MOBILE_TAB}
         items={CATEGORIES.map((c) => ({
           href: propertiesHomeHref(c.id, intent),
-          label: c.id === "homes" ? "Home" : c.label,
+          label: c.label,
           active: c.id === category,
         }))}
       />
@@ -374,7 +376,9 @@ export function PropertiesHeroView({
           <LinkTabs
             label="Buy or rent"
             size="lg"
-            className="w-full sm:w-auto max-sm:[&>ul]:flex max-sm:[&>ul]:w-full max-sm:[&_li]:flex-1"
+            className="w-full sm:w-auto"
+            listClassName="max-sm:flex max-sm:w-full"
+            itemWrapClassName="max-sm:flex-1"
             itemClassName="min-w-[76px] justify-center max-sm:h-9 max-sm:w-full max-sm:text-[13px]"
             items={[
               {
@@ -421,6 +425,8 @@ export function ProjectsHeroView({ status }: { status: ProjectStatus }) {
         tone="ink"
         wrap
         className={MOBILE_TABS}
+        listClassName={MOBILE_TAB_LIST}
+        itemWrapClassName={MOBILE_TAB_ITEM}
         itemClassName={MOBILE_TAB}
         items={PROJECT_STATUS.map((s) => ({
           href: projectsHomeHref(s.id),

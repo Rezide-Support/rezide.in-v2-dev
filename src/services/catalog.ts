@@ -10,7 +10,8 @@ import type {
   Realtor,
   RealtorSearchCriteria,
 } from "@/types/models";
-import { getProjectDetail, getProjectsByIds, searchProjects } from "./projects";
+import { findProjectsByNames, getProjectDetail, getProjectsByIds, searchProjects } from "./projects";
+import { compareUnits, getCompareListings, searchCompareProjects } from "./compare-listings";
 import { getFirmAgentDetail, getFirmDetail, getRealtorDetail, searchRealtors } from "./realtors";
 
 const isServer = typeof window === "undefined";
@@ -102,6 +103,32 @@ export async function fetchProjects(criteria: ProjectSearchCriteria) {
 export async function fetchProjectsByIds(ids: string[], city: string) {
   if (isServer) return getProjectsByIds(ids, city);
   const { data } = await api.get<Paginated<Project>>("/api/projects", { baseURL: "", params: { ids, city } });
+  return data;
+}
+
+/** The Sale / Rental compare table (see ./compare-listings). */
+export async function fetchCompareListings(ids: string[]) {
+  if (isServer) return getCompareListings(ids);
+  const { data } = await api.get<Awaited<ReturnType<typeof getCompareListings>>>("/api/compare/listings", { baseURL: "", params: { ids } });
+  return data;
+}
+
+export async function fetchCompareProjects(query: string) {
+  if (isServer) return searchCompareProjects(query);
+  const { data } = await api.get<{ id: string; name: string }[]>("/api/compare/listings", { baseURL: "", params: { projects: query } });
+  return data;
+}
+
+export async function fetchCompareUnits(projectId: string, projectName: string, purpose: "sale" | "rent") {
+  if (isServer) return compareUnits(projectId, projectName, purpose);
+  const { data } = await api.get<{ id: string; name: string }[]>("/api/compare/listings", { baseURL: "", params: { project: projectId, name: projectName, purpose } });
+  return data;
+}
+
+/** Compare Project's "Select project" list (see findProjectsByNames). */
+export async function fetchProjectsByNames(names: string[]) {
+  if (isServer) return findProjectsByNames(names);
+  const { data } = await api.get<{ id: string; name: string }[]>("/api/projects", { baseURL: "", params: { names: names.length ? names : [""] } });
   return data;
 }
 

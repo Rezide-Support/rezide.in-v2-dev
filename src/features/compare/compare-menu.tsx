@@ -10,7 +10,8 @@ import { Segmented } from "@/components/common/segmented";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCompareItems, useSavedStore, type CompareGroup } from "@/stores/saved";
 import { useSession } from "@/stores/session";
-import { COMPARE_TABS, compareHref, entryHref, entryImage, entrySummary, useCompareEntries, type CompareEntry } from "./compare-data";
+import { COMPARE_TABS, compareHref, entryHref, entryImage, entrySummary, pageCompareHref, useCompareEntries, type CompareEntry } from "./compare-data";
+import { usePageCompare } from "./page-compare";
 
 /** Hovering opens the menu (as on rezide.in); a click or tap toggles it too. */
 const CLOSE_DELAY = 150;
@@ -22,14 +23,22 @@ const CLOSE_DELAY = 150;
 export function CompareMenu() {
   const { session } = useSession();
   const items = useCompareItems();
+  // On a project's page: that page's comparison (its project first) in place of the compared projects.
+  const pageProjects = usePageCompare((s) => s.items);
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<CompareGroup>("sale");
+  const [chosenTab, setTab] = useState<CompareGroup | null>(null);
+  const tab = chosenTab ?? (pageProjects ? "projects" : "sale");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const router = useRouter();
   const signedIn = !!session;
-  const shown = signedIn ? items : [];
+  const listed = pageProjects ? [...items.filter((i) => i.kind !== "project"), ...pageProjects] : items;
+  const shown = signedIn ? listed : [];
   const entries = useCompareEntries(shown, open);
-  const total = shown.length;
+  // On a project's page the count is that page's comparison, as its Compare section shows.
+  const total = signedIn ? (pageProjects ? pageProjects.length : shown.length) : 0;
+  const pageIds = new Set(pageProjects?.map((p) => p.id));
+  // From a project's page, Compare opens that page's comparison (the projects in this menu), not the saved list.
+  const compareLink = tab === "projects" && pageProjects?.length ? pageCompareHref(pageProjects.map((p) => p.id)) : compareHref(tab);
 
   const show = () => {
     clearTimeout(timer.current);
@@ -92,9 +101,9 @@ export function CompareMenu() {
                 label: `${t.label} (${entries.filter((e) => e.group === t.group).length})`,
               }))}
             />
-            <CompareList entries={entries.filter((e) => e.group === tab)} empty={COMPARE_TABS.find((t) => t.group === tab)!.empty} />
+            <CompareList entries={entries.filter((e) => e.group === tab)} empty={COMPARE_TABS.find((t) => t.group === tab)!.empty} fixed={pageIds} />
             {entries.some(e => e.group === tab) ? (
-              <Link href={compareHref(tab)} onClick={() => setOpen(false)} className="flex h-10 items-center justify-center rounded-full bg-black text-sm font-semibold text-rez-full-white hover:bg-rez-arsenic">Compare</Link>
+              <Link href={compareLink} onClick={() => setOpen(false)} className="flex h-10 items-center justify-center rounded-full bg-black text-sm font-semibold text-rez-full-white hover:bg-rez-arsenic">Compare</Link>
             ) : (
               <span aria-disabled="true" className="flex h-10 items-center justify-center rounded-full bg-black text-sm font-semibold text-rez-full-white opacity-40">Compare</span>
             )}
@@ -105,7 +114,8 @@ export function CompareMenu() {
   );
 }
 
-function CompareList({ entries, empty }: { entries: CompareEntry[]; empty: string }) {
+/** `fixed`: a project page's own comparison, managed in its Compare section (no trash here). */
+function CompareList({ entries, empty, fixed }: { entries: CompareEntry[]; empty: string; fixed: Set<string> }) {
   const remove = useSavedStore((s) => s.remove);
   if (!entries.length) return <p className="flex h-28 items-center justify-center text-sm text-rez-graphite">{empty}</p>;
   return (
@@ -119,20 +129,20 @@ function CompareList({ entries, empty }: { entries: CompareEntry[]; empty: strin
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <Link href={entryHref(e)} className="truncate text-sm font-semibold hover:underline">
-                {e.item.title}
+                {e.item.title || e.project?.name}
               </Link>
               <span className="truncate text-xs font-medium text-rez-graphite">
                 {e.loading ? "Loading…" : e.failed ? "Details unavailable" : entrySummary(e)}
               </span>
             </div>
-            <button
+            {!(e.item.kind === "project" && fixed.has(e.item.id)) && <button
               type="button"
               onClick={() => remove("compare", e.item)}
-              aria-label={`Remove ${e.item.title} from compare`}
+              aria-label={`Remove ${e.item.title || e.project?.name} from compare`}
               className="flex size-9 shrink-0 items-center justify-center rounded-full text-rez-burgundy hover:bg-rez-cloud"
             >
               <Icon name="trash" size={18} />
-            </button>
+            </button>}
           </li>
         );
       })}

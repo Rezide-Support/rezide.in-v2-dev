@@ -3,10 +3,11 @@
 import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-import { Chip, SectionHeading } from "@/features/properties/detail/detail-ui";
+import { SectionHeading } from "@/features/properties/detail/detail-ui";
 import { formatAreaRange, formatPriceRange, formatRupees } from "@/features/properties/detail/format";
 import { PROJECT_STATUS_LABEL } from "@/lib/constants";
 import { formatNumber } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { Project } from "@/types/models";
 import { V1Title } from "./v1-ui";
 
@@ -25,17 +26,38 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
 }
 
 /** Possession badge text: "Apr 2029" style from the possession label. */
-const possessionShort = (p: Project) => p.possessionLabel.replace(/^(Possession|Completed|Launch)\s+/i, "");
+const possessionShort = (p: Pick<Project, "possessionLabel">) => p.possessionLabel.replace(/^(Possession|Completed|Launch)\s+/i, "");
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * rezide.in's Project summary badges: the status read from the completion date (past: "Ready to
+ * Move", else "Under Construction") and that date as "Jan, 2024", both in the status's colour.
+ */
+export function summaryBadges(p: Pick<Project, "completionDate" | "status" | "possessionLabel">, now = new Date()) {
+  const date = p.completionDate ? new Date(p.completionDate.replace(" ", "T")) : null;
+  if (date && !Number.isNaN(date.getTime())) {
+    const ready = date.getTime() < now.getTime();
+    return { ready, status: ready ? "Ready to Move" : "Under Construction", date: `${MONTHS[date.getMonth()]}, ${date.getFullYear()}` };
+  }
+  // No completion date on the record: the listed status and possession.
+  return { ready: p.status === "rtm", status: PROJECT_STATUS_LABEL[p.status], date: possessionShort(p) };
+}
+
+/** rezide.in's status colours (green for Ready to Move, slate for Under Construction). */
+const SUMMARY_GRADIENT = { ready: "from-[#2ECC71] to-[#17A855]", building: "from-[#5D6D7E] to-[#3E5063]" };
 
 export function ProjectSummary({ project: p }: { project: Project }) {
   const yieldPct = p.rentFrom && p.priceFrom ? ((p.rentFrom * 12) / p.priceFrom) * 100 : undefined;
+  const badges = summaryBadges(p);
+  const badge = cn("w-auto rounded-lg bg-gradient-to-r px-3 py-1 text-sm font-medium text-white", badges.ready ? SUMMARY_GRADIENT.ready : SUMMARY_GRADIENT.building);
   return (
     <section aria-labelledby="summary-heading" className="flex flex-col gap-6 sm:gap-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SectionHeading id="summary-heading">Project summary</SectionHeading>
-        <div className="flex gap-2">
-          <Chip tone="dark">{PROJECT_STATUS_LABEL[p.status]}</Chip>
-          <Chip tone="dark">{possessionShort(p)}</Chip>
+        <div className="flex h-fit gap-2">
+          <span className={badge}>{badges.status}</span>
+          <span className={badge}>{badges.date}</span>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
@@ -64,7 +86,7 @@ export function ProjectSummary({ project: p }: { project: Project }) {
 const AMENITY_PREVIEW = 11;
 
 /** The amenity's icon, from the Rezide backend's icon set (by amenity name), as rezide.in shows it. */
-const amenityIcon = (name: string) => `https://api.rezide.in/v1/admin/repository/amenities/icon/${encodeURIComponent(name)}.svg`;
+export const amenityIcon = (name: string) => `https://api.rezide.in/v1/admin/repository/amenities/icon/${encodeURIComponent(name)}.svg`;
 
 /** "Project Amenities", as on rezide.in: icon cards, the first 11, then "N More / View". */
 export function ProjectAmenities({ project: p }: { project: Project }) {

@@ -72,7 +72,7 @@ export function safeNext(next: string | null): string | null {
 }
 
 export function landingFor(role: UserRole) {
-  return role === "realtor" ? "/dashboard" : role === "owner" ? "/account?tab=listings" : "/account";
+  return role === "realtor" ? "/dashboard" : role === "owner" ? "/dashboard/my-listings/my-visits" : "/dashboard/my-searches/viewed";
 }
 
 function DetailsStep({

@@ -19,6 +19,7 @@ export type Transaction = {
   /** e.g. "2.5 BHK" */
   config?: string;
   areaSqft?: number;
+  areaLabel?: string;
   /** Sale: the transaction value. */
   value?: number;
   /** Sale: the government ready-reckoner value. */
@@ -37,7 +38,7 @@ type Labelled = { label?: string } | null | undefined;
 /** A row as the backend returns it (the fields rezide.in reads). */
 export type BackendTransaction = {
   _id?: string;
-  area?: number;
+  area?: number | { value?: number | string; name?: string };
   bhk?: string;
   property_details?: { tower?: Labelled; unit_no?: Labelled; bhk?: string; area?: number };
   transaction_details?: {
@@ -50,10 +51,10 @@ export type BackendTransaction = {
   };
 };
 
-/** A positive amount. Rental rows send rent, deposit and rate as text ("490891"), so strings are read too. */
+/** Nonnegative amounts, retaining valid zero values and numeric strings. */
 const money = (n: unknown) => {
   const v = typeof n === "string" && n.trim() !== "" ? Number(n.replace(/[,\s?]/g, "")) : n;
-  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
+  return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : undefined;
 };
 const label = (l: Labelled) => l?.label?.trim() || undefined;
 
@@ -66,7 +67,8 @@ export function toTransaction(raw: BackendTransaction, kind: TransactionKind): T
     wing: label(pd.tower),
     flat: label(pd.unit_no),
     config: (raw.bhk || pd.bhk)?.trim() || undefined,
-    areaSqft: money(raw.area ?? pd.area),
+    areaSqft: money(typeof raw.area === "object" ? raw.area?.value : raw.area ?? pd.area),
+    areaLabel: typeof raw.area === "object" ? raw.area?.name : undefined,
     ratePerSqft: money(t.rpsf),
     ...(kind === "sale"
       ? { value: money(t.rate_per_month), readyReckoner: money(t.security_deposit) }
@@ -81,6 +83,6 @@ export async function fetchTransactions(projectId: string, kind: TransactionKind
     { projectIds: [projectId], transaction_type: kind === "sale" ? "Sale" : "Rental" },
     { params: { page: 1, pageSize } },
   );
-  const items = (data.data ?? []).map((r) => toTransaction(r, kind));
+  const items = (Array.isArray(data?.data) ? data.data : []).map((r) => toTransaction(r, kind));
   return { items, total: data.result_count ?? items.length };
 }

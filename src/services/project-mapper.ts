@@ -3,6 +3,7 @@ import { BUDGET_TIERS } from "@/lib/constants";
 import type { DeveloperProfile, Project, ProjectConfiguration, ProjectRera, ProjectSearchCriteria, ProjectSortKey, ProjectStatus } from "@/types/models";
 import { cityLabel, toBackendCity } from "./locations";
 import { cdnImage, PLACEHOLDER_IMAGE } from "./property-mapper";
+import { array, record, text } from "@/features/realtors/directory-model";
 
 /*
  * Rezide backend projects → the UI's Project, and the UI's search → the backend's filter body.
@@ -12,6 +13,10 @@ import { cdnImage, PLACEHOLDER_IMAGE } from "./property-mapper";
 
 type Media = { url?: string; label?: string };
 const urls = (items: Media[] | undefined) => (items ?? []).map((m) => m.url?.trim() ?? "").filter(Boolean).map(cdnImage);
+const projectLogoUrl = (key?: string) => {
+  const value = key?.trim();
+  return value ? (/^https?:\/\//i.test(value) ? value : uploadUrl(value)) : undefined;
+};
 
 /** A row of POST /Inventory/project/filter/new (the fields read). */
 export type BackendProjectRow = {
@@ -31,6 +36,10 @@ export type BackendProjectRow = {
   amenities?: string;
   apartment_view_groups?: string;
   rera_id?: string;
+  /** The developer's logo (an upload key), shown on the card's photo as on rezide.in. */
+  logo?: string;
+  /** The project's video: a YouTube link or a CDN file key (the card's video button). */
+  videoId?: string;
   images?: Media[];
   amenities_image?: Media[];
   saleRange?: { minimumPriceRange?: number; maximumPriceRange?: number; avgRate?: number };
@@ -51,17 +60,24 @@ export type BackendDeveloper = {
 
 export type BackendProjectDetail = {
   project?: {
+    status?: string;
+    possession?: string;
     general_information?: {
       developer_id?: BackendDeveloper | string;
       projectBrochure_fileID?: string;
       logo?: string;
+      /** The 360° virtual tour page. */
+      vr_tour_link?: string;
+      project_type?: { name?: string } | null;
+      completion_date?: string;
+      possession_data?: { possession_date?: string };
       reraIDs?: { rera_id?: string; rera_link?: string; rera_image?: string }[];
     };
     locality_and_address?: {
       coordinates?: { latitude?: string | number; longitude?: string | number };
-      address?: { line_1?: string; city?: string; locality?: string; sub_region?: string };
+      address?: { line_1?: string; city?: string; locality?: string; sub_region?: string; region?: string };
     };
-    project_description?: { description?: string; highlights?: string[] };
+    project_description?: { description?: string; highlights?: string[]; apartment_views?: string[] };
     amenities?: string[];
     media?: { images?: Media[]; amenities?: Media[]; sample_flats?: Media[]; videos?: Media[] };
     configuration?: { bhk?: string; unit_plan?: string }[];
@@ -120,12 +136,17 @@ export function toProject(row: BackendProjectRow, city: string, statusOverride?:
   return {
     id: String(row._id ?? ""),
     name: (row.project_name ?? "").trim(),
+    logo: projectLogoUrl(row.logo),
     developer: (row.developer_name ?? "").trim(),
+    ...(row.logo?.trim() ? { developerLogo: uploadUrl(row.logo.trim()) } : {}),
+    ...(row.videoId?.trim() ? { videoUrl: row.videoId.trim() } : {}),
     city: row.city?.trim() || city,
     locality: (row.locality || row.sub_region || "").trim(),
     status,
     possessionYear: possession.year,
     possessionLabel: possession.label,
+    backendStatus: row.status?.trim() || undefined,
+    possessionDate: row.possession?.trim() || undefined,
     configurations: (row.bhk ?? "").trim(),
     bhkOptions: toBhkOptions(row.bhk),
     priceFrom: row.saleRange?.minimumPriceRange ?? 0,
@@ -141,10 +162,41 @@ export function toProject(row: BackendProjectRow, city: string, statusOverride?:
     amenities: splitList(row.amenities, /,\s*/),
     views: splitList(row.apartment_view_groups, ","),
     reraId: splitList(row.rera_id, ",")[0] ?? "",
+    reraIds: splitList(row.rera_id, ",").filter((id) => !/^na$/i.test(id)),
     images: images.length ? images : urls(row.amenities_image).length ? urls(row.amenities_image) : [PLACEHOLDER_IMAGE],
     coords: [0, 0],
     description: "",
     brochureUrl: row.projectBrochureId ? cdnBrochure(row.projectBrochureId) : undefined,
+  };
+}
+
+/** /Inventory/project/ids returns populated records, unlike the flat search rows. */
+export function toListingProject(value: unknown, city: string): Project {
+  const raw = record(value);
+  const configurationPlans = toConfigurationPlans(raw as Pick<NonNullable<BackendProjectDetail["project"]>, "price_range" | "configuration">);
+  if (!raw.general_information) return { ...toProject(raw as BackendProjectRow, city), configurationPlans };
+  const general = record(raw.general_information);
+  const address = record(record(raw.locality_and_address).address);
+  const coordinates = record(record(raw.locality_and_address).coordinates);
+  const media = record(raw.media);
+  const developer = record(record(general.developer_id).general_information);
+  const amenities = array(raw.amenities).map(item => typeof item === "string" ? item : text(record(item).name)).filter(Boolean);
+  const photos = array(media.images).map(item => ({ url: text(record(item).url) })).filter(item => item.url);
+  const configs = [...new Set(array(raw.configuration).map(item => text(record(item).bhk)).filter(Boolean))];
+  const base = toProject({
+    _id: text(raw._id), project_name: text(general.project_name), logo: text(general.logo),
+    developer_name: text(developer.developer_name) || text(general.developer_name),
+    city: text(address.city) || city, locality: text(address.locality) || text(address.sub_region),
+    status: text(raw.status), possession: text(raw.possession) || text(record(general.possession_data).possession_date), bhk: configs.join(", "), images: photos, amenities: amenities.join(", "),
+    tower_count: Number(raw.towerCount) || 0, no_of_units: Number(raw.no_units) || 0,
+    saleRange: record(raw.saleRange), rentRange: record(raw.rentRange),
+  }, city);
+  const lat = Number(coordinates.latitude), lng = Number(coordinates.longitude);
+  return { ...base,
+    configurationPlans,
+    description: text(record(raw.project_description).description),
+    highlights: array(record(raw.project_description).highlights).filter((item): item is string => typeof item === "string"),
+    coords: Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : base.coords,
   };
 }
 
@@ -156,6 +208,22 @@ const amount = (n: unknown) => {
   const v = typeof n === "string" ? Number(n.replace(/,/g, "")) : n;
   return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
 };
+
+/** A 360° tour page, over https only (it is shown in a frame on an https page). */
+export function vrTourUrl(link: string | undefined): string | undefined {
+  const url = link?.trim().replace(/^http:\/\//i, "https://");
+  return url && /^https:\/\/[^\s"'<>]+$/i.test(url) ? url : undefined;
+}
+
+/**
+ * The project's video and 360° tour, from a detail record or a /Inventory/project/ids row:
+ * rezide.in's card buttons and the gallery's Video tab. Only the fields that are set.
+ */
+export function projectMediaOf(p: Pick<NonNullable<BackendProjectDetail["project"]>, "media" | "general_information"> | undefined): Pick<Project, "videoUrl" | "vrTourUrl"> {
+  const video = p?.media?.videos?.[0]?.url?.trim();
+  const vr = vrTourUrl(p?.general_information?.vr_tour_link);
+  return { ...(video ? { videoUrl: video } : {}), ...(vr ? { vrTourUrl: vr } : {}) };
+}
 
 /** Per-configuration area, sale and rent ranges (and unit plans), from a detail record or a /Inventory/project/ids row. */
 export function toConfigurationPlans(project: Pick<NonNullable<BackendProjectDetail["project"]>, "price_range" | "configuration">): ProjectConfiguration[] {
@@ -211,6 +279,9 @@ function toDeveloperProfile(project: NonNullable<BackendProjectDetail["project"]
 }
 
 /** A row with the detail record's fields added. */
+/** The image labels rezide.in shows in the gallery's Project Plans tab. */
+const PLAN_LABELS = new Set(["site plan", "location plan", "township plan"]);
+
 export function withProjectDetail(base: Project, detail: BackendProjectDetail): Project {
   const p = detail.project;
   if (!p) return base;
@@ -220,19 +291,38 @@ export function withProjectDetail(base: Project, detail: BackendProjectDetail): 
   const lng = Number(coords?.longitude);
   const city = address?.city ? cityLabel(address.city.trim()) : base.city;
   const brochure = p.general_information?.projectBrochure_fileID;
-  const photos = [...urls(p.media?.images), ...urls(p.media?.sample_flats)];
+  // As on rezide.in, site, location and township plans go under Project Plans, not Photos.
+  const images = p.media?.images ?? [];
+  const isPlan = (m: Media) => PLAN_LABELS.has(m.label?.trim().toLowerCase() ?? "");
+  // Photos: the project's own images only (rezide.in leaves the sample flats out), each with its label as the caption.
+  const photoMedia = images.filter((m) => !isPlan(m) && m.url?.trim());
+  const photos = urls(photoMedia);
+  const planImages = urls(images.filter(isPlan));
   return {
     ...base,
     city,
+    backendStatus: p.status?.trim() || base.backendStatus,
+    possessionDate: base.possessionDate || p.possession?.trim() || p.general_information?.possession_data?.possession_date?.trim() || undefined,
+    logo: projectLogoUrl(p.general_information?.logo) ?? base.logo,
     address: address?.line_1?.trim() || undefined,
     coords: Number.isFinite(lat) && Number.isFinite(lng) && (lat || lng) ? [lat, lng] : base.coords,
     description: p.project_description?.description?.trim() ?? "",
     highlights: p.project_description?.highlights?.map((h) => h.trim()).filter(Boolean),
     images: photos.length ? photos : base.images,
+    imageCaptions: photos.length === photoMedia.length && photos.length ? photoMedia.map((m) => m.label?.trim() ?? "") : undefined,
     // The list row only carries some of them.
     amenities: p.amenities?.length ? p.amenities.map((x) => x.trim()).filter(Boolean) : base.amenities,
     amenityImages: urls(p.media?.amenities),
-    videoUrl: p.media?.videos?.[0]?.url?.trim() || undefined,
+    planImages,
+    region: address?.region?.trim() || undefined,
+    subRegion: address?.sub_region?.trim() || undefined,
+    projectType: p.general_information?.project_type?.name?.trim() || undefined,
+    completionDate: p.general_information?.completion_date || undefined,
+    // The gallery's Views tab (rezide.in reads the detail record's apartment views).
+    views: p.project_description?.apartment_views?.map((v) => v.trim()).filter(Boolean).length
+      ? p.project_description.apartment_views.map((v) => v.trim()).filter(Boolean)
+      : base.views,
+    ...projectMediaOf(p),
     configurationPlans: toConfigurationPlans(p),
     reras: toReras(p),
     brochureUrl: brochure ? cdnBrochure(brochure) : base.brochureUrl,
@@ -261,6 +351,13 @@ export function toProjectFilters(c: ProjectSearchCriteria) {
     views: c.views,
     ...(min > 0 ? { budget_min: [min] } : {}),
     ...(Number.isFinite(max) ? { budget_max: [max] } : {}),
+    // The Filters drawer, sent as rezide.in's "Project Filters" sends them (only when chosen).
+    ...(c.projectTypes.length ? { project_type: c.projectTypes } : {}),
+    ...(c.unitTypes.length ? { building_type: c.unitTypes } : {}),
+    ...(c.bhk.length ? { bhks: c.bhk } : {}),
+    ...(c.areaMin !== undefined ? { area_min: [String(c.areaMin)] } : {}),
+    ...(c.areaMax !== undefined ? { area_max: [String(c.areaMax)] } : {}),
+    ...(c.media.length ? { project_with: c.media } : {}),
     sortBy: PROJECT_SORT_BY[c.sort],
     ids: [] as string[],
   };

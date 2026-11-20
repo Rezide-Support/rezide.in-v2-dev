@@ -1,7 +1,7 @@
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { api } from "@/lib/api/client";
-import { getDeveloperContact } from "@/services/developers";
+import { developerExperience, getDeveloperContact, toDeveloperPage } from "@/services/developers";
 import { sendDeveloperContactLead } from "@/services/mutations";
 import { toTransaction } from "@/services/transactions";
 
@@ -70,5 +70,45 @@ describe("transactions", () => {
     expect(rent).toMatchObject({ monthlyRent: 490891, securityDeposit: 1100000, ratePerSqft: 239, areaSqft: 2053, config: "4 BHK" });
     const sale = toTransaction({ transaction_details: { rate_per_month: 56100000, security_deposit: 44515823.74, rpsf: "41038" } }, "sale");
     expect(sale).toMatchObject({ value: 56100000, readyReckoner: 44515823.74, ratePerSqft: 41038 });
+  });
+});
+
+describe("developer page (rezide.in's /developers/{id})", () => {
+  it("counts experience in whole years since the year founded", () => {
+    const now = new Date("2026-11-20T00:00:00Z");
+    expect(developerExperience("1974", now)).toBe("52+ years");
+    expect(developerExperience("N/A", now)).toBeUndefined();
+    expect(developerExperience(undefined, now)).toBeUndefined();
+  });
+
+  it("copies only the public fields: logo, place, addresses with a type, cities", () => {
+    const page = toDeveloperPage({
+      _id: "6637ebf479ed5502b2167b52",
+      general_information: { developer_name: " Empire Realty ", description: "Est. 1974", estd_year: 1974 },
+      contact_details: {
+        address: [
+          { address_type: { label: "Corporate Office" }, line_1: "Empire House", line_2: "Worli", pincode: 400018, city: { label: "Mumbai" }, state: { label: "Maharashtra" } },
+          { address_type: {}, city: { label: "Pune" } },
+        ],
+      },
+      media: { images: [{ label: "Developer Logo", url: "logo1" }] },
+      // The backend's record also holds bank details; they are never copied.
+      ...({ account_details: { account_no: "123" } } as object),
+    });
+    expect(page).toMatchObject({
+      id: "6637ebf479ed5502b2167b52",
+      name: "Empire Realty",
+      place: "Mumbai, Maharashtra",
+      established: "1974",
+      addresses: [{ type: "Corporate Office", line1: "Empire House", line2: "Worli", city: "Mumbai", pincode: "400018" }],
+      cities: ["Mumbai", "Pune"],
+    });
+    expect(page?.logo).toContain("/v1/admin/file/upload/logo1");
+    expect(JSON.stringify(page)).not.toContain("account");
+  });
+
+  it("has no page without an id or a name", () => {
+    expect(toDeveloperPage({ general_information: { developer_name: "X" } })).toBeNull();
+    expect(toDeveloperPage({ _id: "6637ebf479ed5502b2167b52" })).toBeNull();
   });
 });

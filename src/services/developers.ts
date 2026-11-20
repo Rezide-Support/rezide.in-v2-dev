@@ -1,3 +1,4 @@
+import { uploadUrl } from "@/lib/api/origins";
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { ApiError, api } from "@/lib/api/client";
 
@@ -60,4 +61,80 @@ export async function fetchDeveloperContact(id: string): Promise<DeveloperContac
   if (typeof window === "undefined") return getDeveloperContact(id);
   const { data } = await api.get<DeveloperContact>(`/api/developers/${encodeURIComponent(id)}/contact`, { baseURL: "" });
   return data;
+}
+
+/* ---------------- The developer page (rezide.in's /developers/{id}) ---------------- */
+
+type Labelled = { label?: string } | undefined;
+type BackendAddress = {
+  address_type?: Labelled;
+  line_1?: string;
+  line_2?: string;
+  pincode?: string | number;
+  city?: Labelled;
+  state?: Labelled;
+};
+export type BackendDeveloper = {
+  _id?: string;
+  general_information?: { developer_name?: string; description?: string; estd_year?: string | number };
+  contact_details?: { address?: BackendAddress[] };
+  media?: { images?: { label?: string; url?: string }[] };
+};
+
+/** One office, as rezide.in's Address popup shows it. */
+export type DeveloperAddress = { type: string; line1: string; line2?: string; city?: string; pincode?: string };
+
+export type DeveloperPage = {
+  id: string;
+  name: string;
+  logo?: string;
+  /** "Mumbai, Maharashtra": the first office's city and state. */
+  place?: string;
+  description: string;
+  /** e.g. "1975". */
+  established?: string;
+  /** Office addresses that name their type ("Corporate Office"); rezide.in lists those in blue. */
+  addresses: DeveloperAddress[];
+  /** The offices' cities, in order. */
+  cities: string[];
+};
+
+const label = (l: Labelled) => l?.label?.trim() || undefined;
+
+/** "52+ years" since the year founded, as rezide.in counts it (whole years since 1 January). */
+export function developerExperience(established: string | undefined, now = new Date()): string | undefined {
+  const year = Number(established);
+  if (!/^\d{4}$/.test(established ?? "") || year > now.getFullYear()) return undefined;
+  return `${now.getFullYear() - year}+ years`;
+}
+
+export function toDeveloperPage(d: BackendDeveloper): DeveloperPage | null {
+  const name = d.general_information?.developer_name?.trim();
+  if (!d._id || !name) return null;
+  const offices = d.contact_details?.address ?? [];
+  const first = offices[0];
+  const logoKey = d.media?.images?.find((i) => i.label === "Developer Logo")?.url?.trim();
+  const established = String(d.general_information?.estd_year ?? "").trim();
+  return {
+    id: d._id,
+    name,
+    logo: logoKey ? uploadUrl(logoKey) : undefined,
+    place: label(first?.city) && label(first?.state) ? `${label(first?.city)}, ${label(first?.state)}` : undefined,
+    description: d.general_information?.description?.trim() ?? "",
+    established: established || undefined,
+    addresses: offices.flatMap((a): DeveloperAddress[] => {
+      const type = label(a.address_type);
+      if (!type) return [];
+      return [{ type, line1: a.line_1?.trim() ?? "", line2: a.line_2?.trim() || undefined, city: label(a.city), pincode: a.pincode ? String(a.pincode).trim() : undefined }];
+    }),
+    cities: offices.flatMap((a) => (label(a.city) ? [label(a.city)!] : [])),
+  };
+}
+
+/** A developer, or null when the backend doesn't have it. */
+export async function fetchDeveloper(id: string): Promise<DeveloperPage | null> {
+  if (!BACKEND_ID_PATTERN.test(id)) return null;
+  const { data } = await api.get<BackendDeveloper | { data?: BackendDeveloper }>(`/repository/developer/${encodeURIComponent(id)}`);
+  const record = data && "data" in data && data.data ? data.data : (data as BackendDeveloper);
+  return toDeveloperPage(record);
 }

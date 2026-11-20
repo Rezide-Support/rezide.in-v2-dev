@@ -5,8 +5,8 @@ import { ApiError, api } from "@/lib/api/client";
 import { paginate } from "@/features/search/match";
 import type { Intent, Paginated, Project, ProjectSearchCriteria, Property } from "@/types/models";
 import type { DeveloperStats, ProjectDetail } from "./catalog";
-import { fetchLandmarks, fetchLocalityPhoto } from "./localities";
-import { inChosenBudgets, toConfigurationPlans, toProject, toProjectFilters, withProjectDetail, type BackendProjectDetail, type BackendProjectRow } from "./project-mapper";
+import { fetchLandmarks, findLocality } from "./localities";
+import { inChosenBudgets, projectMediaOf, toConfigurationPlans, toListingProject, toProject, toProjectFilters, withProjectDetail, type BackendProjectDetail, type BackendProjectRow } from "./project-mapper";
 import { toProperty, type BackendListingPage } from "./property-mapper";
 
 /*
@@ -94,12 +94,29 @@ async function withConfigurations(items: Project[]): Promise<Project[]> {
   const ids = items.map((p) => p.id).filter((id) => BACKEND_ID_PATTERN.test(id));
   if (ids.length === 0) return items;
   try {
-    const { data } = await api.post<{ data?: (Parameters<typeof toConfigurationPlans>[0] & { _id?: string })[] }>("/Inventory/project/ids", { projectIds: ids });
-    const byId = new Map((data.data ?? []).flatMap((r) => (r._id ? [[r._id, toConfigurationPlans(r)] as const] : [])));
-    return items.map((p) => (byId.get(p.id)?.length ? { ...p, configurationPlans: byId.get(p.id) } : p));
+    type Row = Parameters<typeof toConfigurationPlans>[0] & Parameters<typeof projectMediaOf>[0] & { _id?: string };
+    const { data } = await api.post<{ data?: Row[] }>("/Inventory/project/ids", { projectIds: ids });
+    const byId = new Map((data.data ?? []).flatMap((r) => (r?._id ? [[r._id, r] as const] : [])));
+    return items.map((p) => {
+      const row = byId.get(p.id);
+      if (!row) return p;
+      const plans = toConfigurationPlans(row);
+      // The same rows carry the video and the 360° tour (the card's buttons, as on rezide.in).
+      return { ...p, ...projectMediaOf(row), ...(plans.length ? { configurationPlans: plans } : {}) };
+    });
   } catch {
     return items;
   }
+}
+
+/**
+ * Compare Project's "Select project" list, as rezide.in asks for it: the backend's first page
+ * (10) of projects matching any of the locality and name typed, or the latest with neither.
+ */
+export async function findProjectsByNames(names: string[]): Promise<{ id: string; name: string }[]> {
+  const terms = names.map((n) => n.trim()).filter(Boolean).slice(0, 2);
+  const { data } = await api.post<ProjectPage>(FILTER_URL, { project_names_localities_subRegions: terms });
+  return (data.data ?? []).flatMap((r) => (r._id && r.project_name ? [{ id: String(r._id), name: r.project_name.trim() }] : []));
 }
 
 /** Specific projects, in the given city. */
@@ -150,10 +167,10 @@ export const getProjectDetail = cacheDetail(async (id: string): Promise<ProjectD
   const similarIds = (detail.project.similar_projects ?? []).flatMap((s) => (s.value && s.value !== id ? [s.value] : [])).slice(0, RELATED_COUNT);
   const place = address?.sub_region?.trim() || project.locality;
 
-  const [listings, landmarks, localityPhoto, similar, nearby, developer] = await Promise.all([
+  const [listings, landmarks, locality, similar, nearby, developer] = await Promise.all([
     listingsOf(id, project.name).catch(orEmpty<Property[]>([])),
     fetchLandmarks(id).catch(orEmpty(undefined)),
-    address?.locality ? fetchLocalityPhoto(address.locality).catch(orEmpty(null)) : Promise.resolve(null),
+    address?.locality ? findLocality(address.locality).catch(orEmpty(null)) : Promise.resolve(null),
     getProjectsByIds(similarIds, project.city).then((p) => p.items).catch(orEmpty<Project[]>([])),
     // Near by: rezide.in searches the project's sub-region.
     place
@@ -164,7 +181,15 @@ export const getProjectDetail = cacheDetail(async (id: string): Promise<ProjectD
     developerStats(project).catch(orEmpty(undefined)),
   ]);
   const similarOnly = similar.filter((s) => !nearby.some((n) => n.id === s.id));
-  return { project: { ...project, landmarks, localityPhoto: localityPhoto ?? undefined }, listings, similar: similarOnly, nearby, developer };
+  // The cards' Details tables: one batched request for both rails.
+  const withRanges = await withConfigurations([...similarOnly, ...nearby]);
+  return {
+    project: { ...project, landmarks, localityPhoto: locality?.photo ?? undefined, localityId: locality?.id },
+    listings,
+    similar: withRanges.slice(0, similarOnly.length),
+    nearby: withRanges.slice(similarOnly.length),
+    developer,
+  };
 });
 
 /** How many projects the developer's counts are read from (rezide.in reads one page of 50). */
@@ -200,11 +225,41 @@ async function developerStats(project: Project): Promise<DeveloperStats | undefi
   };
 }
 
+/** A developer's projects for their page, by the backend's status (rezide.in's four tabs). */
+export type DeveloperProjects = { total: number; all: Project[]; rtm: Project[]; uc: Project[]; nl: Project[] };
+
+/**
+ * rezide.in's "Projects By {developer}": the first 50 projects found by the developer's name,
+ * with the cards' Details tables. The total is the search's count; each tab takes the projects
+ * the backend words with that status.
+ */
+/** `city`: shown on cards whose search row names none (the developer's city). */
+export async function getDeveloperProjects(name: string, city = ""): Promise<DeveloperProjects> {
+  const empty = { total: 0, all: [], rtm: [], uc: [], nl: [] };
+  if (!name.trim()) return empty;
+  const page = await postFilters({
+    page: 1,
+    pageSize: DEVELOPER_PAGE,
+    city: [],
+    project_names_localities_subRegions: [name.trim()],
+    subRegions: [],
+    project_age: [],
+    views: [],
+    sortBy: "Latest",
+    ids: [],
+  });
+  const rows = page.data ?? [];
+  const all = await withConfigurations(rows.map((r) => toProject(r, r.city?.trim() || city)));
+  const withStatus = (s: string) => all.filter((_, i) => rows[i].status?.trim().toLowerCase() === s);
+  return { total: page.result_count ?? 0, all, rtm: withStatus("ready to move"), uc: withStatus("under construction"), nl: withStatus("new launch") };
+}
+
 /** The project on a listing page, with its listing counts. A failure never fails the listing. */
 export async function findListingProject(projectId: string | undefined, city: string) {
   if (!projectId) return { project: null, projectStock: undefined };
   const [rows, stock] = await Promise.all([
-    getProjectsByIds([projectId], city).catch(() => null),
+    api.post<{ data?: BackendProjectRow[] }>("/Inventory/project/ids", { projectIds: [projectId] })
+      .then(({ data }) => ({ items: (Array.isArray(data.data) ? data.data : []).map(row => toListingProject(row, city)) })).catch(() => null),
     api
       .post<{ result_sale?: number; result_rent?: number }>("/inventory/Listing/mobile/filter/count", { project_id: [projectId] })
       .then(({ data }) => ({ sale: data.result_sale ?? 0, rent: data.result_rent ?? 0 }))

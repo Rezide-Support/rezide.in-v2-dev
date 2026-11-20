@@ -32,6 +32,19 @@ describe("property search criteria ↔ URL", () => {
     expect(c.localities).toEqual(["Worli", "Powai"]);
   });
 
+  it("reads the previous sale-filter URL names and comma-separated selections", () => {
+    const c = parse("searchQuery=Prestige&project_type=Apartment,Villa&bhk=64de062c4f5f0ae6e602328a,656730d08eb9d2295cb750ed&building_type=Standalone,Gated%20Amenities&exit_direction=E,NE&minBudget=10000000&maxArea=5000");
+    expect(c).toMatchObject({
+      q: "Prestige",
+      unitTypes: ["Apartment", "Villa"],
+      bhk: ["2 BHK", "5+ BHK"],
+      buildingTypes: ["Standalone", "Gated Amenities"],
+      facing: ["E", "NE"],
+      budgetMin: 10_000_000,
+      areaMax: 5_000,
+    });
+  });
+
   it("round-trips every field through the URL", () => {
     const original = defaultPropertyCriteria({
       city: "Bengaluru",
@@ -41,11 +54,11 @@ describe("property search criteria ↔ URL", () => {
       localities: ["Whitefield"],
       unitTypes: ["Apartment"],
       bhk: ["2 BHK"],
-      furnishing: ["Semi Furnished"],
+      furnishing: ["650eb6b2a1a78c56b3fac96e"],
       bathrooms: ["2"],
       parking: ["1"],
       media: ["Photo"],
-      facing: ["West"],
+      facing: ["W"],
       budgetMin: 25_000,
       budgetMax: 1_00_000,
       areaMin: 500,
@@ -82,7 +95,7 @@ describe("property search criteria ↔ URL", () => {
     expect(parse("areaMin=abc&areaMax=-5")).toMatchObject({ areaMin: undefined, areaMax: undefined });
     expect(parse("areaMin=5000&areaMax=3000")).toMatchObject({ areaMin: 3000, areaMax: 5000 });
     expect(propertySearchHref({ category: "offices", areaMin: 10_000 })).toBe(
-      "/properties?city=Mumbai&intent=buy&type=offices&areaMin=10000",
+      "/properties?city=Mumbai&intent=buy&type=offices&minArea=10000",
     );
     expect(countActiveFilters(parse("areaMin=500&areaMax=1000"))).toBe(1);
   });
@@ -104,6 +117,60 @@ describe("property search criteria ↔ URL", () => {
       "/properties?city=Mumbai&intent=buy&type=homes&loc=Worli",
     );
   });
+
+  it("serializes sale filters using the previous API-facing names", () => {
+    const criteria = defaultPropertyCriteria({
+      q: "Example project",
+      unitTypes: ["Apartment", "Villa"],
+      bhk: ["2 BHK", "5+ BHK"],
+      furnishing: ["650eb6b2a1a78c56b3fac96e"],
+      bathrooms: ["2"],
+      availability: ["659302fcd10433fa2dbb7c8a"],
+      budgetMin: 10_000_000,
+    });
+    const params = serializePropertyCriteria(criteria);
+    expect(params.get("searchQuery")).toBe("Example project");
+    expect(params.get("project_type")).toBe("Apartment,Villa");
+    expect(params.get("bhk")).toBe("64de062c4f5f0ae6e602328a,656730d08eb9d2295cb750ed");
+    expect(params.get("furnishing")).toBe("650eb6b2a1a78c56b3fac96e");
+    expect(params.get("no_of_bathrooms")).toBe("2");
+    expect(params.get("availability")).toBe("659302fcd10433fa2dbb7c8a");
+    expect(params.get("minBudget")).toBe("10000000");
+    expect(parsePropertyCriteria(params)).toEqual(criteria);
+  });
+
+  it("serializes rent filters with legacy names, master ids, and the rent 5+ BHK id", () => {
+    const criteria = defaultPropertyCriteria({
+      intent: "rent",
+      unitTypes: ["Apartment", "Pent House"],
+      bhk: ["5+ BHK", "Studio"],
+      furnishing: ["650eb6b2a1a78c56b3fac96e"],
+      bathrooms: ["2", ">"],
+      parking: ["1"],
+      media: ["Video"],
+      facing: ["E"],
+      availability: ["0", "15", "6593031bd10433fa2dbb7c92"],
+      buildingTypes: ["Gated Amenities"],
+      balconies: ["1"],
+      buildingAges: ["1 - 3 years"],
+      preferredApartment: ["7"],
+      floorRanges: ["1 - 5"],
+      timeOnRezide: ["AnyTime"],
+      budgetMin: 25_000,
+      budgetMax: 100_000,
+      areaMin: 100,
+      areaMax: 500,
+    });
+    const params = serializePropertyCriteria(criteria);
+    expect(params.get("project_type")).toBe("Apartment,Pent House");
+    expect(params.get("bhk")).toBe("656730d08eb9d2295cb750ed,650eb55ea1a78c56b3fac910");
+    expect(params.get("no_of_bathrooms")).toBe("2,>");
+    expect(params.get("availability")).toBe("0,15,6593031bd10433fa2dbb7c92");
+    expect(params.get("time_on_rezide")).toBe("AnyTime");
+    expect(params.get("minBudget")).toBe("25000");
+    expect(params.get("maxArea")).toBe("500");
+    expect(parsePropertyCriteria(params)).toEqual(criteria);
+  });
 });
 
 describe("project search criteria ↔ URL", () => {
@@ -117,6 +184,13 @@ describe("project search criteria ↔ URL", () => {
     const c = parseProjectCriteria(new URLSearchParams("city=Mumbai&q=Oberoi&status=rtm&loc=Worli&budget=luxury&view=Sea+View&year=2027&sort=plot-desc&page=2"));
     expect(c.sort).toBe("plot-desc");
     expect(parseProjectCriteria(serializeProjectCriteria(c))).toEqual(c);
+  });
+
+  it("round-trips the Filters drawer (type, unit, BHK, area, video / VR)", () => {
+    const c = parseProjectCriteria(new URLSearchParams("ptype=650c6732a3021fab1835c045&unit=Villa&bhk=2+BHK&bhk=3+BHK&amin=500&amax=2000&with=VR+Tour"));
+    expect(c).toMatchObject({ projectTypes: ["650c6732a3021fab1835c045"], unitTypes: ["Villa"], bhk: ["2 BHK", "3 BHK"], areaMin: 500, areaMax: 2000, media: ["VR Tour"] });
+    expect(parseProjectCriteria(serializeProjectCriteria(c))).toEqual(c);
+    expect(parseProjectCriteria(new URLSearchParams("amin=abc&amax=-5"))).toMatchObject({ areaMin: undefined, areaMax: undefined });
   });
 
   it("reads the project sort, falling back to Latest", () => {

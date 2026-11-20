@@ -246,6 +246,11 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* Photo sliders always slide, as rezide.in's carousels do (Windows turns this setting on
+     whenever its animations are off). Only the photo strip; everything else keeps it. */
+  [data-slide-track].transition-transform {
+    transition-duration: 600ms !important;
+  }
   .ken-burns {
     animation: none;
   }
@@ -453,6 +458,15 @@
 }
 
 /* ---------- Foldable / dual-screen overlays (see FoldWatcher) ---------- */
+@media print {
+  .print-listing-comparison body * { visibility: hidden; }
+  .print-listing-comparison .listing-comparison,
+  .print-listing-comparison .listing-comparison * { visibility: visible; }
+  .print-listing-comparison .listing-comparison { position: absolute; inset: 0; margin: 0; width: 100%; }
+  .print-listing-comparison .listing-comparison > div { overflow: visible; }
+  .print-listing-comparison .listing-comparison table { min-width: 0; font-size: 9px; }
+  .print-listing-comparison .listing-comparison tr { break-inside: avoid; }
+}
 /* Centred dialogs and toasts would sit exactly on a vertical hinge: move them onto the right screen. */
 [data-fold="x"] [data-slot="dialog-content"] {
   left: calc(var(--seg-1-left) + var(--seg-1-width) / 2);

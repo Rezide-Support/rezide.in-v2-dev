@@ -39,7 +39,7 @@ type Entry = {
  * isn't shared between them, so the listing search route's warm-up would fill a cache the
  * facets/groups routes never read. One Map per server process.
  */
-const GLOBAL_KEY = Symbol.for("rezide.listingIndex");
+const GLOBAL_KEY = Symbol.for("rezide.listingIndex.v2");
 const store = globalThis as typeof globalThis & { [GLOBAL_KEY]?: Map<string, Entry> };
 const cache = (store[GLOBAL_KEY] ??= new Map<string, Entry>());
 

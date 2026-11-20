@@ -118,7 +118,7 @@ describe("projects Location dialog: ten at a time", () => {
     await screen.findByText("Locality 24");
     expect(rows()).toHaveLength(24);
     expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
-    // The end is said plainly, so the list doesn't look stuck.
-    expect(screen.getByText("All 24 localities in Western Suburbs are shown.")).toBeInTheDocument();
+    // The full list ends without a note.
+    expect(screen.queryByText(/localities in Western Suburbs are shown/)).not.toBeInTheDocument();
   });
 });

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { SampleBadge } from "@/components/common/feedback";
 import { Segmented } from "@/components/common/segmented";
 import { Button } from "@/components/ui/button";
 import { formatArea, formatDate, formatPrice } from "@/lib/format";
 import { transactionQueries } from "@/lib/queries";
+import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import type { Transaction, TransactionKind } from "@/services/transactions";
 import { useSession } from "@/stores/session";
@@ -26,7 +27,7 @@ const rupees = (n: number | undefined) => (n === undefined ? DASH : formatRupees
 
 /** A transaction's cells, in column order. */
 function cells(t: Transaction, kind: TransactionKind): string[] {
-  const first = [t.date ? formatDate(t.date) : DASH, t.wing ?? DASH, t.flat ?? DASH, t.config ?? DASH, t.areaSqft ? formatArea(t.areaSqft) : DASH];
+  const first = [t.date ? formatDate(t.date) : DASH, t.wing ?? DASH, t.flat ?? DASH, t.config ?? DASH, t.areaSqft === undefined ? DASH : `${formatArea(t.areaSqft)}${t.areaLabel ? ` (${t.areaLabel})` : ""}`];
   return kind === "sale"
     ? [...first, price(t.value), rupees(t.ratePerSqft), price(t.readyReckoner)]
     : [...first, price(t.securityDeposit), price(t.monthlyRent, true), rupees(t.ratePerSqft)];
@@ -60,11 +61,21 @@ export function Transactions({
   const columns = kind === "sale" ? SALE_COLUMNS : RENT_COLUMNS;
   const live = status === "authenticated" && Boolean(projectId);
   const records = useQuery({ ...transactionQueries.recent(projectId ?? "", kind), enabled: live });
+  const availability = useQuery({
+    queryKey: ["transaction-availability", projectId, kind],
+    enabled: status === "anonymous" && !!projectId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await api.get<{ hasTransactions: boolean }>(`/api/projects/${encodeURIComponent(projectId ?? "")}/transaction-summary`, { baseURL: "", params: { kind } });
+      return data.hasTransactions;
+    },
+  });
   const rows = live ? records.data?.items : undefined;
   const noun = kind === "sale" ? "sale" : "rental";
+  if (!projectId || (status === "anonymous" && availability.data === false) || (live && records.isSuccess && rows?.length === 0)) return null;
 
   return (
-    <section aria-labelledby="txn-heading" className="flex flex-col gap-5">
+    <section id={live && rows && rows.length > 0 ? "recent" : undefined} aria-labelledby="txn-heading" className="flex scroll-mt-32 flex-col gap-5">
       <div className={cn("flex flex-wrap items-center gap-3", centered ? "justify-center text-center" : "justify-between")}>
         <SectionHeading id="txn-heading" className={cn(centered && "lg:text-[26px]")}>
           {kind === "sale" ? (toggle ? "Recent transactions" : "Sale transactions") : "Rental transactions"} in {title}
@@ -142,7 +153,6 @@ export function Transactions({
                 <Button asChild size="sm" className="rounded-md px-4 text-[13px]">
                   <Link href={`/login?next=${encodeURIComponent(path)}`}>Login to view</Link>
                 </Button>
-                <SampleBadge>Illustrative rows · no data</SampleBadge>
               </>
             ) : records.isError ? (
               <p className="max-w-sm rounded-lg bg-black px-4 py-2.5 text-[13px] font-medium text-rez-full-white">
@@ -157,6 +167,22 @@ export function Transactions({
           </div>
         )}
       </div>
+      {live && rows && rows.length > 0 && (
+        <div className="mt-4 grid w-full items-center gap-4 lg:flex lg:justify-between">
+          <p className="text-xs">
+            <b>Disclaimer </b>* - The Transaction Data has been sourced from IndexTap and is available for informational purposes only. No representation or warranty is expressly or impliedly given as to its accuracy. You are advised to visit the relevant IGR Maharashtra website to know more.
+          </p>
+          <div className="flex shrink-0 justify-center">
+            <Image
+              src="/images/indextap_color.png"
+              alt="IndexTap"
+              width={300}
+              height={300}
+              className="h-[50px] w-[100px] object-contain lg:h-[70px] lg:w-[200px]"
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

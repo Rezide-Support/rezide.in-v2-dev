@@ -50,22 +50,28 @@ function DialogOverlay({
 
 function DialogContent({
   className,
+  overlayClassName,
   children,
   onOpenAutoFocus,
   onCloseAutoFocus,
   showCloseButton = true,
+  instantClose = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  /** Close without the fade-out (e.g. after Apply, so the results show at once). */
+  instantClose?: boolean
+  overlayClassName?: string
 }) {
   const focusHandlers = useReturnFocus({ onOpenAutoFocus, onCloseAutoFocus })
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={cn(overlayClassName, instantClose && "data-closed:animate-none")} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-[20px] bg-popover p-6 text-sm text-popover-foreground shadow-rez-lg duration-150 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          instantClose && "data-closed:animate-none",
           className
         )}
         {...props}

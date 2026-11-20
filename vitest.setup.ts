@@ -18,4 +18,14 @@ class RO {
   disconnect() {}
 }
 globalThis.ResizeObserver ??= RO as unknown as typeof ResizeObserver;
+// The Embla carousel (the photo galleries) watches its slides with IntersectionObserver.
+class IO extends RO {
+  root = null;
+  rootMargin = "";
+  thresholds = [];
+  takeRecords() {
+    return [];
+  }
+}
+globalThis.IntersectionObserver ??= IO as unknown as typeof IntersectionObserver;
 Element.prototype.scrollIntoView ??= () => {};

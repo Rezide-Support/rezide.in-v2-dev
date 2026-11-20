@@ -21,14 +21,31 @@ const LANDMARK_CATEGORIES: [LandmarkCategory, string][] = [
 /** How many landmarks rezide.in asks for per category. */
 const LANDMARKS_PER_CATEGORY = 4;
 
-type BackendLandmark = { placeName?: string; latitude?: number; longitude?: number; distance?: number };
+type BackendLandmark = { placeName?: string; latitude?: number | string; longitude?: number | string; distance?: number | string; icon?: string };
+
+/** Google's place icon, over https only (the page is https, and the CSP allows Google's static hosts). */
+const placeIcon = (icon: unknown) => {
+  if (typeof icon !== "string") return undefined;
+  const url = icon.trim().replace(/^http:\/\//i, "https://");
+  return /^https:\/\/maps\.gstatic\.com\//i.test(url) ? url : undefined;
+};
+
+/** A finite number from a number or numeric string (the backend sends `distance` as a string), else null. */
+const toNumber = (value: unknown) => {
+  if (typeof value === "string" && value.trim() === "") return null;
+  const n = typeof value === "number" || typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(n) ? n : null;
+};
 
 /** Null when the row can't be listed or put on the map. */
 export function toLandmark(row: BackendLandmark): Landmark | null {
   const name = row.placeName?.trim();
-  const { latitude, longitude, distance } = row;
-  if (!name || typeof latitude !== "number" || typeof longitude !== "number" || typeof distance !== "number") return null;
-  return { name, distanceKm: distance, coords: [latitude, longitude] };
+  const latitude = toNumber(row.latitude);
+  const longitude = toNumber(row.longitude);
+  const distance = toNumber(row.distance);
+  if (!name || latitude === null || longitude === null || distance === null) return null;
+  const icon = placeIcon(row.icon);
+  return { name, distanceKm: distance, coords: [latitude, longitude], ...(icon ? { icon } : {}) };
 }
 
 /** One row per place: the list is keyed by name, and the backend can repeat a place. */
@@ -48,15 +65,25 @@ export async function fetchLandmarks(projectId: string): Promise<LandmarkGroup[]
 }
 
 type BackendLocality = {
-  general_information?: { locality_name?: string };
+  _id?: string;
+  general_information?: {
+    locality_name?: string;
+    city?: string;
+    description?: string;
+    what_to_expect?: string;
+    the_lifestyle?: string;
+    unexpected_appeal?: string;
+    the_market?: string;
+  };
   media?: { images?: { url?: string }[] };
 };
 
 /**
- * A locality's photo, found by name. Only an exact match counts: another
- * locality's photo would be wrong, and the caller has a fallback.
+ * A locality found by name: its id (for its page) and photo. The photo needs an exact name
+ * match (another locality's photo would be wrong, and the caller has a fallback); the id, as
+ * rezide.in's "Explore" link, falls back to the search's first result.
  */
-export async function fetchLocalityPhoto(name: string): Promise<string | null> {
+export async function findLocality(name: string): Promise<{ id?: string; photo: string | null } | null> {
   const wanted = name.trim().toLowerCase();
   if (!wanted) return null;
   const { data } = await api.post<{ data?: BackendLocality[] }>(
@@ -64,7 +91,49 @@ export async function fetchLocalityPhoto(name: string): Promise<string | null> {
     { sub_regions: null, regions: null, searchQuery: [name.trim()] },
     { params: { page: 1, pageSize: 5 } },
   );
-  const match = data.data?.find((l) => l.general_information?.locality_name?.trim().toLowerCase() === wanted);
+  const rows = data.data ?? [];
+  const match = rows.find((l) => l.general_information?.locality_name?.trim().toLowerCase() === wanted);
   const photo = match?.media?.images?.[0]?.url;
-  return photo ? cdnImage(photo) : null;
+  const id = (match ?? rows[0])?._id;
+  return { id: id && /^[a-f0-9]{24}$/i.test(id) ? id : undefined, photo: photo ? cdnImage(photo) : null };
+}
+
+/** A locality's photo, found by name (see findLocality). */
+export async function fetchLocalityPhoto(name: string): Promise<string | null> {
+  return (await findLocality(name))?.photo ?? null;
+}
+
+/** rezide.in's locality page: GET /Repository/Locality/{id}. */
+export type LocalityDetail = {
+  id: string;
+  name: string;
+  /** The city's name, for the "Properties for rent / sale" links and the map. */
+  city?: string;
+  description: string;
+  whatToExpect: string;
+  lifestyle: string;
+  unexpectedAppeal: string;
+  market: string;
+  images: string[];
+};
+
+/** One locality, or null when the backend doesn't have it. */
+export async function fetchLocality(id: string, cityName?: (cityId: string) => Promise<string | undefined>): Promise<LocalityDetail | null> {
+  if (!/^[a-f0-9]{24}$/i.test(id)) return null;
+  const { data } = await api.get<BackendLocality>(`/Repository/Locality/${encodeURIComponent(id)}`);
+  const g = data?.general_information;
+  const name = g?.locality_name?.trim();
+  if (!data?._id || !name) return null;
+  const text = (s?: string) => s?.trim() ?? "";
+  return {
+    id: data._id,
+    name,
+    city: g?.city && cityName ? await cityName(g.city).catch(() => undefined) : undefined,
+    description: text(g?.description),
+    whatToExpect: text(g?.what_to_expect),
+    lifestyle: text(g?.the_lifestyle),
+    unexpectedAppeal: text(g?.unexpected_appeal),
+    market: text(g?.the_market),
+    images: (data.media?.images ?? []).map((i) => i.url?.trim() ?? "").filter(Boolean).map(cdnImage),
+  };
 }

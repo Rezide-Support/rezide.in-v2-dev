@@ -2,49 +2,129 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
-import { useRef, useState, type KeyboardEvent } from "react";
+import { ArrowLeft, ArrowRight, type LucideIcon } from "lucide-react";
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import { SampleBadge } from "@/components/common/feedback";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { thumbnailSrc } from "@/content/media";
-import { cn } from "@/lib/utils";
 import { ScrollIndicator } from "@/components/common/scroll-indicator";
+import { cn } from "@/lib/utils";
+
+/*
+ * ASSUMED TYPES: these were not defined or imported in the original file.
+ * If you already have GalleryImage, PropertyPhoto and labelledSlides elsewhere,
+ * delete this block and import yours instead.
+ */
+export type GalleryImage = string;
+export type PropertyPhoto = { url: string; label?: string };
+
+function labelledSlides(source: PropertyPhoto[] | GalleryImage[]): PropertyPhoto[] {
+  return (source as (PropertyPhoto | GalleryImage)[]).map((item) =>
+    typeof item === "string" ? { url: item } : item,
+  ).filter(item => typeof item?.url === "string" && item.url.trim().length > 0);
+}
 
 export type GalleryTab = {
   value: string;
   label: string;
+  /** A shorter label for phone tabs, e.g. "Plans" for "Project Plans". */
+  phoneLabel?: string;
   icon: LucideIcon;
-  images: string[];
+  images: GalleryImage[];
+  slides?: PropertyPhoto[];
+  /** Each image's own caption, by index (e.g. rezide.in's "Artist Impression - Project Elevation"), when there are no `slides`. */
+  captions?: string[];
+  videoUrl?: string;
+  tourUrl?: string;
   /** Shown when the tab has no media. */
   empty: string;
+  content?: ReactNode;
 };
 
-/** v1 media gallery: segmented tabs, large photo with counter + arrows, thumbnail strip. */
-export function MediaGallery({ tabs, title, className, caption }: { tabs: GalleryTab[]; title: string; className?: string; caption?: string }) {
-  const first = tabs.find((t) => t.images.length)?.value ?? tabs[0].value;
+const FALLBACK_SRC = "/images/listing-placeholder.jpg";
+
+function slidesForTab(tab: GalleryTab): PropertyPhoto[] {
+  const labelled = labelledSlides(tab.slides ?? []);
+  if (labelled.length) return labelled;
+  // Plain images take their captions (by index) as their labels.
+  return labelledSlides(tab.images.map((url, i) => ({ url, label: tab.captions?.[i]?.trim() || undefined })));
+}
+
+const hasMedia = (t: GalleryTab) => !!t.content || slidesForTab(t).length > 0 || !!t.videoUrl?.trim() || !!t.tourUrl?.trim();
+
+/**
+ * v1 media gallery: segmented tabs, large photo with counter + arrows, thumbnail strip.
+ * On phones it is one bordered card: icon-over-label tabs with an underline, the photo (swipeable)
+ * and a separate thumbnail strip, with `overlay` (the heart) sitting on the photo.
+ */
+export function MediaGallery({
+  tabs,
+  title,
+  className,
+  caption,
+  overlay,
+  showEmptyTabs = false,
+}: {
+  tabs: GalleryTab[];
+  title: string;
+  className?: string;
+  caption?: string;
+  overlay?: ReactNode;
+  /** Keep tabs with no media, each showing its `empty` text (the project page shows all its tabs, as rezide.in). */
+  showEmptyTabs?: boolean;
+}) {
+  const availableTabs = showEmptyTabs ? tabs : tabs.filter(hasMedia);
+  if (!availableTabs.length) return null;
+
+  const first = availableTabs[0].value;
+
   return (
-    <Tabs defaultValue={first} className={cn("gap-2", className)}>
+    <Tabs
+      defaultValue={first}
+      className={cn("gap-2 max-lg:gap-0 max-lg:overflow-hidden max-lg:rounded-lg max-lg:border max-lg:border-rez-smoke", className)}
+    >
       <ScrollIndicator>
       <TabsList
         aria-label="Media"
-        className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-full border border-rez-smoke bg-white p-1 scrollbar-none group-data-horizontal/tabs:h-auto"
+        className="flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-rez-smoke bg-white p-0 scrollbar-none group-data-horizontal/tabs:h-auto lg:gap-0 lg:rounded-[6px] lg:border lg:p-0"
       >
-        {tabs.map((t) => (
+        {availableTabs.map((t) => (
           <TabsTrigger
             key={t.value}
             value={t.value}
-            className="h-9 min-w-[88px] flex-1 rounded-full border-0 px-3 text-sm font-medium text-rez-graphite after:hidden hover:text-black data-active:bg-black data-active:font-semibold data-active:text-rez-full-white data-active:shadow-none data-active:hover:text-rez-full-white sm:h-10"
+            className="h-14 flex-1 flex-col gap-1 rounded-none border-0 px-3 text-xs font-medium text-rez-graphite after:hidden hover:text-black data-active:font-semibold data-active:text-black data-active:shadow-[inset_0_-2px_0_#000] lg:h-9 lg:min-w-[88px] lg:flex-row lg:gap-1.5 lg:rounded-[6px] lg:text-sm lg:data-active:bg-black lg:data-active:text-rez-full-white lg:data-active:shadow-none lg:data-active:hover:text-rez-full-white"
           >
             <t.icon className="size-4" aria-hidden />
-            {t.label}
+            {t.phoneLabel ? (
+              <>
+                <span className="max-lg:hidden">{t.label}</span>
+                {/* aria-hidden: the tab keeps its full name for screen readers. */}
+                <span aria-hidden className="lg:hidden">
+                  {t.phoneLabel}
+                </span>
+              </>
+            ) : (
+              t.label
+            )}
           </TabsTrigger>
         ))}
       </TabsList>
       </ScrollIndicator>
-      {tabs.map((t) => (
+      {availableTabs.map((t) => (
         <TabsContent key={t.value} value={t.value} className="min-w-0">
-          {t.images.length ? (
-            <Viewer images={t.images} label={`${title}: ${t.label.toLowerCase()}`} caption={caption} />
+          {t.content ? t.content : t.videoUrl ? (
+            <video src={t.videoUrl} controls preload="metadata" aria-label={`${title}: video`} className="aspect-video w-full rounded-lg bg-black" />
+          ) : t.tourUrl ? (
+            <iframe src={t.tourUrl} title={`${title}: VR tour`} allowFullScreen loading="lazy" className="aspect-video w-full rounded-lg border-0" />
+          ) : hasMedia(t) ? (
+            <Viewer
+              images={t.images}
+              slides={slidesForTab(t)}
+              label={`${title}: ${t.label.toLowerCase()}`}
+              caption={caption}
+              overlay={overlay}
+            />
           ) : (
             <div className="flex aspect-[16/9] flex-col items-center justify-center gap-3 rounded-lg bg-rez-cloud px-6 text-center sm:aspect-[21/10]">
               <t.icon className="size-8 text-rez-graphite" aria-hidden />
@@ -57,133 +137,92 @@ export function MediaGallery({ tabs, title, className, caption }: { tabs: Galler
   );
 }
 
-export function Viewer({
-  images,
-  label,
-  cardHref,
-  priority,
-  reserveBadgeSpace = false,
-  caption,
-}: {
-  images: string[];
+type CarouselApi = NonNullable<ReturnType<typeof useEmblaCarousel>[1]>;
+
+function GalleryArrows({ api, previous, next }: { api?: CarouselApi; previous: boolean; next: boolean }) {
+  const arrow = "pointer-events-none absolute top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm opacity-0 transition-opacity group-hover/carousel:pointer-events-auto group-hover/carousel:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 disabled:invisible disabled:pointer-events-none [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100";
+  return <>
+    <button type="button" aria-label="Previous slide" disabled={!previous} onClick={() => api?.scrollPrev()} className={cn(arrow, "left-6")}><ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden /></button>
+    <button type="button" aria-label="Next slide" disabled={!next} onClick={() => api?.scrollNext()} className={cn(arrow, "right-6")}><ArrowRight className="size-4" strokeWidth={1.5} aria-hidden /></button>
+  </>;
+}
+
+function keyboardScroll(event: KeyboardEvent, api?: CarouselApi) {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.key === "ArrowLeft") api?.scrollPrev();
+  else api?.scrollNext();
+}
+
+export function Viewer({ images, slides: photoSlides, label, cardHref, priority, sample = false, caption, overlay }: {
+  images: GalleryImage[];
+  slides?: PropertyPhoto[];
   label: string;
   cardHref?: string;
   priority?: boolean;
-  /** Lifts the card's photo dots above a badge at the bottom (e.g. "Project photo"). */
-  reserveBadgeSpace?: boolean;
-  /** A line shown along the bottom of the gallery's photo. */
+  sample?: boolean;
   caption?: string;
+  overlay?: ReactNode;
+  reserveBadgeSpace?: boolean;
 }) {
-  const [index, setIndex] = useState(0);
-  const [failedSrc, setFailedSrc] = useState("");
-  const touchStart = useRef<number | null>(null);
-  const thumbs = useRef<(HTMLButtonElement | null)[]>([]);
-  const n = images.length;
-  const go = (i: number) => {
-    if (n < 2) return;
-    const next = (i + n) % n;
-    setIndex(next);
-    const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    thumbs.current[next]?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduce ? "auto" : "smooth" });
-  };
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      go(index - 1);
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      go(index + 1);
-    }
-  };
+  const slides = labelledSlides(photoSlides ?? images);
+  const n = slides.length;
+  const [mainRef, mainApi] = useEmblaCarousel({ loop: false });
+  const [thumbRef, thumbApi] = useEmblaCarousel({ loop: false, align: "start", containScroll: "keepSnaps" });
+  const [main, setMain] = useState({ selected: 0, previous: false, next: false });
+  const [thumbs, setThumbs] = useState({ previous: false, next: false });
+  const [failed, setFailed] = useState<Set<string>>(() => new Set());
 
-  if (cardHref) return <div role="region" aria-roledescription="carousel" aria-label={label} onKeyDown={onKeyDown} className="relative h-full w-full" onTouchStart={event => { touchStart.current = event.touches[0].clientX; }} onTouchEnd={event => { if (touchStart.current === null) return; const distance = event.changedTouches[0].clientX - touchStart.current; if (Math.abs(distance) > 40) go(index + (distance < 0 ? 1 : -1)); touchStart.current = null; }}>
-    <Link href={cardHref} className="absolute inset-0" aria-label={`View ${label}`}>
-      <Image src={images[index] && images[index] !== failedSrc ? images[index] : "/images/listing-placeholder.jpg"} onError={() => setFailedSrc(images[index] || "")} alt={`${label}, photo ${index + 1} of ${n || 1}`} fill sizes="(min-width: 1280px) 420px, (min-width: 768px) 50vw, 100vw" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : undefined} className="object-cover" />
-    </Link>
-    {n > 1 && <>
-      <button type="button" onClick={() => go(index - 1)} aria-label={`Previous photo of ${label}`} className="absolute top-1/2 left-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-sm"><ArrowLeft className="size-4" strokeWidth={1.5} /></button>
-      <button type="button" onClick={() => go(index + 1)} aria-label={`Next photo of ${label}`} className="absolute top-1/2 right-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-sm"><ArrowRight className="size-4" strokeWidth={1.5} /></button>
-      <div className={cn("absolute inset-x-0 flex justify-center gap-2", reserveBadgeSpace ? "bottom-10" : "bottom-4")} aria-label="Choose photo">{images.map((src, i) => <button key={`${src}:${i}`} type="button" onClick={() => go(i)} aria-label={`Show photo ${i + 1} of ${label}`} aria-current={i === index ? "true" : undefined} className="flex size-5 items-center justify-center"><span className={cn("size-2 rounded-full", i === index ? "bg-white" : "bg-white/50")} /></button>)}</div>
-    </>}
-  </div>;
+  useEffect(() => {
+    if (!mainApi) return;
+    const sync = () => {
+      const selected = mainApi.selectedScrollSnap();
+      setMain({ selected, previous: mainApi.canScrollPrev(), next: mainApi.canScrollNext() });
+      thumbApi?.scrollTo(selected);
+    };
+    sync();
+    mainApi.on("select", sync).on("reInit", sync);
+    return () => { mainApi.off("select", sync).off("reInit", sync); };
+  }, [mainApi, thumbApi]);
 
-  return (
-    <div role="region" aria-roledescription="carousel" aria-label={label} onKeyDown={onKeyDown} className="flex flex-col gap-2">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-rez-cloud sm:aspect-[21/10]">
-        {images.map((src, i) => (
-          <div
-            key={src}
-            role="group"
-            aria-roledescription="slide"
-            aria-label={`${i + 1} of ${n}`}
-            aria-hidden={i !== index}
-            className={cn("absolute inset-0 transition-opacity duration-300 motion-reduce:transition-none", i === index ? "opacity-100" : "pointer-events-none opacity-0")}
-          >
-            {/* Only the active slide and its neighbours load. */}
-            {Math.abs(i - index) <= 1 || (index === 0 && i === n - 1) ? (
-              <Image src={src} alt={`${label}, photo ${i + 1} of ${n} (sample image)`} fill sizes="(min-width: 1024px) 66vw, 100vw" quality={70} loading={i === 0 ? "eager" : undefined} fetchPriority={i === 0 ? "high" : undefined} className="object-cover" />
-            ) : null}
-          </div>
-        ))}
-        <SampleBadge className="absolute top-3 left-3">Sample photo</SampleBadge>
-        <span className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white tabular-nums" aria-live="polite">
-          {index + 1}/{n}
-        </span>
-        {caption && <span className="absolute inset-x-0 bottom-0 bg-black/50 px-3 py-2 text-base text-white">{caption}</span>}
-        {n > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={() => go(index - 1)}
-              aria-label="Previous photo"
-              className="absolute top-1/2 left-3 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black shadow-rez-sm transition-colors hover:bg-white focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60 focus-visible:outline-none"
-            >
-              <ChevronLeft className="size-5" aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => go(index + 1)}
-              aria-label="Next photo"
-              className="absolute top-1/2 right-3 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black shadow-rez-sm transition-colors hover:bg-white focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60 focus-visible:outline-none"
-            >
-              <ChevronRight className="size-5" aria-hidden />
-            </button>
-          </>
-        )}
+  useEffect(() => {
+    if (!thumbApi) return;
+    const sync = () => setThumbs({ previous: thumbApi.canScrollPrev(), next: thumbApi.canScrollNext() });
+    sync();
+    thumbApi.on("select", sync).on("reInit", sync);
+    return () => { thumbApi.off("select", sync).off("reInit", sync); };
+  }, [thumbApi]);
+
+  const selected = main.selected < n ? main.selected : 0;
+  const source = (url: string) => failed.has(url) ? FALLBACK_SRC : url;
+  const fail = (url: string) => { if (!failed.has(url)) setFailed(previous => new Set(previous).add(url)); };
+  return <div className={cardHref ? "h-full w-full" : "flex min-w-0 flex-col gap-2"}>
+    <div role="region" aria-roledescription="carousel" aria-label={label} tabIndex={0} onKeyDown={event => keyboardScroll(event, mainApi)} className={cn("group/carousel relative overflow-hidden bg-rez-cloud outline-none focus-visible:ring-2 focus-visible:ring-rez-mocaccino", cardHref ? "h-full w-full" : "rounded-none max-lg:h-[230px] lg:aspect-[21/10]")}>
+      <div ref={mainRef} className="h-full overflow-hidden">
+        <div className="flex h-full touch-pan-y">
+          {slides.map((slide, i) => <div key={slide.url + ":" + i} role="group" aria-roledescription="slide" aria-label={(i + 1) + " of " + n} aria-hidden={i !== selected} className="relative h-full min-w-0 flex-[0_0_100%]">
+            {cardHref ? <Link href={cardHref} tabIndex={i === selected ? 0 : -1} className="relative block h-full w-full" aria-label={"View " + label}><Image src={source(slide.url)} onError={() => fail(slide.url)} alt={label + ", photo " + (i + 1) + " of " + n} fill sizes="(min-width: 1280px) 420px, 50vw" priority={priority && i === 0} className="object-cover" /></Link> : <Image src={source(slide.url)} onError={() => fail(slide.url)} alt={label + ", photo " + (i + 1) + " of " + n} fill sizes="(min-width: 1024px) 66vw, 100vw" quality={70} loading={i === 0 ? "eager" : "lazy"} className="object-cover" />}
+            {!cardHref && (slide.label?.trim() || caption) && <p className="absolute inset-x-0 bottom-0 bg-[rgba(84,84,84,0.7)] p-2 text-sm text-white">{slide.label?.trim() ? slide.label : caption}</p>}
+          </div>)}
+        </div>
       </div>
-      {n > 0 && (
-        <ul className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" aria-label="Thumbnails">
-          {images.map((src, i) => (
-            <li key={src} className="w-[calc((100%-1.5rem)/4)] min-w-[88px] shrink-0">
-              <button
-                ref={(el) => {
-                  thumbs.current[i] = el;
-                }}
-                type="button"
-                onClick={() => go(i)}
-                aria-label={`Show photo ${i + 1} of ${n}`}
-                aria-current={i === index ? "true" : undefined}
-                className={cn(
-                  "group/thumb relative block aspect-[2/1] w-full overflow-hidden rounded-md bg-rez-cloud outline-none",
-                  i === index ? "" : "opacity-60 transition-opacity hover:opacity-100",
-                )}
-              >
-                <Image src={thumbnailSrc(src)} alt="" fill sizes="(min-width: 1024px) 240px, 25vw" quality={70} loading="eager" className="object-cover" />
-                {/* Border drawn inside the thumbnail, above the photo: an outer ring is clipped by the
-                    scrolling strip and doesn't follow the rounded corners. */}
-                <span
-                  aria-hidden
-                  className={cn(
-                    "pointer-events-none absolute inset-0 rounded-[inherit] border-2 transition-colors",
-                    i === index ? "border-black" : "border-transparent",
-                    "group-focus-visible/thumb:border-rez-mocaccino-ink",
-                  )}
-                />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {!cardHref && <span className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white tabular-nums" aria-live="polite">{n ? selected + 1 : 0}/{n}</span>}
+      {sample && <SampleBadge className="absolute top-3 left-3">Sample photo</SampleBadge>}
+      {overlay && <div className="absolute top-3 right-[3.75rem] z-10 lg:hidden">{overlay}</div>}
+      {n > 1 && <GalleryArrows api={mainApi} previous={main.previous} next={main.next} />}
     </div>
-  );
+    {!cardHref && n > 0 && <div role="region" aria-roledescription="carousel" aria-label={label + " thumbnails"} tabIndex={0} onKeyDown={event => keyboardScroll(event, thumbApi)} className="group/carousel relative min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-rez-mocaccino">
+      <div ref={thumbRef} className="overflow-hidden">
+        <div className="flex touch-pan-y gap-4">
+          {slides.map((slide, i) => <div key={slide.url + ":" + i} className="min-w-0 flex-[0_0_33.333%] md:flex-[0_0_50%] lg:flex-[0_0_25%]">
+            <button type="button" onClick={() => mainApi?.scrollTo(i)} aria-label={"Show photo " + (i + 1) + " of " + n} aria-current={i === selected ? "true" : undefined} className={cn("relative block h-[50px] w-full overflow-hidden bg-rez-cloud transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rez-mocaccino lg:h-[117px]", i === selected ? "opacity-100" : "opacity-50")}>
+              <Image src={failed.has(slide.url) ? FALLBACK_SRC : thumbnailSrc(slide.url)} onError={() => fail(slide.url)} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 33vw" quality={70} className="object-cover" />
+            </button>
+          </div>)}
+        </div>
+      </div>
+      {n > 1 && <GalleryArrows api={thumbApi} previous={thumbs.previous} next={thumbs.next} />}
+    </div>}
+  </div>;
 }

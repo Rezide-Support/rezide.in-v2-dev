@@ -1,64 +1,71 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Icon } from "@/components/brand/icon";
-import { CoverImage } from "@/components/common/cover-image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/common/feedback";
-import { LinkTabs } from "@/components/common/link-tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useCompareItems, useSavedStore, COMPARE_LIMIT, type CompareGroup } from "@/stores/saved";
+import { useCompareItems, COMPARE_LIMIT, compareGroupOf } from "@/stores/saved";
 import { useSession } from "@/stores/session";
-import type { Project, Property } from "@/types/models";
-import {
-  COMPARE_TABS,
-  PROJECT_ROWS,
-  RENT_ROWS,
-  SALE_ROWS,
-  cellText,
-  compareHref,
-  entryHref,
-  entryImage,
-  useCompareEntries,
-  type CompareEntry,
-} from "./compare-data";
+import { COMPARE_TABS, compareHref, pageCompareHref, pageCompareIds } from "./compare-data";
+import { ListingCompare } from "./listing-compare";
+import { ProjectCompare } from "./project-compare";
+import { usePageCompare } from "./page-compare";
+import { useEffect } from "react";
 
-const BROWSE: Record<CompareGroup, { href: string; label: string }> = {
-  sale: { href: "/properties?intent=buy", label: "Browse properties for sale" },
-  rent: { href: "/properties?intent=rent", label: "Browse rentals" },
-  projects: { href: "/projects/search", label: "Browse projects" },
-};
-
-/** /compare?type=sale|rental|projects — the compared items side by side, as on rezide.in. */
+/**
+ * /compare?type=sale|rental|projects (rezide.in also links Sale, Rental, Projects): the compared
+ * items side by side, as rezide.in's compare page. Each tab always shows its table; an empty
+ * column offers "Add Property" / "Add Project".
+ */
 export function CompareView() {
   const { session, status } = useSession();
-  const type = useSearchParams().get("type");
+  const params = useSearchParams();
+  const router = useRouter();
+  const type = params.get("type")?.toLowerCase();
   const tab = COMPARE_TABS.find((t) => t.type === type)?.group ?? "sale";
   const items = useCompareItems();
-  const entries = useCompareEntries(session ? items : []);
-  const shown = entries.filter((e) => e.group === tab);
+  // Opened from a project page's navbar menu: just that page's projects (?ids=), not the saved list.
+  const idsParam = params.get("ids");
+  const listedIds = tab === "projects" && idsParam !== null ? (pageCompareIds(idsParam) ?? []) : null;
+  const listed = listedIds ? { ids: listedIds, onChange: (ids: string[]) => router.replace(pageCompareHref(ids), { scroll: false }) } : undefined;
+  // The navbar shows this view's projects and count, as it does on the project page it came from.
+  const setPage = usePageCompare((s) => s.set);
+  const listedKey = listedIds?.join(",") ?? null;
+  useEffect(() => {
+    if (listedKey === null) return;
+    setPage(listedKey ? listedKey.split(",").map((id) => ({ kind: "project", id, title: "", savedAt: "" })) : []);
+    return () => setPage(null);
+  }, [listedKey, setPage]);
+  const count = (group: (typeof COMPARE_TABS)[number]["group"]) =>
+    !session ? 0 : group === "projects" && listedIds ? listedIds.length : items.filter((i) => compareGroupOf(i) === group).length;
 
   return (
-    <section className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 py-8 md:px-8 md:py-12">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[36px]">Compare</h1>
+    <section className="mx-auto mb-5 flex w-full max-w-[1280px] flex-col px-4 py-4 md:px-8">
+      <div className="my-4 flex items-center justify-center lg:justify-between">
+        <h1 className="hidden flex-1 text-[28px] leading-tight font-semibold tracking-[-0.02em] lg:flex">Compare</h1>
         {session && (
-          <LinkTabs
-            label="Compare list"
-            appearance="track"
-            items={COMPARE_TABS.map((t) => ({
-              href: compareHref(t.group),
-              label: `${t.label} (${entries.filter((e) => e.group === t.group).length})`,
-              active: t.group === tab,
-            }))}
-          />
+          <nav aria-label="Compare list" className="grid grid-cols-3 gap-2 rounded-full border border-gray-200 bg-white px-1 py-1 shadow-sm">
+            {COMPARE_TABS.map((t) => (
+              <Link
+                key={t.group}
+                href={compareHref(t.group)}
+                aria-current={t.group === tab ? "page" : undefined}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-center text-sm whitespace-nowrap text-gray-500 transition-shadow hover:bg-[#eee] hover:text-black hover:shadow-md",
+                  t.group === tab && "bg-black text-white shadow-md hover:bg-black hover:text-white",
+                )}
+              >
+                {t.label} ({count(t.group)})
+              </Link>
+            ))}
+          </nav>
         )}
       </div>
 
       {status === "loading" ? (
-        <Skeleton className="h-80 w-full rounded-[20px]" />
+        <Skeleton className="h-80 w-full rounded-md" />
       ) : !session ? (
         <EmptyState
           icon="user"
@@ -71,101 +78,11 @@ export function CompareView() {
         >
           Compare up to {COMPARE_LIMIT} properties or projects side by side once you sign in.
         </EmptyState>
-      ) : shown.length === 0 ? (
-        <EmptyState
-          title={COMPARE_TABS.find((t) => t.group === tab)!.empty}
-          action={
-            <Button asChild variant="secondary">
-              <Link href={BROWSE[tab].href}>{BROWSE[tab].label}</Link>
-            </Button>
-          }
-        >
-          Use Compare on a property or project page to add it here (up to {COMPARE_LIMIT}).
-        </EmptyState>
+      ) : tab === "projects" ? (
+        <ProjectCompare listed={listed} />
       ) : (
-        <CompareTable group={tab} entries={shown} />
+        <ListingCompare key={tab} purpose={tab} />
       )}
     </section>
-  );
-}
-
-function CompareTable({ group, entries }: { group: CompareGroup; entries: CompareEntry[] }) {
-  const remove = useSavedStore((s) => s.remove);
-  const rows = group === "projects" ? PROJECT_ROWS : group === "rent" ? RENT_ROWS : SALE_ROWS;
-  const valueOf = (row: (typeof rows)[number], e: CompareEntry) => {
-    const x = group === "projects" ? e.project : e.property;
-    if (e.loading) return <Skeleton className="h-4 w-24" />;
-    if (!x) return "—";
-    return group === "projects"
-      ? cellText(row as (typeof PROJECT_ROWS)[number], x as Project)
-      : cellText(row as (typeof SALE_ROWS)[number], x as Property);
-  };
-
-  return (
-    <div className="overflow-x-auto rounded-[20px] border border-rez-smoke">
-      <table style={{ minWidth: 220 + entries.length * 220 }} className="w-full table-fixed border-collapse text-left text-sm">
-        <colgroup>
-          <col className="w-[112px] sm:w-[180px] md:w-[220px]" />
-          {entries.map((e) => (
-            <col key={e.item.id} />
-          ))}
-        </colgroup>
-        <thead>
-          <tr className="align-top">
-            <th scope="col" className="sticky left-0 z-10 bg-white p-4 text-[13px] font-semibold text-rez-graphite">
-              {entries.length} of {COMPARE_LIMIT} selected
-            </th>
-            {entries.map((e) => {
-              const image = entryImage(e);
-              return (
-                <th key={e.item.id} scope="col" className="border-l border-rez-smoke p-4 font-normal">
-                  <div className="flex flex-col gap-3">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-rez-cloud">
-                      {image && <CoverImage src={image} alt={e.item.title} sizes="(min-width: 1024px) 340px, 50vw" />}
-                      <button
-                        type="button"
-                        onClick={() => remove("compare", e.item)}
-                        aria-label={`Remove ${e.item.title} from compare`}
-                        className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-white/95 shadow-rez-sm hover:bg-white"
-                      >
-                        <Icon name="x" size={16} />
-                      </button>
-                    </div>
-                    <Link href={entryHref(e)} className="line-clamp-2 text-[15px] leading-snug font-semibold hover:underline">
-                      {e.item.title}
-                    </Link>
-                    {e.failed && <span className="text-xs text-rez-burgundy">These details couldn&apos;t be loaded.</span>}
-                  </div>
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={row.label} className={cn(i % 2 === 0 && "bg-rez-cloud/60")}>
-              <th scope="row" className={cn("sticky left-0 z-10 p-4 text-[13px] font-semibold text-rez-graphite", i % 2 === 0 ? "bg-[#f4f5fa]" : "bg-white")}>
-                {row.label}
-              </th>
-              {entries.map((e) => (
-                <td key={e.item.id} className="border-l border-rez-smoke p-4 font-medium">
-                  {valueOf(row, e)}
-                </td>
-              ))}
-            </tr>
-          ))}
-          <tr>
-            <th scope="row" className="sticky left-0 z-10 bg-white p-4" />
-            {entries.map((e) => (
-              <td key={e.item.id} className="border-l border-rez-smoke p-4">
-                <Button asChild variant="secondary" className="w-full">
-                  <Link href={entryHref(e)}>View details</Link>
-                </Button>
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
-    </div>
   );
 }

@@ -1,8 +1,9 @@
+import { ProjectWideCard } from "./project-wide-card";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
 import { PROJECTS } from "@/mocks/fixtures/projects";
 import type { Project } from "@/types/models";
@@ -119,4 +120,55 @@ describe("Configuration plans", () => {
     wrap(<ConfigurationPlans project={project({ configurationPlans: [] })} />);
     expect(screen.getByText("No Unit Plans Available")).toBeInTheDocument();
   });
+});
+
+it("expands the Viewed project configuration row into the reference table and collapses it again", async () => {
+ const user=userEvent.setup();
+ wrap(<ProjectWideCard project={project({configurationPlans:[{bhk:"1 BHK",areaMin:373,areaMax:458},{bhk:"2 BHK",areaMin:434,areaMax:720},{bhk:"3 BHK",areaMin:823,areaMax:994}]})}/>);
+ expect(screen.queryByRole("table")).not.toBeInTheDocument();
+ await user.click(screen.getByRole("button",{name:"Show configuration details"}));
+ const table=screen.getByRole("table");
+ expect(within(table).getAllByRole("columnheader").map(cell=>cell.textContent)).toEqual(["Config.","Carpet Area","Sale Range","Rent Range"]);
+ expect(within(table).getAllByRole("row").slice(1).map(row=>within(row).getAllByRole("cell").map(cell=>cell.textContent))).toEqual([["1 BHK","373 - 458","-","-"],["2 BHK","434 - 720","-","-"],["3 BHK","823 - 994","-","-"]]);
+ await user.click(screen.getByRole("button",{name:"Hide configuration details"}));
+ expect(screen.queryByRole("table")).not.toBeInTheDocument();
+});
+
+vi.mock("next/navigation",()=>({useRouter:()=>({push:vi.fn()}),usePathname:()=>"/dashboard/my-searches/viewed",useSearchParams:()=>new URLSearchParams()}));
+
+it("Details expands inline while the project title and photo open separately in a new tab", async () => {
+ const user=userEvent.setup();
+ const p=project({configurationPlans:[{bhk:"1 BHK",areaMin:373,areaMax:458}]});
+ wrap(<ProjectWideCard project={p}/>);
+ for(const link of [screen.getByRole("link",{name:p.name}),screen.getByRole("link",{name:`View ${p.name}`})]) {
+  expect(link).toHaveAttribute("href",`/project/${p.id}`);
+  expect(link).toHaveAttribute("target","_blank");
+ }
+ await user.click(screen.getByRole("button",{name:/^Details/}));
+ expect(screen.getByRole("table")).toBeInTheDocument();
+ await user.click(screen.getByRole("button",{name:/^Hide Details/}));
+ expect(screen.queryByRole("table")).not.toBeInTheDocument();
+});
+it("hides Details and the configuration expander when price ranges are absent", () => {
+ wrap(<ProjectWideCard project={project({configurationPlans:[]})}/>);
+ expect(screen.queryByRole("button",{name:/Details/})).not.toBeInTheDocument();
+ expect(screen.queryByRole("button",{name:"Show configuration details"})).not.toBeInTheDocument();
+ expect(screen.queryByRole("link",{name:/^Details/})).not.toBeInTheDocument();
+});
+
+it("uses the backend status and validates the possession badge independently of activity dates", () => {
+ const p=project({backendStatus:"Ready for Occupation",possessionDate:"2026-11-01T00:00:00Z",possessionLabel:"Possession Jan 2040"});
+ const view=wrap(<ProjectWideCard project={p}/>);
+ expect(screen.getByText("Ready for Occupation")).toBeInTheDocument();
+ expect(screen.getByText("Nov 2026")).toBeInTheDocument();
+ expect(screen.queryByText("Jan 2040")).not.toBeInTheDocument();
+ view.unmount();
+ wrap(<ProjectWideCard project={{...p,possessionDate:"invalid"}}/>);
+ expect(screen.queryByText("Nov 2026")).not.toBeInTheDocument();
+});
+
+it("keeps the dashboard status green and hides a missing date badge", () => {
+ wrap(<ProjectWideCard project={project({backendStatus:"completed",possessionDate:undefined})}/>);
+ expect(screen.getByText("completed")).toHaveClass("from-[#2ECC71]","to-[#17A855]");
+ expect(screen.queryByText("-",{selector:"span"})).not.toBeInTheDocument();
 });

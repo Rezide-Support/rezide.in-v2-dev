@@ -1,5 +1,6 @@
 "use client";
 
+import { Funnel } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState, type FormEvent } from "react";
 import { Icon } from "@/components/brand/icon";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { ProjectSearchCriteria, ProjectSortKey, ProjectStatus } from "@/types/models";
 import { LocationDialog } from "./location-dialog";
 import { ProjectCard } from "./project-card";
+import { ProjectFilterDrawer, RESET_DRAWER, countDrawerFilters, drawerChips } from "./project-filter-drawer";
 
 type FilterKey = "status" | "budget" | "localities" | "views" | "years";
 
@@ -62,9 +64,12 @@ const withValues = (key: FilterKey, values: string[]): Partial<ProjectSearchCrit
       : { [key]: values };
 
 export function ProjectSearch() {
-  const { criteria, update, isNavigating } = useUrlCriteria(parseProjectCriteria, serializeProjectCriteria);
+  const { criteria, update } = useUrlCriteria(parseProjectCriteria, serializeProjectCriteria);
   const query = useQuery(projectQueries.search(criteria));
   const [openKey, setOpenKey] = useState<FilterKey | null>(null);
+  // The filter the dialog shows. It outlives openKey, so the dialog keeps its options and count while it closes.
+  const [dialogKey, setDialogKey] = useState<FilterKey>("status");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>([]);
   const [q, setQ] = useState(criteria.q);
   const [lastQ, setLastQ] = useState(criteria.q);
@@ -76,16 +81,23 @@ export function ProjectSearch() {
 
   // Live count for the unapplied selection in the open dialog.
   const preview = useQuery({
-    ...projectQueries.search({ ...criteria, ...(openKey ? withValues(openKey, draft) : {}), page: 1 }),
+    ...projectQueries.search({ ...criteria, ...withValues(dialogKey, draft), page: 1 }),
     enabled: openKey !== null,
   });
 
   const applyLabel = () => (preview.isFetching || !preview.data ? "Apply" : `Apply (${pluralize(preview.data.total, "project")})`);
+  // The Apply button spins while the count for the ticked options loads.
+  const countLoading = openKey !== null && preview.isFetching;
 
   const keys: FilterKey[] = ["status", "budget", "localities", "views", "years"];
+  // The filter buttons. Possession has none; a possession year from an old link still shows as a removable chip.
+  const buttonKeys = keys.filter((k) => k !== "years");
   const data = query.data;
   const chips = keys.flatMap((k) => valuesOf(criteria, k).map((v) => ({ k, v })));
-  const clearAll = () => update({ q: "", status: [], budget: [], localities: [], views: [], years: [] });
+  // The Filters drawer's choices (project type, unit type, BHK, area, video / VR).
+  const moreChips = drawerChips(criteria);
+  const drawerCount = countDrawerFilters(criteria);
+  const clearAll = () => update({ q: "", status: [], budget: [], localities: [], views: [], years: [], ...RESET_DRAWER });
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -95,12 +107,17 @@ export function ProjectSearch() {
   return (
     <div className="flex-1 px-4 pt-5 pb-24 md:px-8">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-[18px]">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] md:text-[32px]">
-            <span className="font-extrabold">{criteria.city}</span> Projects.
+        <div className="flex flex-wrap items-center justify-between gap-4 max-sm:gap-3">
+          <h1 className="text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] max-sm:text-xl md:text-[32px]">
+            {/* Phones: rezide.in's "Projects (6063)". */}
+            <span className="sm:hidden">Projects{data ? ` (${data.total})` : ""}</span>
+            <span className="max-sm:hidden">
+              <span className="font-extrabold">{criteria.city}</span> Projects.
+            </span>
           </h1>
-          <div className="flex flex-wrap items-center gap-2.5">
-            {keys.map((k) => {
+          {/* Phones: the same pills, smaller, in one row that scrolls sideways. */}
+          <div className="flex items-center gap-2.5 max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:gap-2 max-sm:overflow-x-auto max-sm:px-4 max-sm:py-0.5 max-sm:scrollbar-none sm:flex-wrap">
+            {buttonKeys.map((k) => {
               const vals = valuesOf(criteria, k);
               return (
                 <button
@@ -109,10 +126,11 @@ export function ProjectSearch() {
                   aria-haspopup="dialog"
                   onClick={() => {
                     setDraft(vals);
+                    setDialogKey(k);
                     setOpenKey(k);
                   }}
                   className={cn(
-                    "flex h-12 items-center gap-2.5 rounded-full border pr-4 pl-[22px] text-[15px] hover:border-black",
+                    "flex h-12 shrink-0 items-center gap-2.5 rounded-full border pr-4 pl-[22px] text-[15px] whitespace-nowrap hover:border-black max-sm:h-10 max-sm:gap-1.5 max-sm:pr-3 max-sm:pl-4 max-sm:text-sm",
                     vals.length ? "border-black bg-rez-cloud font-bold" : "border-rez-smoke bg-white font-medium",
                   )}
                 >
@@ -121,38 +139,77 @@ export function ProjectSearch() {
                 </button>
               );
             })}
-            {chips.length > 0 && (
-              <Button variant="link" className="px-1.5 text-[13px]" onClick={() => update({ status: [], budget: [], localities: [], views: [], years: [] })}>
-                Clear
-              </Button>
-            )}
           </div>
         </div>
 
+        <div className="flex items-center gap-2 sm:gap-4">
         <form
           role="search"
           onSubmit={submit}
-          className="flex items-center rounded-full border border-rez-smoke bg-white py-1.5 pr-1.5 pl-3.5 shadow-rez-sm focus-within:border-rez-mocaccino"
+          className="flex min-w-0 flex-1 items-center rounded-md border border-rez-smoke bg-white focus-within:border-rez-mocaccino sm:rounded-full sm:py-1.5 sm:pr-1.5 sm:pl-3.5 sm:shadow-rez-sm"
         >
           <label htmlFor={inputId} className="sr-only">
             Search project, developer or locality
           </label>
-          <Icon name="search" size={18} className="ml-1 text-rez-graphite" />
+          <Icon name="search" size={18} className="ml-3 shrink-0 text-rez-graphite sm:ml-1" />
           <input
             id={inputId}
+            type="search"
+            enterKeyHint="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search project, developer or locality"
-            className="h-12 min-w-0 flex-1 bg-transparent px-3 text-[15px] outline-none placeholder:text-[#767a88]"
+            className="h-10 min-w-0 flex-1 bg-transparent px-2.5 text-sm outline-none placeholder:text-[#767a88] sm:h-12 sm:px-3 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
           />
-          <Button type="submit" size="lg" className="px-4 sm:px-6">
+          {/* Phones search from the keyboard's Search key, as on rezide.in. */}
+          <Button type="submit" size="lg" className="px-6 max-sm:hidden">
             <Icon name="search" size={20} />
-            <span className="hidden sm:inline">Search</span>
+            Search
           </Button>
         </form>
+        {/* As on the property search: the sliders button after the search bar opens the other filters (square on phones, as on rezide.in). */}
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setDrawerOpen(true)}
+          aria-label={drawerCount ? `Filters, ${drawerCount} applied` : "Filters"}
+          className={cn(
+            "relative flex size-10 shrink-0 items-center justify-center rounded-md border bg-white hover:border-black sm:size-[62px] sm:rounded-full sm:shadow-rez-sm",
+            drawerCount ? "border-black" : "border-rez-smoke",
+          )}
+        >
+          <Icon name="sliders" size={22} className="max-sm:size-[18px]" />
+          {drawerCount > 0 && (
+            <span className="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rez-mocaccino px-1 text-[11px] font-bold text-black sm:-top-0.5 sm:-right-0.5 sm:h-[22px] sm:min-w-[22px] sm:px-1.5 sm:text-xs">
+              {drawerCount}
+            </span>
+          )}
+        </button>
+        {/* Phones: rezide.in's funnel button picks the sort order (the sort select below is hidden there). */}
+        <label className="relative flex size-10 shrink-0 items-center justify-center rounded-md border border-rez-smoke bg-white focus-within:border-black sm:hidden">
+          <Funnel className="size-[18px]" aria-hidden />
+          <span className="sr-only">Sort projects</span>
+          <select
+            value={criteria.sort}
+            onChange={(e) => update({ sort: e.target.value as ProjectSortKey })}
+            className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+          >
+            {PROJECT_SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        </div>
 
-        {(chips.length > 0 || criteria.q) && (
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Phones: rezide.in's "Active Search:" line, its chips in one scrolling row. */}
+        <div className="flex items-center gap-2 sm:hidden">
+          <span className="shrink-0 text-xs font-medium">Active Search:</span>
+          {!(chips.length > 0 || moreChips.length > 0 || criteria.q) && <span className="text-xs text-rez-graphite">None</span>}
+        </div>
+        {(chips.length > 0 || moreChips.length > 0 || criteria.q) && (
+          <div className="flex items-center gap-2 max-sm:-mt-2 max-sm:overflow-x-auto max-sm:pb-1 max-sm:scrollbar-none sm:flex-wrap [&>*]:shrink-0">
             {criteria.q && (
               <RemovableChip label={`“${criteria.q}”`} onRemove={() => update({ q: "" })}>
                 “{criteria.q}”
@@ -167,13 +224,19 @@ export function ProjectSearch() {
                 {labelOf(k, v)}
               </RemovableChip>
             ))}
+            {moreChips.map((chip) => (
+              <RemovableChip key={chip.id} label={chip.label} onRemove={() => update(chip.remove)}>
+                {chip.label}
+              </RemovableChip>
+            ))}
             <Button variant="link" className="text-[13px]" onClick={clearAll}>
               Clear all
             </Button>
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-rez-smoke pt-2">
+        {/* rezide.in leaves the count, per-page and sort bar off phones (sort is the funnel above). */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-rez-smoke pt-2 max-sm:hidden">
           <p className="text-[15px] text-rez-graphite" aria-live="polite">
             {data ? (
               data.total ? (
@@ -215,7 +278,7 @@ export function ProjectSearch() {
           </div>
         </div>
 
-        <div aria-busy={query.isFetching || isNavigating} className={cn("transition-opacity", (query.isFetching || isNavigating) && data && "opacity-60")}>
+        <div aria-busy={query.isFetching} className={cn("transition-opacity", query.isFetching && data && "opacity-60")}>
           {query.isError && !data ? (
             <ErrorState message="The projects service didn't respond." onRetry={() => query.refetch()} />
           ) : !data ? (
@@ -228,7 +291,7 @@ export function ProjectSearch() {
             <EmptyState
               title="No projects match these filters."
               action={
-                chips.length || criteria.q ? (
+                chips.length || moreChips.length || criteria.q ? (
                   <Button variant="secondary" onClick={clearAll}>
                     Clear search and filters
                   </Button>
@@ -255,12 +318,21 @@ export function ProjectSearch() {
       <MultiSelectDialog
         open={openKey !== null && openKey !== "localities"}
         onOpenChange={(o) => !o && setOpenKey(null)}
-        title={openKey ? LABELS[openKey] : ""}
-        groups={openKey && openKey !== "localities" ? groupsFor(openKey) : []}
-        selected={openKey ? valuesOf(criteria, openKey) : []}
+        title={LABELS[dialogKey]}
+        groups={dialogKey === "localities" ? [] : groupsFor(dialogKey)}
+        selected={valuesOf(criteria, dialogKey)}
         onDraftChange={setDraft}
-        onApply={(values) => openKey && update(withValues(openKey, values))}
+        onApply={(values) => update(withValues(dialogKey, values))}
         applyLabel={applyLabel}
+        countLoading={countLoading}
+      />
+      <ProjectFilterDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        criteria={criteria}
+        update={update}
+        total={data?.total}
+        pending={query.isFetching}
       />
       {/* Location works as on rezide.in: region tabs, localities loaded from the backend as the list scrolls. */}
       <LocationDialog
@@ -271,6 +343,7 @@ export function ProjectSearch() {
         onDraftChange={setDraft}
         onApply={(values) => update({ localities: values })}
         applyLabel={applyLabel}
+        countLoading={countLoading}
       />
     </div>
   );

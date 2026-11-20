@@ -2,16 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { GraduationCap, Hospital, Navigation, Plane, ShoppingBag, TrainFront, TramFront, type LucideIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { GraduationCap, Hospital, Plane, ShoppingBag, TrainFront, TramFront, type LucideIcon } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { SampleBadge } from "@/components/common/feedback";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResultsMap } from "@/features/search/results-map";
-import type { MapPoint } from "@/features/search/leaflet-map";
+import { directionsEmbedUrl } from "@/lib/google-maps";
 import { cn } from "@/lib/utils";
-import type { LandmarkCategory, LandmarkGroup, LatLng } from "@/types/models";
-import { directionsHref, formatKm } from "./format";
+import type { Landmark, LandmarkCategory, LandmarkGroup, LatLng } from "@/types/models";
+import { LandmarksMap } from "./landmarks-map";
 
+/** rezide.in's tabs, in its order. All six always show; Schools is open first. */
+const CATEGORIES: LandmarkCategory[] = ["Schools", "Railway Stations", "Metro Stations", "Airports", "Malls", "Hospitals"];
+
+/** Stand-ins for Google's place icon when a landmark has none. */
 const ICONS: Record<LandmarkCategory, LucideIcon> = {
   Schools: GraduationCap,
   "Railway Stations": TrainFront,
@@ -21,19 +24,21 @@ const ICONS: Record<LandmarkCategory, LucideIcon> = {
   Hospitals: Hospital,
 };
 
+const NO_LANDMARKS: Landmark[] = [];
+
 /**
- * v1 "Connectivity & Landmarks": locality photo, map, landmark category tabs
- * and a distance list. Landmarks are real on listings (`live`, with `status`
- * while they load) and sample data on projects. Directions open OpenStreetMap
- * in a new tab.
+ * v1 "Connectivity & Landmarks", as rezide.in has it: the locality photo beside a Google map
+ * with a red pin per landmark, six landmark tabs, and a distance list. Tapping a landmark shows
+ * Google's driving route from the project in place of the map; tapping it again goes back.
+ * Landmarks are real on listings (`live`, with `status` while they load) and sample data otherwise.
  */
 export function Connectivity({
-  name,
   locality,
   coords,
   groups,
   photo,
   exploreHref,
+  exploreNewTab = false,
   live = false,
   status = "ready",
   onRetry,
@@ -45,106 +50,132 @@ export function Connectivity({
   groups?: LandmarkGroup[];
   photo: string;
   exploreHref: string;
+  /** Opens the locality's page in a new tab, as rezide.in's "Explore" photo. */
+  exploreNewTab?: boolean;
   live?: boolean;
   status?: "loading" | "error" | "ready";
   onRetry?: () => void;
   className?: string;
 }) {
-  const available = useMemo(() => (groups ?? []).filter((g) => g.items.length), [groups]);
-  const [chosen, setChosen] = useState<string | null>(null);
-  // Landmarks can arrive after the first render, so the first tab is worked out, not stored.
-  const active = chosen ?? available[0]?.category ?? "";
-  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [active, setActive] = useState<LandmarkCategory>("Schools");
+  // By name: the landmark objects can be rebuilt between renders (a list's names are unique).
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+  const mapBox = useRef<HTMLDivElement>(null);
+  const itemsOf = (category: LandmarkCategory) => groups?.find((g) => g.category === category)?.items ?? NO_LANDMARKS;
+  // Memoised: the map re-pins and refits whenever this list changes.
+  const pins = useMemo(() => groups?.find((g) => g.category === active)?.items ?? NO_LANDMARKS, [groups, active]);
+  const selected = pins.find((l) => l.name === selectedName) ?? null;
+  const setSelected = (l: Landmark | null) => setSelectedName(l?.name ?? null);
 
-  // Memoised: the map refits whenever its points change, and hovering a landmark re-renders.
-  const points = useMemo<MapPoint[]>(() => {
-    const items = available.find((g) => g.category === active)?.items ?? [];
-    return [
-      { id: "here", position: coords, label: name.length > 22 ? `${name.slice(0, 21)}…` : name, title: name },
-      ...items.map((l, i) => ({ id: `lm-${i}`, position: l.coords, label: String(i + 1), title: `${i + 1}. ${l.name}` })),
-    ];
-  }, [coords, name, available, active]);
+  const choose = (l: Landmark) => {
+    if (selected?.name === l.name) return setSelected(null);
+    setSelected(l);
+    // On phones the map sits above the list: bring the route into view, as rezide.in does.
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      window.setTimeout(() => mapBox.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    }
+  };
 
   return (
-    <div className={cn("flex flex-col gap-5 rounded-xl border border-rez-smoke bg-white p-4 sm:p-8", className)}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8">
-        <Link href={exploreHref} className="group relative block aspect-[2/1] overflow-hidden rounded-xl bg-rez-cloud outline-none focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60">
-          <Image src={photo} alt="" fill sizes="(min-width: 768px) 45vw, 100vw" quality={70} className="object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
-          <span className="absolute inset-0 bg-black/45" aria-hidden />
-          <span className="absolute inset-x-0 bottom-6 text-center text-lg font-semibold text-white">
-            Explore <span className="text-rez-mocaccino">{locality}</span>
+    <div className={cn("flex flex-col gap-5 rounded-xl border border-[#BDBDBD] bg-white p-3 sm:p-8", className)}>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
+        <Link
+          href={exploreHref}
+          {...(exploreNewTab ? { target: "_blank", rel: "noopener" } : {})}
+          className="group relative block h-[130px] overflow-hidden rounded-xl bg-rez-cloud outline-none focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60 min-[431px]:h-[300px]"
+        >
+          <Image src={photo} alt="" fill sizes="(min-width: 768px) 45vw, 100vw" quality={70} className="object-cover" />
+          <span className="absolute inset-0 bg-black/40" aria-hidden />
+          <span className="absolute inset-x-0 bottom-4 text-center text-lg font-semibold whitespace-nowrap text-white">
+            Explore <span className="text-[#3b82f6]">{locality}</span>
           </span>
         </Link>
-        <div className="relative isolate z-0 aspect-[2/1] overflow-hidden rounded-xl">
-          <ResultsMap points={points} highlightedId={highlighted} onSelect={(p) => setHighlighted(p.id)} className="h-full w-full" />
+        <div ref={mapBox} className="relative isolate z-0 h-[300px] scroll-mt-24 overflow-hidden rounded-xl">
+          {selected && (
+            <iframe
+              key={selected.name}
+              title={`Driving directions to ${selected.name}`}
+              src={directionsEmbedUrl(coords, selected.coords)}
+              className="absolute inset-0 h-full w-full rounded-xl border-0"
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          )}
+          {/* Kept mounted under the route, so going back doesn't reload the map. */}
+          <LandmarksMap center={coords} landmarks={pins} className={cn("h-full w-full rounded-xl", selected && "invisible")} />
         </div>
       </div>
 
-      {status === "loading" ? (
-        <p role="status" className="text-center text-[15px] text-rez-graphite">Loading nearby landmarks…</p>
-      ) : status === "error" ? (
-        <p role="alert" className="text-center text-[15px] text-rez-graphite">
-          Nearby landmarks are unavailable right now.{" "}
-          <button type="button" className="font-semibold underline" onClick={onRetry}>
-            Retry
-          </button>
+      <Tabs
+        value={active}
+        onValueChange={(v) => {
+          setActive(v as LandmarkCategory);
+          setSelected(null);
+        }}
+        className="gap-3"
+      >
+        <TabsList aria-label="Landmark type" className="flex h-auto w-full justify-start gap-2 overflow-x-auto bg-transparent p-px scrollbar-none group-data-horizontal/tabs:h-auto">
+          {CATEGORIES.map((c) => (
+            <TabsTrigger
+              key={c}
+              value={c}
+              className="h-9 min-w-[120px] flex-1 rounded-lg border border-gray-500 bg-white px-4 py-1.5 text-sm font-medium whitespace-nowrap text-gray-800 after:hidden data-active:border-black data-active:bg-black data-active:text-white data-active:shadow-none data-active:hover:text-white"
+            >
+              {c}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <p className="flex flex-wrap items-center justify-center gap-2 text-center text-sm font-medium text-gray-500">
+          Tap a landmark to see live directions {live ? null : <SampleBadge>Sample landmarks</SampleBadge>}
         </p>
-      ) : available.length === 0 ? (
-        <p className="text-center text-[15px] text-rez-graphite">Nearby landmarks haven&apos;t been added for this location yet.</p>
-      ) : (
-        <Tabs value={active} onValueChange={(v) => {
-            setChosen(v);
-            setHighlighted(null);
-          }} className="gap-3">
-          <TabsList aria-label="Landmark type" className="flex h-auto w-full justify-start gap-2 overflow-x-auto bg-transparent p-px scrollbar-none group-data-horizontal/tabs:h-auto">
-            {available.map((g) => (
-              <TabsTrigger
-                key={g.category}
-                value={g.category}
-                className="h-9 min-w-[120px] flex-1 rounded-md border border-rez-arsenic bg-white px-3 text-sm font-medium text-black after:hidden data-active:border-black data-active:bg-black data-active:text-rez-full-white data-active:shadow-none data-active:hover:text-rez-full-white"
-              >
-                {g.category}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <p className="flex flex-wrap items-center justify-center gap-2 text-center text-[13px] text-rez-graphite">
-            Choose a landmark for directions (opens OpenStreetMap). {live ? null : <SampleBadge>Sample landmarks</SampleBadge>}
-          </p>
-          {available.map((g) => {
-            const IconCmp = ICONS[g.category];
-            return (
-              <TabsContent key={g.category} value={g.category}>
-                <ol className="flex flex-col">
-                  {g.items.map((l, i) => (
-                    <li key={l.name} className="border-b border-rez-smoke last:border-b-0">
-                      <a
-                        href={directionsHref(coords, l.coords)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onMouseEnter={() => setHighlighted(`lm-${i}`)}
-                        onFocus={() => setHighlighted(`lm-${i}`)}
+        {CATEGORIES.map((c) => {
+          const items = itemsOf(c);
+          const Fallback = ICONS[c];
+          return (
+            <TabsContent key={c} value={c}>
+              {status === "loading" ? (
+                <p role="status" className="flex justify-center py-2 text-sm">
+                  Loading landmarks...
+                </p>
+              ) : status === "error" ? (
+                <p role="alert" className="py-2 text-center text-sm text-[#242424]">
+                  Nearby landmarks are unavailable right now.{" "}
+                  <button type="button" className="font-semibold underline" onClick={onRetry}>
+                    Retry
+                  </button>
+                </p>
+              ) : items.length === 0 ? (
+                <p className="py-2 pl-4 text-sm text-[#242424]">No landmarks available</p>
+              ) : (
+                <ul className="flex flex-col">
+                  {items.map((l) => (
+                    <li key={l.name} className="border-b border-rez-smoke">
+                      <button
+                        type="button"
+                        aria-pressed={selected?.name === l.name}
+                        onClick={() => choose(l)}
                         className={cn(
-                          "flex items-center gap-3 rounded-md px-2 py-3 text-sm transition-colors hover:bg-rez-cloud focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60 focus-visible:outline-none sm:px-3",
-                          highlighted === `lm-${i}` && "bg-rez-cloud",
+                          "flex w-full items-center gap-2 p-3 text-left transition-colors hover:bg-rez-cloud focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60 focus-visible:outline-none",
+                          selected?.name === l.name && "bg-blue-100 hover:bg-blue-100",
                         )}
                       >
-                        <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full bg-black text-[11px] font-semibold text-rez-full-white">
-                          {i + 1}
-                        </span>
-                        <IconCmp className="hidden size-5 shrink-0 text-rez-arsenic sm:block" aria-hidden />
-                        <span className="min-w-0 flex-1 font-medium text-rez-arsenic">{l.name}</span>
-                        <span className="shrink-0 text-rez-arsenic tabular-nums">{formatKm(l.distanceKm)}</span>
-                        <Navigation className="size-4 shrink-0 text-rez-graphite" aria-hidden />
-                        <span className="sr-only">(directions open in a new tab)</span>
-                      </a>
+                        {l.icon ? (
+                          <Image src={l.icon} alt="" width={24} height={24} unoptimized className="size-6 shrink-0" />
+                        ) : (
+                          <Fallback className="size-6 shrink-0 text-[#6D6D6D]" aria-hidden />
+                        )}
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#6D6D6D] sm:whitespace-normal">{l.name}</span>
+                        <span className="w-24 shrink-0 text-sm text-[#242424] tabular-nums">{l.distanceKm.toFixed(2)} kms</span>
+                      </button>
                     </li>
                   ))}
-                </ol>
-              </TabsContent>
-            );
-          })}
-        </Tabs>
-      )}
+                </ul>
+              )}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
     </div>
   );
 }

@@ -2,22 +2,26 @@
 
 import { toast } from "sonner";
 import { Share2 } from "lucide-react";
-import { Icon } from "@/components/brand/icon";
 import { Button } from "@/components/ui/button";
+import type { Property } from "@/types/models";
+import { PropertyShareButton } from "./property-share";
 
-/** Uses the Web Share sheet where available, otherwise copies the link. */
+/** Listings use the preview dialog; other links use native sharing or copy. */
 export function ShareButton({
   title,
   path,
   className,
   iconOnly,
+  property,
 }: {
   title: string;
   path: string;
   className?: string;
   /** Round outline icon button (prototype card "Share"). */
   iconOnly?: boolean;
+  property?: Property;
 }) {
+  if (property) return <PropertyShareButton property={property} className={className} iconOnly={iconOnly} />;
   const share = async () => {
     const url = new URL(path, window.location.origin).toString();
     try {
@@ -47,7 +51,7 @@ export function ShareButton({
   }
   return (
     <Button variant="secondary" size="default" onClick={share} className={className}>
-      <Icon name="share" size={18} />
+      <Share2 size={18} strokeWidth={1.75} aria-hidden />
       Share
     </Button>
   );

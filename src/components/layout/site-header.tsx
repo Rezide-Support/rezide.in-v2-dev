@@ -107,7 +107,8 @@ function DesktopNavList({ pathname }: { pathname: string }) {
               scroll={false}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex h-12 items-center px-[18px] text-[13px] tracking-[0.06em] uppercase transition-colors",
+                // Tighter on narrower screens so the five links never run over the city divider or the account buttons.
+                "relative flex h-12 items-center px-3 text-[13px] tracking-[0.06em] uppercase transition-colors min-[1536px]:px-4",
                 active ? "font-bold text-black" : "font-medium text-rez-graphite hover:text-black",
               )}
             >
@@ -115,7 +116,7 @@ function DesktopNavList({ pathname }: { pathname: string }) {
               <span
                 aria-hidden
                 className={cn(
-                  "absolute inset-x-[18px] bottom-0 h-[3px] origin-center rounded-full bg-rez-mocaccino transition-transform duration-300 ease-rez",
+                  "absolute inset-x-3 bottom-0 h-[3px] origin-center rounded-full bg-rez-mocaccino transition-transform duration-300 ease-rez min-[1536px]:inset-x-4",
                   active ? "scale-x-100" : "scale-x-0",
                 )}
               />
@@ -174,13 +175,13 @@ export function SiteHeader() {
   const close = () => setMenuOpen(false);
 
   return (
-    <header className="group/realtor-header relative z-20 border-b border-rez-smoke bg-white max-md:rounded-b-[20px] max-md:border-b-0 max-md:shadow-rez-sm max-sm:has-[.realtor-mobile-header]:rounded-b-3xl max-sm:has-[.realtor-mobile-header]:border-0">
+    <header className="group/realtor-header sticky top-0 z-50 border-b border-rez-smoke bg-white max-md:rounded-b-[20px] max-md:border-b-0 max-md:shadow-rez-sm max-sm:has-[.realtor-mobile-header]:rounded-b-3xl max-sm:has-[.realtor-mobile-header]:border-0">
       {/* /realtors on phones has its own header (logo, sign in, menu, city); it hides the standard bar below. */}
       <Suspense fallback={null}>
         <RealtorMobileHeader openMenu={() => setMenuOpen(true)} />
       </Suspense>
       <div className="mx-auto flex h-16 max-w-[1344px] items-center gap-2 px-4 max-sm:group-has-[.realtor-mobile-header]/realtor-header:hidden sm:gap-5 md:h-[76px] md:px-8">
-        +<Link href="/" scroll={false} aria-label="Rezide home" className="flex shrink-0 items-center text-black">
+        <Link href="/" scroll={false} aria-label="Rezide home" className="flex shrink-0 items-center text-black">
           <Logo height={16} className="sm:hidden" />
           <Logo height={24} className="hidden sm:block" />
         </Link>

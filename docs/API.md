@@ -87,22 +87,25 @@ Model `Property` (`src/types/models.ts`). Key fields: `id`, `title`, `category` 
 | `city` | string, required | Exact city, case-insensitive (default in UI: `Mumbai`). |
 | `intent` | `buy`\|`rent` | Default `buy`. |
 | `type` | category | `homes`\|`offices`\|`retail`\|`industrial`\|`land`. Default `homes`. (Named `type` because it is also the page URL param.) |
-| `q` | string | Free text. Split on whitespace; **every token** must appear (substring, case/diacritic-insensitive) in at least one of `title`, `locality`, `projectName`, `unitType`, `city`. |
+| `searchQuery` (`q` accepted) | string | Free text. Split on whitespace; **every token** must appear (substring, case/diacritic-insensitive) in at least one of `title`, `locality`, `projectName`, `unitType`, `city`. |
 | `loc` | string[] | Localities (exact, case-insensitive). |
 | `unit` | string[] | Unit types (`UNIT_TYPES` in `src/lib/constants.ts`). |
-| `bhk` | string[] | `"1 BHK"…"4 BHK"`, `"5+ BHK"` (n+ = at least n). |
-| `furnishing` | string[] | `Fully Furnished`\|`Semi Furnished`\|`Unfurnished`. |
-| `bath` | string[] | `"1"…"4"`, `"5+"`. |
-| `parking` | string[] | `"1"…"3"`, `"4+"`. |
-| `media` | string[] | `Video`\|`Photo`\|`VR Tour`: listing has **any** of them. |
-| `facing` | string[] | 8 compass values (`North East`, …). |
+| `bhk` | string[] | Home filters accept master IDs; rent's `5+ BHK` uses its dedicated master ID. |
+| `furnishing` | string[] | Home filters accept furnishing master IDs. |
+| `bath` (`no_of_bathrooms` accepted) | string[] | `"1"…"5"` and `">"` for more than five. |
+| `parking` (`no_of_parkings` accepted) | string[] | `"1"…"4"` and `">"` for more than four. |
+| `media` (`listing_with` accepted) | string[] | `Video`\|`Photo`\|`VR Tour`: listing has **any** of them. |
+| `facing` (`exit_direction` accepted) | string[] | Eight compass labels or their backend codes (`N`, `NE`, …). |
+| Home filters | | `availability`, `project_type`, `building_type`, `no_of_balconies`, `building_age`, `preffered_apartment`, `floor_range`, and `time_on_rezide` accept comma-separated or repeated values. |
 | `project` | string[] | Project ids. |
-| `min`, `max` | int INR | Inclusive price bounds (monthly rent for `rent`). Swapped if inverted. |
-| `areaMin` | int sq ft | Inclusive lower bound. |
-| `areaMax` | int sq ft | **Exclusive** upper bound. Swapped if inverted. |
+| `minBudget` (`min` accepted), `maxBudget` (`max` accepted) | int INR | Inclusive price bounds (monthly rent for `rent`). Swapped if inverted. |
+| `minArea` (`areaMin` accepted) | int sq ft | Inclusive lower bound. |
+| `maxArea` (`areaMax` accepted) | int sq ft | **Exclusive** upper bound. Swapped if inverted. |
 | `sort` | `latest`\|`price-asc`\|`price-desc`\|`area-desc` | Default `latest` (= `updatedAt` desc). Ties broken by `id` asc so paging is stable. |
 | `page`, `per` | int | See pagination. |
 | `view` | ignored | UI-only (`list|map|loc|proj`); the client never sends it. |
+
+For rent homes, availability values are `0`, `15`, `30`, `40`, `6593031bd10433fa2dbb7c92` (Rented), and `659ffb68f524ad70b2692abf` (Coming soon). Budget choices in INR are `25000`, `30000`, `35000`, `40000`, `50000`, `60000`, `85000`, `100000`, `150000`, `200000`, `400000`, `700000`, and `1000000`. Area choices in sq ft are `100`, `200`, `300`, `400`, `500`, `1000`, `1500`, `2000`, `3000`, `4000`, `5000`, `10000`, and `25000`; max area also offers `50000`. Rent's `Any Time` URL value is `AnyTime`; the mapper omits it from the request because it means no time restriction.
 
 **Filter semantics** (`matchesProperty`): values **within** one group are OR-ed; groups are AND-ed with each other and with `city`, `intent`, `type`, `q`, budget and area. A listing missing a field (e.g. no `bhk`) fails a non-empty filter on that field. Unknown/invalid values are ignored by the parser rather than rejected (pages are shareable URLs); the backend may do the same or return 400, but should not 500.
 
@@ -110,20 +113,23 @@ Model `Property` (`src/types/models.ts`). Key fields: `id`, `title`, `category` 
 
 Search. Response `Paginated<Property>`. Used by `/properties` (list view).
 
-**Live.** The browser calls this app's route `GET /api/properties?<page query>` (`src/app/api/properties/route.ts`), which reads the query with `parsePropertyCriteria` and calls the Rezide backend's `POST /inventory/Listing/mobile/all` on the server (`src/services/properties.ts`), as rezide.in's `/api/listings` does. `src/services/property-mapper.ts` writes the backend body (city as the master's name, BHK and furnishing as master ids, bathrooms/parking `5+` → `["5", ">"]`, facing as `N`/`NE`/…, text and localities in `project_names_localities`, sort labels such as `"Price (High to Low)"`) and maps each listing to `Property`. When `priceHide` is set the price is never read, so it can't reach the browser: the card shows "Price on request". The total is `result_sale` or `result_rent`. Photos come from `https://cdn.rezide.in/images/{key}.jpeg` (own photos, else project sample flats, else project photos, else `/images/listing-placeholder.jpg`). The backend only holds homes, so other categories return no listings without a call. Unit type is sent as `project_type`; the media filter has no backend filter yet and is ignored.
+**Live.** The browser calls this app's route `GET /api/properties?<page query>` (`src/app/api/properties/route.ts`), which reads the query with `parsePropertyCriteria` and calls the Rezide backend's `POST /inventory/Listing/mobile/all` on the server (`src/services/properties.ts`), as rezide.in's `/api/listings` does. `src/services/property-mapper.ts` writes the backend body (city as the master's name, BHK and furnishing as master ids, bathroom/balcony/parking upper bounds as `">"`, facing as `N`/`NE`/…, text and localities in `project_names_localities`, and home filters under their legacy API field names) and maps each listing to `Property`. When `priceHide` is set the price is never read, so it can't reach the browser: the card shows "Price on request". The total is `result_sale` or `result_rent`. Photos come from `https://cdn.rezide.in/images/{key}.jpeg` (own photos, else project sample flats, else project photos, else `/images/listing-placeholder.jpg`). The backend only holds homes, so other categories return no listings without a call. Unit type is sent as `project_type`.
+
+The home filter drawer gets its result total separately from `GET /api/properties/count`, which forwards the same filters to `POST /inventory/Listing/mobile/filter/count` and selects `result_sale` or `result_rent`. The current directory keeps its existing live-update behavior; the separate count is used for the drawer's result button.
 
 **Map view's list.** `GET /api/properties?<page query>&bbox=west,south,east,north` returns one page of the listings in that part of the map (`searchListingsInArea`), as the map moves and when a cluster is focused. The backend can't search by area, so this filters the city's cached listings (`src/services/listing-index.ts`, below), with the search params applied here by `matchesProperty`. A listing's location is its `listing_address`, else its project's `locality_and_address.coordinates`; a listing with neither isn't listed. Map pins come from a different service (below), so the list's count won't equal the pins' total.
 
 ### `GET /properties/facets` [impl]
 
-**Live, computed by this app (facets and groups).** The backend's `POST /inventory/Listing/mobile/filter/count` returns totals only (`{ result, result_sale, result_rent }`), so the browser calls `GET /api/properties/facets` and `GET /api/properties/groups`, and the server computes them with the reference functions in `features/search/match.ts` over the city's live listings (`src/services/listing-index.ts`: every listing for a city and purpose, fetched in parallel pages of 250 and kept in memory for 10 minutes; a Mumbai sale list is ~30 MB from the backend, ~1 MB mapped). Drawer localities are the ones with listings (busiest 40 first). **Ask the backend team** for per-option counts on `/filter/count` (or a facets endpoint): it would remove this download.
+**Live.** The browser calls `GET /api/properties/facets` and `GET /api/properties/groups`. For sale and rent home-filter options, the server asks `POST /inventory/Listing/mobile/filter/count` for each displayed option, so each option uses the same count source as the drawer's result button. Requests are limited to six concurrent counts and cached by filter body for 60 seconds. Locality choices are still ranked from the city's live listing index (`src/services/listing-index.ts`: fetched in parallel pages of 250 and kept in memory for 10 minutes; a Mumbai sale list is ~30 MB from the backend, ~1 MB mapped). The busiest 40 localities are shown. If the backend cannot return an option count, that chip displays an em dash rather than a misleading zero.
 
 Per-option counts for the filter drawer. Same params as search; `sort`, `page`, `per` are ignored.
 
 ```ts
 type PropertyFacets = {
   total: number; // listings matching all the params
-  facets: Record<"localities" | "unitTypes" | "bhk" | "furnishing" | "bathrooms" | "parking" | "media" | "facing" | "projects", Record<string, number>>;
+  facets: Record<"localities" | "unitTypes" | "bhk" | "furnishing" | "bathrooms" | "parking" | "media" | "facing" | "projects" | "availability" | "buildingTypes" | "balconies" | "buildingAges" | "preferredApartment" | "floorRanges" | "timeOnRezide", Record<string, number>>;
+  unavailable?: Partial<Record<string, Record<string, true>>>;
 };
 ```
 
@@ -333,13 +339,13 @@ Response `201 { id, status: "pending_verification" | "with_realtor" }` (`with_re
 
 All scoped to the signed-in user; no user id in the URL, except the live activity endpoints below.
 
-**Live activity** (`src/services/activity.ts`, the same backend endpoints as rezide.in). `GET /api/account/activity` is this app's route: rows hold full listing records, so they are mapped on the server and a withheld price never reaches the browser. Behind it: `GET /user/statistic/last/visit/{userId}?page=&pageSize=` → `{ result: { visits: [{ listing_id, listing, timestamp }] } }`; `GET /shortlist/user/statistic/{userId}?page=&pageSize=` → `{ result: { shortlist: [...] } }`; `GET /share/listing/user/shared?mobile_no=91…&status=reject` → `{ data: [{ listing_id: { _id }, createdAt }] }`, with each listing then read from `GET /inventory/Listing/{id}`. The browser calls directly (no listing records): `GET /shortlist/user/statistic/{userId}` (ids for the button), `POST /shortlist/user/statistic/{userId}?listing_id=&action=add|remove&type=sale|rent`, and `POST /user/statistic/last/visit/{userId}?listing_id=&type=sale|rent` when a signed-in user opens a listing. Guests, Compare and project shortlists stay on the device (`src/stores/saved.ts`); rezide.in's compare is also device-only.
+**Live activity** (`src/services/activity.ts`, the same backend endpoints as rezide.in). `GET /api/account/activity` is this app's route: rows hold full listing or project records, so they are mapped on the server and a withheld property price never reaches the browser. Viewed and shortlisted each query one type at a time with `type=sale|rent|project&page=1&pageSize=24`: `GET /user/statistic/last/visit/{userId}` → `{ result: { visits: [{ listing_id, listing, project, type, timestamp }] } }`; `GET /shortlist/user/statistic/{userId}` → `{ result: { shortlist: [...] } }`. Shared and rejected use `GET /share/listing/user/shared?mobile_no=91…&status=reject` → `{ data: [{ listing_id: { _id }, createdAt }] }`, with each property then read from `GET /inventory/Listing/{id}`. The browser calls directly (no listing records): `GET /shortlist/user/statistic/{userId}` (ids for the button), `POST /shortlist/user/statistic/{userId}?listing_id=&action=add|remove&type=sale|rent|project`, and `POST /user/statistic/last/visit/{userId}?listing_id=&type=sale|rent|project` when a signed-in user opens a listing. Guests and Compare stay on the device (`src/stores/saved.ts`); rezide.in's compare is also device-only.
 
 **To raise with the backend team:** these endpoints take a user id or phone with no token, so anyone who has one can read or change that user's activity (rezide.in has the same gap).
 
 | Endpoint | Params | Response | Screen |
 | --- | --- | --- | --- |
-| `GET /api/account/activity` **live** | `tab=viewed\|shared\|shortlisted\|rejected`, `userId`, `phone` | `ActivityItem[] = { propertyId, date, note?, property: Property }[]` (latest 50, properties only) | `/account` seeker lists |
+| `GET /api/account/activity` **live** | `tab=viewed\|shared\|shortlisted\|rejected`, `userId`, `phone` | `ActivityItem[]` (latest 24 per type; property or project) | `/account` seeker lists |
 | `GET /account/visits` [impl] | `role=seeker\|owner` | `AccountVisit[]` | `/account?tab=visits` |
 | `GET /account/offers` [impl] | `role=seeker\|owner` | `AccountOffer[]` | `/account?tab=offers` |
 | `GET /account/listings` [impl] | — | `OwnerListing[]` | `/account?tab=listings` (owner) |
@@ -479,3 +485,14 @@ What changes against a real API:
 | Realtor Corner | `POST /callbacks`, `/trial-requests` | 2 |
 | Dashboard (CRM) | contacts ×5, groups ×4, uploads ×2, credits ×1, team ×3, firm ×2, me ×2, associable projects ×2 | 21 |
 | **Total implemented** | | **43** |
+
+### Listing detail locality
+
+- `POST /api/localities?page=1&pageSize=1`: accepts `{sub_regions:null,regions:null,searchQuery:[localityName]}` and proxies the first locality result as `{id,image}` (or `null`).
+- `GET /api/localities/landmarks?projectId=<projectId>&category=<category>`: validates the project ID/category and returns up to four landmarks in backend order, preserving backend distances. Categories: `school`, `train_station`, `subway_station`, `airport`, `mall`, `hospital`.
+- Listing locality uses the populated project address and coordinates, independently of the listing address.
+- Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` for both the Maps JavaScript loader and Embed directions. Enable both APIs and restrict the browser key to the application origins. Restart the dev server after changing environment configuration.
+
+### Owner enquiry (List Property)
+
+`POST /api/list-property/enquiry` validates first_name, last_name, mobile, email, locality, project_name, flat_no, and looking (sell/rent), then forwards the mapped owner lead to `/v1/admin/lead/developer-contact`. The proxy fixes type to `listProperty` and source to `Rezide.in property listing form`; it never sends a page URL. This public form does not create a listing or require authentication/OTP.

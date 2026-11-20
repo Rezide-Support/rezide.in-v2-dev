@@ -3,7 +3,7 @@ import type { Property } from "@/types/models";
 
 export type FieldRow = { label: string; value: string };
 
-const na = (v: string | number | undefined | null) => (v === undefined || v === null || v === "" ? "N/A" : String(v));
+const na = (v: string | number | undefined | null) => (v === undefined || v === null || v === "" ? "-" : String(v));
 
 /**
  * Rows for the v1 "Property" info tab. Fields that don't apply to the
@@ -15,7 +15,7 @@ export function propertyFields(p: Property): FieldRow[] {
     { label: "City", value: p.city },
     { label: "Region", value: na(p.region) },
     { label: "Sub region", value: na(p.subRegion ?? p.locality) },
-    { label: "Locality", value: p.locality },
+    { label: "Locality", value: na(p.localityName ?? p.locality) },
     { label: "Project type", value: na(p.projectType) },
     { label: "Unit type", value: p.unitType },
   ];
@@ -25,7 +25,7 @@ export function propertyFields(p: Property): FieldRow[] {
       { label: "Vastu: exit", value: na(p.vastuExit) },
       { label: "View", value: na(p.view) },
       { label: "Flooring", value: na(p.flooring) },
-      { label: "BHK", value: p.unitType === "Studio" ? "Studio" : na(p.bhk && `${p.bhk} BHK`) },
+      { label: "BHK", value: p.unitType === "Studio" ? "Studio" : na(p.bhk === undefined ? undefined : `${p.bhk} BHK`) },
       { label: "No. of balconies", value: na(p.balconies) },
       { label: "No. of bathrooms", value: na(p.bathrooms) },
       { label: "No. of parkings", value: na(p.parking) },
@@ -39,6 +39,6 @@ export function propertyFields(p: Property): FieldRow[] {
     for (const s of p.specs) if (s.label !== "Facing") rows.push({ label: s.label, value: s.value });
     if (p.lifts !== undefined) rows.push({ label: "No. of lifts", value: String(p.lifts) });
   }
-  rows.push({ label: `${p.areaBasis} area`, value: formatArea(p.areaSqft) });
+  rows.push({ label: `${p.areaBasis} area`, value: p.areaKnown === false ? "-" : formatArea(p.areaSqft) });
   return rows;
 }

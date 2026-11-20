@@ -6,12 +6,11 @@ import { priceLabel } from "./price-label";
 export { priceLabel } from "./price-label";
 import { Bath, BedDouble, Building2, Car, Phone, Sofa, Store } from "lucide-react";
 import { CoverImage } from "@/components/common/cover-image";
-import { SampleBadge } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { formatArea, formatDate, formatRate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/types/models";
-import { Viewer } from "./detail/media-gallery";
+import { PropertyCardImageCarousel } from "./property-card-image-carousel";
 import { SaveIconButton } from "./detail/save-actions";
 import { ShareButton } from "./share-button";
 import { BrochureButton } from "./detail/brochure-button";
@@ -19,28 +18,31 @@ import { ListingWhatsAppButton } from "./detail/agent-card";
 import { LeadDialog } from "./detail/lead-dialog";
 import { PROPERTY_INTENTS } from "./detail/lead-form";
 import { RealtorProfilePopup } from "@/features/realtors/person-profile";
+import { ViewedEye } from "./detail/record-view";
 
 export const propertyHref = (p: Pick<Property, "id">) => `/properties/${p.id}`;
 
 
 export function availabilityLabel(p: Pick<Property, "availability" | "availableFrom">, now = Date.now()) {
   const status = p.availability?.trim();
-  if (!status) return "Availability not provided";
+  if (!status || /^(availability not provided|not available|not provided|n\/?a)$/i.test(status)) return "";
   if (status.toLowerCase() === "available" && p.availableFrom && Date.parse(p.availableFrom) > now) return `Available: ${formatDate(p.availableFrom)}`;
   return status;
 }
 
 /** Shared by compact map cards; display the real availability, not prototype verification. */
 function VerificationPill({ property, small }: { property: Property; small?: boolean }) {
+  if (!availabilityLabel(property)) return null;
   return <span className={cn("pointer-events-none absolute top-3 left-3 max-w-[calc(100%-24px)] rounded-[4px] bg-black px-3 py-1 text-xs font-semibold text-white", small && "text-[11px]")}>{availabilityLabel(property)}</span>;
 }
 
 /** Existing shared property card, restyled to match the Rezide listing card. */
 export function PropertyCard({ property: p, priority, layout = "stack" }: { property: Property; priority?: boolean; layout?: "stack" | "row" }) {
+  const row = layout === "row";
   const rent = p.intent === "rent", path = propertyHref(p);
+  const displayDate = row ? p.listedAt || p.updatedAt : p.updatedAt;
   const realListing = BACKEND_ID_PATTERN.test(p.id);
   const canContact = !!p.realtorId && !!p.realtorFirmId;
-  const photos = p.images.slice(0, 5);
   const office = p.category === "offices" || /office/i.test(p.unitType || p.specs[0]?.value || "");
   const retail = p.category === "retail" || /shop|showroom/i.test(p.unitType || p.specs[0]?.value || "");
   const features = [
@@ -49,38 +51,40 @@ export function PropertyCard({ property: p, priority, layout = "stack" }: { prop
     { Icon: Car, label: "Parking", value: p.parking !== undefined ? `${p.parking} Parks` : "Not provided" },
     { Icon: Sofa, label: "Furnishing", value: p.furnishing || p.specs.find(spec => spec.label === "Furnishing")?.value || "Not provided" },
   ];
-  return <article className={cn("group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-rez-smoke bg-white shadow-[0_1px_3px_#0000001f]", layout === "row" && "md:grid md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]")}>
-    <div className={cn("relative aspect-[16/9] shrink-0 bg-rez-cloud", layout === "row" && "md:aspect-auto md:min-h-[290px]")}>
-      <Viewer key={p.id} reserveBadgeSpace={!!p.photoSource && p.photoSource !== "listing" && p.photoSource !== "placeholder"} images={photos} label={p.title} cardHref={path} priority={priority} />
-      <span className="pointer-events-none absolute top-5 left-3 max-w-[calc(100%-148px)] rounded-[4px] bg-black px-3 py-1 text-[11px] font-semibold text-white sm:text-xs">{availabilityLabel(p)}</span>
-      <div className="absolute top-5 right-3 flex gap-2">
-        <SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-9 sm:size-8 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
-        <SaveIconButton list="compare" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-9 sm:size-8 rounded-full bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
-        <ShareButton title={p.title} path={path} iconOnly className="size-9 sm:size-8 rounded-full border-0 bg-white p-0 text-rez-graphite hover:bg-rez-cloud" />
+  return <article className={cn("group relative flex w-full max-w-[640px] min-w-0 flex-col overflow-hidden rounded-xl border border-rez-smoke bg-white shadow-[0_1px_3px_#0000001f]", row && "md:grid md:max-w-none md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)] md:rounded-lg")}>
+    <div className={cn("relative h-[240px] shrink-0 bg-rez-cloud", row && "md:h-auto md:min-h-[208px] xl:min-h-[250px] 2xl:min-h-[280px]")}>
+      <PropertyCardImageCarousel key={p.id} images={p.images} label={p.title || "Property listing"} href={path} priority={priority} />
+      <div className="pointer-events-none absolute top-5 left-3 flex max-w-[calc(100%-148px)] items-center gap-2">
+        {availabilityLabel(p) && <span className="rounded-[4px] bg-black px-3 py-1 text-[11px] font-semibold text-white sm:text-xs">{availabilityLabel(p)}</span>}
+        <ViewedEye listingId={p.id} className="size-[18px] text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]" />
       </div>
-      {p.photoSource && p.photoSource !== "listing" && p.photoSource !== "placeholder" && <SampleBadge className="pointer-events-none absolute right-3 bottom-3">{p.photoSource === "sample-flat" ? "Sample" : "Project photo"}</SampleBadge>}
+      <div className="absolute top-5 right-5 flex gap-3">
+        <SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-6 gap-0 rounded-full border-0 bg-white p-1 text-rez-graphite hover:bg-rez-cloud [&_svg]:size-[14px]" />
+        <SaveIconButton list="compare" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-6 gap-0 rounded-full border-0 bg-white p-1 text-rez-graphite hover:bg-rez-cloud [&_svg]:size-[14px]" />
+        <ShareButton property={p} title={p.title} path={path} iconOnly className="size-6 gap-0 rounded-full border-0 bg-white p-1 text-rez-graphite hover:bg-rez-cloud [&_svg]:size-[14px]" />
+      </div>
     </div>
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="flex flex-1 flex-col gap-3 px-4 pt-3 pb-3">
+      <div className={cn("flex flex-1 flex-col gap-2 px-4 py-2", row && "md:px-3")}>
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0"><h3 className="text-[16px] leading-tight font-semibold [overflow-wrap:anywhere] sm:text-[17px]"><Link href={path} className="hover:underline">{p.title || "Property listing"}</Link></h3><p className="mt-1 text-[13px] leading-snug text-rez-graphite">{p.locationLabel || [p.locality, p.city].filter(Boolean).join(", ") || "Location not provided"}</p></div>
+          <div className="min-w-0 flex-1"><h3 title={p.title || "Property listing"} className="truncate text-base leading-6 font-semibold"><Link href={path} className="hover:underline">{p.title || "Property listing"}</Link></h3>{!row && <p className="text-xs leading-4 font-medium break-words text-rez-graphite">{p.locationLabel || [p.locality, p.city].filter(Boolean).join(", ") || "Location not provided"}</p>}</div>
           <BrochureButton url={p.brochureUrl} listingId={realListing ? p.id : undefined} path={path} iconOnly variant="outline" size="icon" className="size-9 shrink-0 rounded-full border-rez-smoke text-rez-graphite shadow-sm" />
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div><p className="text-[20px] leading-tight font-semibold">{priceLabel(p)}</p>{!p.priceHidden && p.price > 0 && <p className="mt-1 text-xs text-rez-graphite">{p.ratePerSqft ? `₹ ${formatNumber(p.ratePerSqft)} per sqft` : formatRate(p.price, p.areaSqft, rent)}</p>}</div>
-          <span className="rounded-[6px] bg-[#f4f4f6] px-2 py-1.5 text-[13px] whitespace-nowrap">{p.areaBasis}: {p.areaSqft ? `${formatNumber(p.areaSqft)} sqft` : "Not provided"}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div><p className="text-lg leading-7 font-semibold">{priceLabel(p)}</p>{!p.priceHidden && p.price > 0 && <p className="text-xs leading-4 font-medium text-rez-graphite">{p.ratePerSqft ? `₹ ${formatNumber(p.ratePerSqft)} per sqft` : formatRate(p.price, p.areaSqft, rent)}</p>}</div>
+          <span className="max-w-full rounded-md bg-gray-100 px-2 py-1 text-[10.4px] break-words lg:text-sm">{p.areaBasis}: {p.areaSqft ? `${formatNumber(p.areaSqft)} sqft` : "Not provided"}</span>
         </div>
-        <dl className="grid grid-cols-4 gap-1 rounded-[8px] bg-[#f4f4f6] px-2 py-2.5">
-          {features.map(feature => <div key={feature.label} className="flex min-w-0 flex-col items-center gap-1 text-center"><dt><feature.Icon className="size-[22px] text-[#777783]" aria-hidden /><span className="sr-only">{feature.label}</span></dt><dd className="text-[10px] leading-snug [overflow-wrap:anywhere] sm:text-xs">{feature.value}</dd></div>)}
+        <dl className="grid grid-cols-4 rounded-md bg-[#F3F4F6] py-2">
+          {features.map(feature => <div key={feature.label} className="flex min-w-0 flex-col items-center gap-1 px-2 text-center"><dt><feature.Icon className="size-6 text-[#777783]" aria-hidden /><span className="sr-only">{feature.label}</span></dt><dd className="text-xs leading-4 [overflow-wrap:anywhere]">{feature.value}</dd></div>)}
         </dl>
-        <div className="mt-auto flex justify-between gap-3 text-xs leading-snug text-rez-graphite"><div className="min-w-0"><p>Listing Realtor</p><p className="mt-0.5 text-[12px] font-semibold text-black [overflow-wrap:anywhere]"><RealtorProfilePopup lookupId={p.realtorId} purpose={p.intent === "rent" ? "rent" : "sale"} label={p.realtorFirm || "Listing realtor"} /></p></div><div className="shrink-0 text-right"><p>Last Updated</p><p className="mt-0.5 text-[12px] font-semibold text-black">{p.updatedAt && !Number.isNaN(Date.parse(p.updatedAt)) ? formatDate(p.updatedAt) : "Not provided"}</p></div></div>
+        <div className="flex justify-between gap-3 text-xs leading-4 text-rez-graphite"><div className="min-w-0"><p>Listing Realtor</p><p className="mt-0.5 truncate text-xs font-semibold text-black [&_button]:block [&_button]:max-w-full [&_button]:truncate"><RealtorProfilePopup lookupId={p.realtorId} purpose={p.intent === "rent" ? "rent" : "sale"} label={p.realtorFirm || "Listing realtor"} /></p></div><div className="shrink-0 text-right"><p>{row ? "Listing Date" : "Last Updated"}</p><p className="mt-0.5 text-[12px] font-semibold text-black">{displayDate && !Number.isNaN(Date.parse(displayDate)) ? formatDate(displayDate) : "Not provided"}</p></div></div>
       </div>
-      <div className="mt-auto grid grid-cols-2 gap-2.5 bg-[#f4f4f6] px-3 py-5">
-        <ListingWhatsAppButton listingId={p.id} brokerId={realListing ? p.realtorId : ""} title={p.title} className="h-10 min-w-0 gap-2 rounded-[4px] border-rez-smoke bg-white px-2 text-sm" />
+      {!row && <div className="mt-auto grid grid-cols-2 gap-2 bg-[#F3F4F6] px-3 py-5">
+        <ListingWhatsAppButton listingId={p.id} brokerId={realListing ? p.realtorId : ""} title={p.title} className="h-9 min-w-0 gap-2 rounded-md border-2 border-[#D1D5DB] bg-white px-2 text-sm font-semibold" />
         <LeadDialog mode="contact" title="Contact the realtor" description={p.title} target={{ propertyId: p.id, realtorId: p.realtorId }} recipient={p.realtorFirm || "the realtor"} intents={PROPERTY_INTENTS} listing={realListing ? { id: p.id, firmId: p.realtorFirmId || "", brokerId: p.realtorId, name: p.title, path } : undefined} mobileSheet>
-          <Button className="h-10 min-w-0 gap-2 rounded-[4px] bg-[#18181b] px-2 text-sm" disabled={realListing && !canContact} title={realListing && !canContact ? "Broker details are unavailable" : undefined}><Phone className="size-[18px]" />Contact</Button>
+          <Button className="h-9 min-w-0 gap-2 rounded-md bg-[#18181B] px-2 text-sm font-medium shadow-sm" disabled={realListing && !canContact} title={realListing && !canContact ? "Broker details are unavailable" : undefined}><Phone className="size-4" />Contact</Button>
         </LeadDialog>
-      </div>
+      </div>}
     </div>
   </article>;
 }
@@ -191,9 +195,9 @@ export function PropertyPhotoCard({
 
 export function PropertyCardSkeleton() {
   return (
-    <div className="flex animate-pulse flex-col overflow-hidden rounded-[20px] border border-rez-smoke" aria-hidden>
-      <div className="aspect-[4/3] bg-rez-cloud" />
-      <div className="flex flex-col gap-3 p-5">
+    <div className="flex w-full max-w-[640px] animate-pulse flex-col overflow-hidden rounded-xl border border-rez-smoke" aria-hidden>
+      <div className="h-[240px] bg-rez-cloud" />
+      <div className="flex flex-col gap-2 px-4 py-2">
         <div className="h-5 w-3/4 rounded bg-rez-cloud" />
         <div className="h-4 w-1/2 rounded bg-rez-cloud" />
         <div className="h-6 w-1/3 rounded bg-rez-cloud" />

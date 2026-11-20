@@ -182,6 +182,17 @@ export async function verifyOtp(input: VerifyOtpInput, { purpose = "signin" }: O
   return session;
 }
 
+/**
+ * Email and password sign-in (POST /user/user/login), as rezide.in's sign-in popup offers next
+ * to the mobile OTP. The backend answers with the user record.
+ */
+export async function loginWithPassword(email: string, password: string): Promise<Session> {
+  const { data } = await api.post(`${USER_URL}/login`, { email: email.trim(), password });
+  const session = toSession(data, { phone: "", code: "", role: "seeker", email });
+  if (!session.user.id) throw new ApiError("Couldn’t sign you in. Check your email and password.", 401, "signin_failed");
+  return session;
+}
+
 export async function logout() {
   await api.post(`${USER_URL}/logout`);
 }

@@ -1,3 +1,4 @@
+import { accountHref, accountTabForPath, isOwnerAccountPath } from "@/features/account/account-routes";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { isExpired, useSession, useSessionStore } from "@/stores/session";
@@ -68,7 +69,21 @@ describe("post-login redirects", () => {
 
   it("lands each role in its own area", () => {
     expect(landingFor("realtor")).toBe("/dashboard");
-    expect(landingFor("owner")).toBe("/account?tab=listings");
-    expect(landingFor("seeker")).toBe("/account");
+    expect(landingFor("owner")).toBe("/dashboard/my-listings/my-visits");
+    expect(landingFor("seeker")).toBe("/dashboard/my-searches/viewed");
   });
+});
+
+describe("customer dashboard routes", () => {
+ it("preserves Shared as recommended and maps the owner and common routes", () => {
+  expect(accountHref("shared")).toBe("/dashboard/my-searches/recommended");
+  expect(accountHref("visits",true)).toBe("/dashboard/my-listings/my-visits");
+  expect(accountHref("offers",true)).toBe("/dashboard/my-listings/my-offers");
+  expect(accountHref("profile",true)).toBe("/dashboard/profile");
+  expect(accountTabForPath("/dashboard/profile/form")).toBe("profile");
+  expect(accountTabForPath("/dashboard/my-searches/recommended")).toBe("shared");
+  expect(isOwnerAccountPath("/dashboard/my-listings/my-visits")).toBe(true);
+  expect(isOwnerAccountPath("/dashboard/my-listings/my-offers")).toBe(true);
+  expect(isOwnerAccountPath("/dashboard/profile")).toBe(false);
+ });
 });

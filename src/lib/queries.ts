@@ -3,6 +3,10 @@ import {
   fetchProject,
   fetchProjects,
   fetchProjectsByIds,
+  fetchProjectsByNames,
+  fetchCompareListings,
+  fetchCompareProjects,
+  fetchCompareUnits,
   fetchFirm,
   fetchFirmAgent,
   fetchRealtor,
@@ -12,9 +16,9 @@ import {
 import { offerRow, visitRow } from "@/features/account/presenters";
 import type { MapArea } from "@/features/search/match";
 import { fetchOffers, fetchOwnerListings, fetchVisits } from "@/services/account";
-import { fetchActivity, fetchShortlistIds, type ActivityUser } from "@/services/activity";
+import { fetchActivity, fetchShortlistIds, fetchViewedIds, type ActivityUser } from "@/services/activity";
 import { fetchUser } from "@/services/auth";
-import { fetchProperties, fetchProperty, fetchPropertyFacets, fetchPropertyGroups } from "@/services/properties";
+import { fetchProperties, fetchProperty, fetchPropertyCount, fetchPropertyFacets, fetchPropertyGroups } from "@/services/properties";
 import {
   fetchCities,
   fetchCityId,
@@ -135,10 +139,17 @@ export const propertyQueries = {
   /** Filter-drawer counts. Paging, sort and view don't change them, so they aren't in the key. */
   facets: (c: PropertySearchCriteria) =>
     queryOptions({
-      queryKey: ["properties", "facets", { ...c, view: undefined, sort: undefined, page: undefined, perPage: undefined }] as const,
+      queryKey: ["properties", "facets-v2", { ...c, view: undefined, sort: undefined, page: undefined, perPage: undefined }] as const,
       queryFn: () => fetchPropertyFacets(c),
       staleTime: CATALOG_STALE,
       placeholderData: keepPreviousData,
+    }),
+  /** Total matching listings from Rezide's dedicated /filter/count endpoint. */
+  count: (c: PropertySearchCriteria) =>
+    queryOptions({
+      queryKey: ["properties", "count", { ...c, view: undefined, sort: undefined, page: undefined, perPage: undefined }] as const,
+      queryFn: () => fetchPropertyCount(c),
+      staleTime: CATALOG_STALE,
     }),
   /** Listings grouped per locality or project (the grouped result views). */
   groups: (c: PropertySearchCriteria, groupBy: PropertyGroupBy) =>
@@ -185,6 +196,38 @@ export const projectQueries = {
     queryOptions({
       queryKey: ["projects", "by-ids", city, ids] as const,
       queryFn: () => fetchProjectsByIds(ids, city),
+      staleTime: CATALOG_STALE,
+      placeholderData: keepPreviousData,
+    }),
+  /** The Sale / Rental compare table's listings, with the room labels. */
+  compareListings: (ids: string[]) =>
+    queryOptions({
+      queryKey: ["compare", "listings", ids] as const,
+      queryFn: () => fetchCompareListings(ids),
+      staleTime: CATALOG_STALE,
+      placeholderData: keepPreviousData,
+    }),
+  /** "Add Property": projects with listings matching the text (three letters or more). */
+  compareProjects: (query: string) =>
+    queryOptions({
+      queryKey: ["compare", "projects", query] as const,
+      queryFn: () => fetchCompareProjects(query),
+      staleTime: CATALOG_STALE,
+      enabled: query.trim().length > 2,
+    }),
+  /** "Add Property": a project's units for sale or rent. */
+  compareUnits: (projectId: string, projectName: string, purpose: "sale" | "rent") =>
+    queryOptions({
+      queryKey: ["compare", "units", projectId, purpose] as const,
+      queryFn: () => fetchCompareUnits(projectId, projectName, purpose),
+      staleTime: CATALOG_STALE,
+      enabled: projectId !== "",
+    }),
+  /** Compare Project's picker: up to 10 projects matching a locality and/or name. */
+  byNames: (names: string[]) =>
+    queryOptions({
+      queryKey: ["projects", "by-names", names] as const,
+      queryFn: () => fetchProjectsByNames(names),
       staleTime: CATALOG_STALE,
       placeholderData: keepPreviousData,
     }),
@@ -235,8 +278,12 @@ export const accountQueries = {
   activity: (tab: ActivityTab, user: ActivityUser) =>
     queryOptions({ queryKey: ["account", "activity", tab, user.id, user.phone ?? ""] as const, queryFn: () => fetchActivity(tab, user) }),
   /** Which listings the user has shortlisted, for the Shortlist button. */
+  /** Which listings the user has shortlisted, for the Shortlist button. */
   shortlistIds: (userId: string) =>
     queryOptions({ queryKey: ["account", "shortlist-ids", userId] as const, queryFn: () => fetchShortlistIds(userId) }),
+  /** Which listings the user has already opened, for the "Viewed" mark on cards. */
+  viewedIds: (userId: string) =>
+    queryOptions({ queryKey: ["account", "viewed-ids", userId] as const, queryFn: () => fetchViewedIds(userId) }),
   /** Visits as display rows (the raw records are cached; `select` formats them). */
   visits: (role: AccountRole) =>
     queryOptions({

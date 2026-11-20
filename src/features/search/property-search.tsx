@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "@/components/brand/icon";
 import { RemovableChip } from "@/components/common/chip";
 import { EmptyState, ErrorState } from "@/components/common/feedback";
@@ -36,8 +36,11 @@ import type { MapView } from "./leaflet-map";
 import { LoadMore } from "./load-more";
 import { MapExplorer } from "./results-map";
 import { useUrlCriteria } from "./use-url-criteria";
+import { useSearchSuggestions } from "./use-search-suggestions";
+import type { SearchSuggestion, SuggestionKind } from "@/services/locations";
 
 type MapCard = "compact" | "photo" | "full";
+const PROPERTY_SUGGESTION_KINDS = ["locality", "subRegion", "project", "developer"] as const satisfies readonly SuggestionKind[];
 
 /**
  * Card used beside the map. The prototype offered three designs (A/B/C) as a
@@ -95,6 +98,13 @@ const CLEARED: Partial<PropertySearchCriteria> = {
   media: [],
   facing: [],
   projects: [],
+  availability: [],
+  buildingTypes: [],
+  balconies: [],
+  buildingAges: [],
+  preferredApartment: [],
+  floorRanges: [],
+  timeOnRezide: [],
   budgetMin: undefined,
   budgetMax: undefined,
   areaMin: undefined,
@@ -120,11 +130,16 @@ function Summary({ from, to, total, noun }: { from: number; to: number; total: n
 }
 
 export function PropertySearch() {
-  const { criteria, update, isNavigating } = useUrlCriteria(parsePropertyCriteria, serializePropertyCriteria);
+  const { criteria, update } = useUrlCriteria(parsePropertyCriteria, serializePropertyCriteria);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [q, setQ] = useState(criteria.q);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchActive, setSearchActive] = useState(-1);
   const inputId = useId();
+  const suggestionListId = useId();
+  const { suggestions, isFetching: suggestionsFetching, isError: suggestionsError, refetch: refetchSuggestions } =
+    useSearchSuggestions(q, { city: criteria.city, kinds: PROPERTY_SUGGESTION_KINDS });
   const setPreferredCity = usePreferencesStore((s) => s.setCity);
 
   // Keep the box in sync when the query changes through navigation (back/forward, chips).
@@ -180,6 +195,10 @@ export function PropertySearch() {
   });
   // Per-option counts for the filter drawer, computed by the API.
   const facets = useQuery({ ...propertyQueries.facets(criteria), enabled: drawerOpen });
+  const homeCount = useQuery({
+    ...propertyQueries.count(criteria),
+    enabled: drawerOpen && criteria.category === "homes",
+  });
 
   const data = isMap ? mapData : query.data;
   const listQuery = isMap ? mapQuery : query;
@@ -188,15 +207,91 @@ export function PropertySearch() {
     (c) => !(drilledLoc && c.key === `localities:${drilledLoc}`) && !(drilledProj && c.key === `projects:${drilledProj}`),
   );
   // Loading the next 10 on the map doesn't dim the list already shown.
-  const pending = (showGroups ? grouped.isFetching : isMap ? mapQuery.isFetching && !mapQuery.isFetchingNextPage : query.isFetching) || isNavigating;
+  const pending = (showGroups ? grouped.isFetching : isMap ? mapQuery.isFetching && !mapQuery.isFetchingNextPage : query.isFetching);
 
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    if (searchOpen && searchActive >= 0 && suggestions[searchActive]) {
+      pickSuggestion(suggestions[searchActive]);
+      return;
+    }
+    setSearchOpen(false);
     update({ q: q.trim() });
   };
+  const pickSuggestion = (suggestion: SearchSuggestion) => {
+    setQ(suggestion.name);
+    setSearchOpen(false);
+    setSearchActive(-1);
+    update({ q: suggestion.name });
+  };
+  const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setSearchOpen(false);
+      return;
+    }
+    if (!suggestions.length || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
+    event.preventDefault();
+    setSearchOpen(true);
+    const step = event.key === "ArrowDown" ? 1 : -1;
+    setSearchActive((active) => active < 0
+      ? step === 1 ? 0 : suggestions.length - 1
+      : (active + step + suggestions.length) % suggestions.length);
+  };
+  const suggestionPopup = searchOpen && q.trim() ? (
+    <div
+      id={suggestionListId}
+      role="listbox"
+      aria-label="Search suggestions"
+      className="absolute top-full right-0 left-0 z-30 mt-2 max-h-[min(360px,50vh)] overflow-y-auto rounded-[20px] border border-rez-smoke bg-white p-1.5 shadow-rez-lg"
+    >
+      {suggestions.map((suggestion, index) => (
+        <button
+          key={`${suggestion.kind}:${suggestion.id || suggestion.name}`}
+          id={`${suggestionListId}-${index}`}
+          type="button"
+          role="option"
+          aria-selected={searchActive === index}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => pickSuggestion(suggestion)}
+          className={cn(
+            "flex min-h-11 w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-sm hover:bg-rez-cloud",
+            searchActive === index && "bg-rez-cloud",
+          )}
+        >
+          <span>{suggestion.name}</span>
+          <span className="ml-3 text-xs capitalize text-rez-graphite">
+            {suggestion.kind === "subRegion" ? "Sub-region" : suggestion.kind}
+          </span>
+        </button>
+      ))}
+      {suggestionsFetching && suggestions.length === 0 && <p role="status" className="p-3 text-sm text-rez-graphite">Searching…</p>}
+      {suggestionsError ? (
+        <p role="status" className="p-3 text-sm text-rez-graphite">
+          Suggestions unavailable.{" "}
+          <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => void refetchSuggestions()} className="underline">
+            Retry
+          </button>
+        </p>
+      ) : !suggestionsFetching && suggestions.length === 0 ? (
+        <p role="status" className="p-3 text-sm text-rez-graphite">No suggestions. Submit to search this text.</p>
+      ) : null}
+    </div>
+  ) : null;
 
-  const changeIntent = (intent: Intent) => update({ intent, budgetMin: undefined, budgetMax: undefined });
+  const changeIntent = (intent: Intent) =>
+    update({
+      intent,
+      budgetMin: undefined,
+      budgetMax: undefined,
+      availability: [],
+      buildingTypes: [],
+      balconies: [],
+      buildingAges: [],
+      preferredApartment: [],
+      floorRanges: [],
+      timeOnRezide: [],
+    });
   const changeCategory = (category: PropertyCategory) =>
     update({
       category,
@@ -207,6 +302,13 @@ export function PropertySearch() {
       parking: [],
       facing: [],
       projects: [],
+      availability: [],
+      buildingTypes: [],
+      balconies: [],
+      buildingAges: [],
+      preferredApartment: [],
+      floorRanges: [],
+      timeOnRezide: [],
       // Land uses plot-size bands; carpet-area bands don't carry across categories.
       areaMin: undefined,
       areaMax: undefined,
@@ -306,21 +408,11 @@ export function PropertySearch() {
       <EmptyState
         title="No listings match your search."
         action={
-          <>
-            {(filterCount > 0 || criteria.q) && (
-              <Button variant="secondary" onClick={clearAll}>
-                Clear search and filters
-              </Button>
-            )}
-            <Button variant="secondary" onClick={() => changeIntent(rent ? "buy" : "rent")}>
-              Try {rent ? "buying" : cat.lease.toLowerCase()} instead
+          filterCount > 0 || criteria.q ? (
+            <Button variant="secondary" onClick={clearAll}>
+              Clear search and filters
             </Button>
-            {criteria.city !== "Mumbai" && (
-              <Button variant="ghost" onClick={() => update({ city: "Mumbai", localities: [] })}>
-                Browse Mumbai
-              </Button>
-            )}
-          </>
+          ) : undefined
         }
       >
         <p>
@@ -349,7 +441,7 @@ export function PropertySearch() {
     }
     if (!data) {
       return (
-        <div className={cn("grid gap-6", variant === "grid" ? "sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1")}>
+        <div className={cn("grid gap-4", variant === "grid" ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")}>
           {Array.from({ length: variant === "grid" ? 6 : 3 }, (_, i) => (
             <PropertyCardSkeleton key={i} />
           ))}
@@ -359,7 +451,7 @@ export function PropertySearch() {
     if (data.total === 0) return emptyState();
     return (
       <>
-        <ul className={cn("grid grid-cols-1", variant === "grid" ? "gap-6 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 gap-4")}>
+        <ul className={cn("grid grid-cols-1", variant === "grid" ? "gap-4 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 gap-4")}>
           {data.items.map((p, i) => (
             <li key={p.id} className="flex">
               <div className="w-full">
@@ -457,9 +549,16 @@ export function PropertySearch() {
       onOpenChange={setDrawerOpen}
       criteria={criteria}
       update={update}
-      total={showGroups ? undefined : data?.total}
-      pending={pending}
+      total={criteria.category === "homes"
+        ? homeCount.data
+        : showGroups ? undefined : data?.total}
+      pending={criteria.category === "homes"
+        ? homeCount.isFetching || homeCount.data === undefined
+        : pending}
+      countError={criteria.category === "homes" && homeCount.isError}
+      onRetryCount={() => void homeCount.refetch()}
       facets={facets.data?.facets}
+      unavailableCounts={facets.data?.unavailable}
     />
   );
 
@@ -487,13 +586,29 @@ export function PropertySearch() {
                 <label htmlFor={inputId} className="sr-only">
                   {placeholder}
                 </label>
-                <input
-                  id={inputId}
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder={placeholder}
-                  className="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[15px] outline-none placeholder:text-[#767a88]"
-                />
+                <div className="relative min-w-0 flex-1">
+                  <input
+                    id={inputId}
+                    value={q}
+                    onChange={(e) => {
+                      setQ(e.target.value);
+                      setSearchOpen(true);
+                      setSearchActive(-1);
+                    }}
+                    onFocus={() => setSearchOpen(true)}
+                    onBlur={() => setSearchOpen(false)}
+                    onKeyDown={onSearchKeyDown}
+                    placeholder={placeholder}
+                    autoComplete="off"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={searchOpen && q.trim() !== ""}
+                    aria-controls={searchOpen && q.trim() !== "" ? suggestionListId : undefined}
+                    aria-activedescendant={searchOpen && searchActive >= 0 ? `${suggestionListId}-${searchActive}` : undefined}
+                    className="h-full w-full min-w-0 bg-transparent px-2.5 text-[15px] outline-none placeholder:text-[#767a88]"
+                  />
+                  {suggestionPopup}
+                </div>
                 <button type="submit" className="sr-only">
                   Search
                 </button>
@@ -598,15 +713,15 @@ export function PropertySearch() {
   return (
     <div className="flex-1 bg-white px-4 pt-5 pb-24 md:px-8">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-[18px]">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] whitespace-nowrap md:text-[32px]">
+        <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] break-words sm:text-[30px] xl:text-[32px]">
             <span className="font-extrabold">{criteria.city}</span> Properties.
             <span className="sr-only">
               {" "}
               {cat.noun} {rent ? `for ${cat.lease.toLowerCase()}` : "for sale"}
             </span>
           </h1>
-          <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2.5">
+          <div className="grid min-w-0 grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center xl:flex-nowrap">
             <label className="sr-only" htmlFor={`${inputId}-type`}>
               Property type
             </label>
@@ -614,7 +729,7 @@ export function PropertySearch() {
               id={`${inputId}-type`}
               value={criteria.category}
               onValueChange={(value) => changeCategory(value as PropertyCategory)}
-              className="border-black pl-[22px] text-[15px] font-bold"
+              className="w-full min-w-0 justify-between gap-2 border-black px-4 text-sm font-semibold data-[size=default]:h-11 sm:w-auto sm:min-w-[140px]"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -629,14 +744,14 @@ export function PropertySearch() {
               id={`${inputId}-intent`}
               value={criteria.intent}
               onValueChange={(value) => changeIntent(value as Intent)}
-              className="border-black pl-[22px] text-[15px] font-bold"
+              className="w-full min-w-0 justify-between gap-2 border-black px-4 text-sm font-semibold data-[size=default]:h-11 sm:w-auto sm:min-w-[140px]"
             >
               <option value="buy">To Buy</option>
               <option value="rent">To {cat.lease}</option>
             </SearchSelect>
-            <span aria-hidden className="mx-1 hidden h-7 w-px bg-rez-smoke sm:block" />
-            <div className="flex max-w-full min-w-0 items-center gap-2.5">
-              <span aria-hidden className="eyebrow hidden text-rez-graphite sm:inline">
+            <span aria-hidden className="mx-1 hidden h-7 w-px bg-rez-smoke xl:block" />
+            <div className="col-span-2 flex w-full min-w-0 items-center gap-2.5 sm:w-auto sm:flex-1 xl:flex-none">
+              <span aria-hidden className="eyebrow hidden text-rez-graphite xl:inline">
                 View
               </span>
               <Segmented
@@ -655,27 +770,48 @@ export function PropertySearch() {
                   { value: "loc", label: "Location" },
                 ]}
                 size="md"
+                className="w-full sm:w-auto"
+                itemClassName="flex-1 px-2 text-[13px] sm:px-3 sm:text-sm"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2.5 [&>button]:size-11 [&>button]:rounded-md [&>button]:text-rez-graphite [&>button]:shadow-sm">
           <form
             role="search"
             onSubmit={submit}
-            className="flex min-w-0 flex-1 items-center rounded-full border border-rez-smoke bg-white py-1.5 pr-1.5 pl-3.5 shadow-rez-sm focus-within:border-rez-mocaccino"
+            className="flex h-11 min-w-0 flex-1 items-center rounded-md border border-rez-smoke bg-white shadow-sm focus-within:border-rez-mocaccino"
           >
+            <button type="submit" aria-label="Search" className="flex h-full w-12 shrink-0 items-center justify-center border-r border-rez-smoke text-rez-graphite hover:bg-rez-cloud focus-visible:outline-2 focus-visible:outline-rez-mocaccino">
+              <Icon name="search" size={18} />
+            </button>
             <label htmlFor={inputId} className="sr-only">
               {placeholder}
             </label>
-            <input
-              id={inputId}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={placeholder}
-              className="h-12 min-w-0 flex-1 bg-transparent px-4 text-[15px] outline-none placeholder:text-[#767a88]"
-            />
+            <div className="relative min-w-0 flex-1">
+              <input
+                id={inputId}
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setSearchOpen(true);
+                  setSearchActive(-1);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                onBlur={() => setSearchOpen(false)}
+                onKeyDown={onSearchKeyDown}
+                placeholder="Search for location or building"
+                autoComplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={searchOpen && q.trim() !== ""}
+                aria-controls={searchOpen && q.trim() !== "" ? suggestionListId : undefined}
+                aria-activedescendant={searchOpen && searchActive >= 0 ? `${suggestionListId}-${searchActive}` : undefined}
+                className="h-10 w-full min-w-0 bg-transparent px-3 text-[13px] outline-none placeholder:text-[#767a88] sm:text-sm"
+              />
+              {suggestionPopup}
+            </div>
             {q && (
               <button
                 type="button"
@@ -689,10 +825,6 @@ export function PropertySearch() {
                 <Icon name="x" size={14} />
               </button>
             )}
-            <Button type="submit" size="lg" aria-label="Search" className="px-4 sm:px-6">
-              <Icon name="search" size={20} />
-              <span className="hidden sm:inline">Search</span>
-            </Button>
           </form>
           {filtersButton}
         </div>
@@ -730,13 +862,13 @@ export function PropertySearch() {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-rez-smoke pt-2">
+        <div className="flex min-w-0 flex-col gap-3 border-t border-rez-smoke pt-3 lg:flex-row lg:items-center lg:justify-between [&>p]:text-sm">
           {summary}
           {!showGroups && (
-            <div className="flex flex-wrap items-center gap-4">
-              <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-3 sm:flex sm:items-center sm:gap-4">
+              <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-rez-graphite sm:flex-row sm:items-center sm:gap-2.5 sm:text-sm">
                 Per page
-                <SearchSelect size="sm" value={criteria.perPage} onValueChange={(value) => update({ perPage: Number(value) })} aria-label="Results per page">
+                <SearchSelect size="sm" value={criteria.perPage} onValueChange={(value) => update({ perPage: Number(value) })} aria-label="Results per page" className="w-full min-w-0 justify-between gap-2 px-3 sm:w-auto sm:min-w-20">
                   {PER_PAGE_OPTIONS.map((n) => (
                     <option key={n} value={n}>
                       {n}
@@ -744,10 +876,11 @@ export function PropertySearch() {
                   ))}
                 </SearchSelect>
               </label>
-              <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
+              <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-rez-graphite sm:flex-row sm:items-center sm:gap-2.5 sm:text-sm">
                 Sort by
                 <SearchSelect
                   size="sm"
+                  className="w-full min-w-0 justify-between gap-2 px-3 sm:w-auto"
                   value={criteria.sort}
                   onValueChange={(value) => update({ sort: value as PropertySearchCriteria["sort"] })} aria-label="Sort results"
                 >

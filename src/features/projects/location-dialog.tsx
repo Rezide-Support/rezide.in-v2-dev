@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type UIEvent } from "react";
 import { Icon } from "@/components/brand/icon";
+import { ApplyContent } from "@/components/common/multi-select-dialog";
 import { Segmented } from "@/components/common/segmented";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,6 +51,7 @@ export function LocationDialog({
   onApply,
   applyLabel,
   onDraftChange,
+  countLoading = false,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -57,6 +59,8 @@ export function LocationDialog({
   selected: string[];
   onApply: (values: string[]) => void;
   applyLabel: (draft: string[]) => string;
+  /** The live count is loading: Apply shows a spinner until it's in. */
+  countLoading?: boolean;
   /** Lets the parent preview results (a live count) for the unapplied draft. */
   onDraftChange?: (draft: string[]) => void;
 }) {
@@ -65,12 +69,15 @@ export function LocationDialog({
   const [tabId, setTabId] = useState("");
   const { tabs, loading: tabsLoading } = useRegionTabs(city, open);
   const activeTab = tabs.find((t) => t.id === tabId) ?? tabs[0];
+  // Apply closes at once (no fade), so the results show straight away.
+  const [applied, setApplied] = useState(false);
 
   // Reset the draft, search and tab each time the dialog opens.
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
+      setApplied(false);
       setDraft(selected);
       setSearch("");
       setTabId("");
@@ -112,7 +119,7 @@ export function LocationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100dvh-48px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[560px]">
+      <DialogContent instantClose={applied} className="flex max-h-[calc(100dvh-48px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[560px]">
         <DialogHeader className="border-b border-rez-smoke px-7 pt-6 pb-[18px]">
           <DialogTitle className="text-[26px]">Location</DialogTitle>
           <DialogDescription className="sr-only">Choose a region, then select one or more localities and apply.</DialogDescription>
@@ -167,17 +174,12 @@ export function LocationDialog({
               </Button>
             </li>
           ) : (
-            // The end of the region's list, said plainly so it doesn't look stuck (Western Suburbs has 24).
+            // The end of a search's matches, said plainly. A region's full list ends without a note.
             !loadingFirst &&
             !localities.isError &&
             activeTab &&
-            items.length > 0 && (
-              <li className="py-4 text-center text-sm text-rez-graphite">
-                {query.trim()
-                  ? `That's every match in ${activeTab.label}.`
-                  : `All ${items.length} ${items.length === 1 ? "locality" : "localities"} in ${activeTab.label} are shown.`}
-              </li>
-            )
+            items.length > 0 &&
+            query.trim() && <li className="py-4 text-center text-sm text-rez-graphite">{`That's every match in ${activeTab.label}.`}</li>
           )}
         </ul>
         <DialogFooter className="flex-row items-center gap-3 border-t border-rez-smoke px-7 pt-4 pb-6">
@@ -190,11 +192,12 @@ export function LocationDialog({
             size="xl"
             className="flex-1"
             onClick={() => {
+              setApplied(true);
               onApply(draft);
               onOpenChange(false);
             }}
           >
-            {applyLabel(draft)}
+            <ApplyContent label={applyLabel(draft)} loading={countLoading} />
           </Button>
         </DialogFooter>
       </DialogContent>

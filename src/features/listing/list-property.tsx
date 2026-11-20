@@ -1,173 +1,9 @@
 "use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useSyncExternalStore } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import { Icon } from "@/components/brand/icon";
-import { Field, FormError } from "@/components/common/form-field";
-import { OtpInput } from "@/components/common/otp-input";
-import { PhoneInput } from "@/components/common/phone-input";
-import { Segmented } from "@/components/common/segmented";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useOtpFlow } from "@/features/auth/use-otp-flow";
-import { ApiError, errorMessage } from "@/lib/api/client";
-import { OTP_LENGTH } from "@/lib/constants";
-import { formatPhone } from "@/lib/format";
-import { indianMobile, otpCode, personName } from "@/lib/validation";
-import { useListingDraftStore } from "@/stores/listing-draft";
-import { useSession, useSessionStore } from "@/stores/session";
-import type { ListingIntent } from "@/types/models";
-import { ListingWizard } from "./listing-wizard";
 import { SiteFooter } from "@/components/layout/site-footer";
-
-const guestSchema = z.object({ firstName: personName("first name"), lastName: personName("last name"), phone: indianMobile });
-type GuestValues = z.infer<typeof guestSchema>;
-
-function StartCard() {
-  const { session } = useSession();
-  const signIn = useSessionStore((s) => s.signIn);
-  const start = useListingDraftStore((s) => s.start);
-  const [intent, setIntent] = useState<ListingIntent>("sell");
-  const [guest, setGuest] = useState<GuestValues | null>(null);
-  const [code, setCode] = useState("");
-  const [codeError, setCodeError] = useState<string | null>(null);
-  const flow = useOtpFlow((s) => {
-    signIn(s);
-    start({ intent, category: "home" });
-  });
-  const form = useForm<GuestValues>({ resolver: zodResolver(guestSchema), defaultValues: { firstName: "", lastName: "", phone: "" }, mode: "onTouched" });
-  const e = form.formState.errors;
-
-  const intentControl = (
-    <div className="flex flex-col gap-2">
-      <span className="text-[13px] font-semibold">I want to</span>
-      <Segmented
-        label="I want to"
-        value={intent}
-        onChange={setIntent}
-        appearance="accent"
-        size="lg"
-        fullWidth
-        options={[
-          { value: "sell", label: "Sell" },
-          { value: "rent", label: "Rent / Lease" },
-        ]}
-      />
-    </div>
-  );
-
-  return (
-    <div className="flex w-full flex-col gap-5 rounded-xl bg-white p-6 text-black shadow-rez-lg sm:p-8 md:w-[440px]">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-[26px] leading-tight font-semibold tracking-[-0.01em]">
-          {flow.step === "otp" ? "Enter the OTP." : session ? "Add a new listing." : "List your property. Free."}
-        </h2>
-        <p className="text-sm leading-normal text-rez-graphite">
-          {flow.step === "otp"
-            ? `Enter the ${OTP_LENGTH}-digit code sent to ${formatPhone(guest?.phone ?? "")}.`
-            : session
-              ? `Welcome back, ${session.user.firstName}. Choose sell or rent out, then add your listing.`
-              : "Takes less than 2 minutes to start."}
-        </p>
-      </div>
-
-      {session ? (
-        <>
-          {intentControl}
-          <Button size="xl" onClick={() => start({ intent, category: "home" })}>
-            Start listing
-          </Button>
-        </>
-      ) : flow.step === "phone" ? (
-        <form
-          noValidate
-          className="flex flex-col gap-4"
-          onSubmit={form.handleSubmit((v) => {
-            setGuest(v);
-            flow.send.mutate(v.phone);
-          })}
-        >
-          <div className="grid grid-cols-2 gap-2.5">
-            <Field label="First name" required error={e.firstName?.message}>
-              <Input autoComplete="given-name" {...form.register("firstName")} />
-            </Field>
-            <Field label="Last name" required error={e.lastName?.message}>
-              <Input autoComplete="family-name" {...form.register("lastName")} />
-            </Field>
-          </div>
-          {intentControl}
-          <Field label="Mobile number" required error={e.phone?.message ?? (flow.send.error instanceof ApiError ? flow.send.error.fieldErrors?.phone : undefined)}>
-            <Controller control={form.control} name="phone" render={({ field }) => <PhoneInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} />} />
-          </Field>
-          {flow.send.isError && !(flow.send.error instanceof ApiError && flow.send.error.fieldErrors) && <FormError>{errorMessage(flow.send.error)}</FormError>}
-          <Button type="submit" size="xl" disabled={flow.send.isPending}>
-            {flow.send.isPending ? "Sending code…" : "Send OTP"}
-          </Button>
-        </form>
-      ) : (
-        <form
-          noValidate
-          className="flex flex-col gap-3"
-          onSubmit={(ev) => {
-            ev.preventDefault();
-            const parsed = otpCode.safeParse(code);
-            if (!parsed.success) return setCodeError(parsed.error.issues[0].message);
-            setCodeError(null);
-            if (guest) flow.verify.mutate({ phone: guest.phone, code: parsed.data, role: "owner", firstName: guest.firstName, lastName: guest.lastName });
-          }}
-        >
-          <Field
-            label={`${OTP_LENGTH}-digit code`}
-            labelClassName="sr-only"
-            required
-            error={codeError ?? (flow.verify.error ? (flow.verify.error instanceof ApiError ? flow.verify.error.fieldErrors?.code ?? flow.verify.error.message : errorMessage(flow.verify.error)) : undefined)}
-          >
-            <OtpInput value={code} onChange={setCode} autoFocus />
-          </Field>
-          <div className="flex justify-between text-[13px] font-medium text-rez-graphite">
-            <button
-              type="button"
-              className="text-black underline underline-offset-[3px]"
-              onClick={() => {
-                flow.changeNumber();
-                setCode("");
-              }}
-            >
-              Change number
-            </button>
-            {flow.secondsLeft > 0 ? (
-              <span>Resend in 0:{String(flow.secondsLeft).padStart(2, "0")}</span>
-            ) : (
-              <button type="button" className="text-black underline underline-offset-[3px]" onClick={() => guest && flow.send.mutate(guest.phone)}>
-                Resend OTP
-              </button>
-            )}
-          </div>
-          <Button type="submit" size="xl" disabled={flow.verify.isPending}>
-            {flow.verify.isPending ? "Verifying…" : "Verify and continue"}
-          </Button>
-        </form>
-      )}
-      <p className="border-t border-rez-smoke pt-3.5 text-center text-xs leading-normal text-rez-graphite">
-        Your number stays private and is shared only when you accept an enquiry.
-      </p>
-    </div>
-  );
-}
-
-const subscribeDraft = (cb: () => void) => useListingDraftStore.persist.onFinishHydration(cb);
-
+import { OwnerEnquiryForm } from "./owner-enquiry-form";
 export function ListProperty() {
-  const draftHydrated = useSyncExternalStore(subscribeDraft, () => useListingDraftStore.persist.hasHydrated(), () => false);
-  const started = useListingDraftStore((s) => s.started);
-  const { status } = useSession();
-
-  if (draftHydrated && status === "authenticated" && started) return <ListingWizard />;
-
-  return (
-    <>
+ return <>
       <section className="bg-rez-forest px-4 py-12 text-rez-full-white md:px-8 md:py-[72px]">
         <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-12">
           <div className="flex max-w-[640px] min-w-0 flex-[1_1_min(100%,520px)] flex-col gap-7">
@@ -189,11 +25,9 @@ export function ListProperty() {
               ))}
             </ul>
           </div>
-          {status === "loading" || !draftHydrated ? <div className="h-[420px] w-full rounded-xl bg-white/10 md:w-[440px]" aria-busy="true" /> : <StartCard />}
+          <div className="w-full min-w-0 flex-[1_1_min(100%,560px)]"><OwnerEnquiryForm /></div>
         </div>
       </section>
-      
-
 <div className="flex min-h-[350px] flex-col items-center justify-center bg-white px-4 text-center text-black">
   <h1 className="text-5xl font-bold uppercase tracking-tight sm:text-7xl md:text-8xl">
     Coming
@@ -285,6 +119,5 @@ export function ListProperty() {
         </div>
       </section> */}
       <SiteFooter />
-    </>
-  );
+</>;
 }

@@ -21,6 +21,7 @@ export type Facing =
 export type LatLng = [lat: number, lng: number];
 
 export type Spec = { label: string; value: string };
+export type PropertyPhoto = { label: string; url: string };
 
 /** Verification is shown as a sample badge only. No verification service is connected. */
 export type VerificationStatus = "verified" | "pending";
@@ -41,19 +42,28 @@ export interface Property {
   /** The owner withholds the price: show "Price on request" (the figure is never sent). */
   priceHidden?: boolean;
   areaSqft: number;
+  areaKnown?: boolean;
+  areaType?: string;
   areaBasis: "Carpet" | "Built-up" | "Plot";
   bhk?: number;
+  bhkLabel?: string;
   bathrooms?: number;
   parking?: number;
   furnishing?: Furnishing;
+  /** Original furnishing status text, including statuses outside the search filters. */
+  furnishingLabel?: string;
   facing?: Facing;
   media: MediaType[];
   specs: Spec[];
   amenities: string[];
   description: string;
   images: string[];
+  propertyPhotos?: PropertyPhoto[];
+  /** Detail-gallery photos, preserving labels from the selected API photo source. */
+  galleryPhotos?: PropertyPhoto[];
   photoSource?: "listing" | "sample-flat" | "project" | "placeholder";
   availability?: string;
+  availabilityId?: string;
   locationLabel?: string;
   ratePerSqft?: number;
   coords: LatLng;
@@ -62,6 +72,8 @@ export interface Property {
   realtorFirm: string;
   /** The realtor's firm, which an enquiry about this listing is sent to. */
   realtorFirmId?: string;
+  /** Agent/manager recipient for enquiries; realtorId remains the broker lookup ID. */
+  contactPersonId?: string;
   verification: VerificationStatus;
   updatedAt: string;
 
@@ -80,6 +92,7 @@ export interface Property {
   subRegion?: string;
   /** e.g. "Gated Community", "Standalone Building". */
   projectType?: string;
+  buildingType?: string;
   vastuEntry?: string;
   vastuExit?: string;
   view?: string;
@@ -92,23 +105,32 @@ export interface Property {
   furnishingItems?: string[];
   /** Building / complex photos (v1 "Complex" gallery tab). */
   complexImages?: string[];
+  complexPhotos?: PropertyPhoto[];
   /** Floor-plan images (v1 "Plans" gallery tab). None in the sample data. */
   planImages?: string[];
+  planPhotos?: PropertyPhoto[];
   /** Brochure PDF, set on the detail page only when one exists. */
   brochureUrl?: string;
   /** Walkthrough video URL. None in the sample data. */
   videoUrl?: string;
+  vrTourUrl?: string;
+  projectHidden?: boolean;
+  projectAmenities?: string[];
   /** Nearby places by category (v1 "Locality" tab). Only sample listings carry them; real ones load per project. */
   landmarks?: LandmarkGroup[];
   /** The backend's locality for this listing; `locality` prefers the wider sub-region. */
   localityName?: string;
+  projectLocality?: { name: string; coords: LatLng };
   /** Unit number and floor, unless the owner hides them. */
   unitNo?: string;
+  tower?: string;
+  floorLabel?: string;
   floor?: number;
   /** Floors in the building. */
   totalFloors?: number;
   /** Age of the building in years. */
   ageYears?: number;
+  buildingAgeLabel?: string;
 }
 
 export type PropertyVisit = {
@@ -120,11 +142,13 @@ export type PropertyVisit = {
   showingStatus: string;
 };
 
-export type RoomDimension = { name: string; /** feet */ length: number; /** feet */ width: number };
+/** `area`: sq ft as the backend measured it; without it, length × width. */
+export type RoomDimension = { name: string; /** feet */ length: number; /** feet */ width: number; area?: number };
 
 export type LandmarkCategory = "Schools" | "Railway Stations" | "Metro Stations" | "Airports" | "Malls" | "Hospitals";
 
-export type Landmark = { name: string; distanceKm: number; coords: LatLng };
+/** `icon`: Google's place icon (https), shown beside the name as on rezide.in. */
+export type Landmark = { name: string; distanceKm: number; coords: LatLng; icon?: string };
 
 export type LandmarkGroup = { category: LandmarkCategory; items: Landmark[] };
 
@@ -166,13 +190,19 @@ export type DeveloperProfile = {
 export interface Project {
   id: string;
   name: string;
+  /** The project's own logo, when provided by the backend. */
+  logo?: string;
   developer: string;
+  /** The developer's logo, shown on the card's photo (rezide.in). Initials stand in without one. */
+  developerLogo?: string;
   city: string;
   locality: string;
   status: ProjectStatus;
   /** Possession year for under-construction projects. */
   possessionYear?: number;
   possessionLabel: string;
+  backendStatus?: string;
+  possessionDate?: string;
   configurations: string;
   bhkOptions: string[];
   /** Starting price in INR. */
@@ -187,7 +217,18 @@ export interface Project {
   amenities: string[];
   views: string[];
   reraId: string;
+  /** Every RERA id on the project row ("NA" left out), for the card's RERA tooltip. */
+  reraIds?: string[];
+  /** From the detail record, for Compare Project. */
+  region?: string;
+  subRegion?: string;
+  /** e.g. "Gated Amenities". */
+  projectType?: string;
+  /** ISO date the project completes. */
+  completionDate?: string;
   images: string[];
+  /** Each photo's label, by index (e.g. "Artist Impression - Project Elevation"), shown under it on the project page. */
+  imageCaptions?: string[];
   coords: LatLng;
   description: string;
 
@@ -206,13 +247,18 @@ export interface Project {
   viewImages?: string[];
   /** Master / site plan images. None in the sample data. */
   planImages?: string[];
+  /** The project's video: a YouTube link or a CDN file key (rezide.in's card button and Video tab). */
   videoUrl?: string;
+  /** The project's 360° virtual tour (an https page shown in a frame), as rezide.in's "360" button. */
+  vrTourUrl?: string;
   landmarks?: LandmarkGroup[];
   developerProfile?: DeveloperProfile;
   /** Brochure file, when the developer has shared one. */
   brochureUrl?: string;
   /** The real locality's photo, when the backend has one. */
   localityPhoto?: string;
+  /** The locality's backend id: its page (/locality/{id}), as rezide.in's "Explore" photo links. */
+  localityId?: string;
 }
 
 export type RealtorCredential = "RERA" | "GST" | "NAR-India";
@@ -421,15 +467,16 @@ export interface ListingDraft {
 export type AccountRole = "seeker" | "owner";
 export type ActivityTab = "viewed" | "shared" | "shortlisted" | "rejected";
 
-/** A property in one of the seeker's activity lists, with the property embedded. */
-export interface ActivityItem {
-  propertyId: string;
+/** A property or project in one of the seeker's activity lists. */
+export type ActivityItem = {
   /** ISO date the activity happened. */
   date: string;
   /** e.g. who shared it and their message, or why it was rejected. */
   note?: string;
-  property: Property;
-}
+} & (
+  | { kind: "property"; propertyId: string; property: Property; project?: never }
+  | { kind: "project"; projectId: string; project: Project; property?: never }
+);
 
 export type VisitKind = "site_visit" | "video_tour";
 export type VisitStatus = "requested" | "confirmed" | "completed" | "cancelled";
@@ -522,6 +569,13 @@ export interface PropertySearchCriteria {
   parking: string[];
   media: string[];
   facing: string[];
+  availability: string[];
+  buildingTypes: string[];
+  balconies: string[];
+  buildingAges: string[];
+  preferredApartment: string[];
+  floorRanges: string[];
+  timeOnRezide: string[];
   /** Project ids (listings inside these projects). */
   projects: string[];
   budgetMin?: number;
@@ -547,6 +601,13 @@ export interface ProjectSearchCriteria {
   budget: string[];
   years: number[];
   views: string[];
+  /** The Filters drawer (rezide.in's "Project Filters"): project type ids, unit types, BHKs, carpet area (sq ft), video / VR. */
+  projectTypes: string[];
+  unitTypes: string[];
+  bhk: string[];
+  areaMin?: number;
+  areaMax?: number;
+  media: string[];
   sort: ProjectSortKey;
   page: number;
   perPage: number;

@@ -4,8 +4,8 @@ import { defaultProjectCriteria } from "@/features/search/criteria";
 import { api } from "@/lib/api/client";
 import { sendProjectEnquiry } from "@/services/mutations";
 import type { ProjectSortKey } from "@/types/models";
-import { toAreaRange, toBhkOptions, toProject, toProjectFilters, withProjectDetail } from "@/services/project-mapper";
-import { findListingProject, getProjectDetail, resetProjectCache, searchProjects } from "@/services/projects";
+import { projectMediaOf, toAreaRange, toBhkOptions, toProject, toListingProject, toProjectFilters, withProjectDetail } from "@/services/project-mapper";
+import { findListingProject, findProjectsByNames, getProjectDetail, resetProjectCache, searchProjects } from "@/services/projects";
 
 /* The Rezide backend's project endpoints, answered by a test double. Shapes follow live responses. */
 
@@ -41,7 +41,7 @@ const detail = {
     locality_and_address: { coordinates: { latitude: "18.99", longitude: "72.84" }, address: { line_1: "GD Ambekar Marg", city: "Bangalore", locality: "Lalbaug", sub_region: "Parel" } },
     project_description: { description: "About it.", highlights: [" Near the sea "] },
     amenities: ["Pool", " Gym ", "Spa"],
-    media: { images: [{ url: "a" }], sample_flats: [{ url: "b" }], amenities: [{ url: "c" }], videos: [{ url: "https://youtu.be/x" }] },
+    media: { images: [{ url: "a", label: "Artist Impression - Project Elevation" }], sample_flats: [{ url: "b" }], amenities: [{ url: "c" }], videos: [{ url: "https://youtu.be/x" }] },
     configuration: [{ bhk: "2 BHK", unit_plan: "plan1" }, { bhk: "2 BHK", unit_plan: "plan1" }, { bhk: "3 BHK" }],
     price_range: [{ name: "2 BHK", minArea: "850", maxArea: "1,000" }],
     similar_projects: [{ value: "66f3ca67d7f5683ae57720fb" }],
@@ -49,6 +49,13 @@ const detail = {
 };
 
 describe("mapping", () => {
+  it("preserves the listing project's entire photo gallery and its own logo", () => {
+    const raw = { _id: "project-1", general_information: { project_name: "L&T Crescent Bay", logo: "project-logo" }, media: { images: [{ url: "exterior-1" }, { url: "exterior-2" }, { url: "exterior-3" }] } };
+    const project = toListingProject(raw, "Mumbai");
+    expect(project.images).toEqual(["exterior-1", "exterior-2", "exterior-3"].map(key => `https://cdn.rezide.in/images/${key}.jpeg`));
+    expect(project.logo).toBe("https://api.rezide.in/v1/admin/file/upload/project-logo");
+    expect(toListingProject({ ...raw, general_information: { ...raw.general_information, logo: "https://cdn.rezide.in/logo.png" } }, "Mumbai").logo).toBe("https://cdn.rezide.in/logo.png");
+  });
   it("reads the backend's worded values", () => {
     expect(toBhkOptions("1, 2, 3 & 4 BHK")).toEqual(["1 BHK", "2 BHK", "3 BHK", "4 BHK"]);
     expect(toBhkOptions("Studio & 1 BHK")).toEqual(["Studio", "1 BHK"]);
@@ -78,6 +85,23 @@ describe("mapping", () => {
     });
   });
 
+  it("reads the card's video from the row, and the video and 360° tour from a detail record", () => {
+    expect(toProject(row({ videoId: "https://youtu.be/fw8KovRUu74" }), "Mumbai").videoUrl).toBe("https://youtu.be/fw8KovRUu74");
+    expect(toProject(row(), "Mumbai")).not.toHaveProperty("videoUrl");
+    expect(
+      projectMediaOf({ media: { videos: [{ url: "https://www.youtube.com/watch?v=uGFI3TfEpH4" }] }, general_information: { vr_tour_link: "http://storage.net-fs.com/hosting/6239072/96/" } }),
+    ).toEqual({ videoUrl: "https://www.youtube.com/watch?v=uGFI3TfEpH4", vrTourUrl: "https://storage.net-fs.com/hosting/6239072/96/" });
+    // A tour link that isn't a web page isn't framed.
+    expect(projectMediaOf({ general_information: { vr_tour_link: "javascript:alert(1)" } })).toEqual({});
+  });
+
+  it("shows the developer's logo from its upload key, as rezide.in's card does", () => {
+    expect(toProject(row({ logo: "25e75246cfd2828cf45f7f5d9b792a9f" }), "Mumbai").developerLogo).toBe(
+      "https://api.rezide.in/v1/admin/file/upload/25e75246cfd2828cf45f7f5d9b792a9f",
+    );
+    expect(toProject(row({ logo: " " }), "Mumbai")).not.toHaveProperty("developerLogo");
+  });
+
   it("has no possession year once ready, and copes with missing values", () => {
     expect(toProject(row({ status: "Ready to Move", possession: "2019-01-07T05:30:00.000Z" }), "Mumbai")).toMatchObject({ status: "rtm", possessionYear: undefined, possessionLabel: "Completed Jan 2019" });
     expect(toProject({ _id: "x" }, "Mumbai")).toMatchObject({ priceFrom: 0, possessionLabel: "Possession not stated", images: ["/images/listing-placeholder.jpg"] });
@@ -91,7 +115,9 @@ describe("mapping", () => {
       coords: [18.99, 72.84],
       description: "About it.",
       highlights: ["Near the sea"],
-      images: ["https://cdn.rezide.in/images/a.jpeg", "https://cdn.rezide.in/images/b.jpeg"],
+      // rezide.in leaves the sample flats out of the photos; each photo keeps its label.
+      images: ["https://cdn.rezide.in/images/a.jpeg"],
+      imageCaptions: ["Artist Impression - Project Elevation"],
       amenityImages: ["https://cdn.rezide.in/images/c.jpeg"],
       amenities: ["Pool", "Gym", "Spa"],
       videoUrl: "https://youtu.be/x",
@@ -100,6 +126,39 @@ describe("mapping", () => {
       developerProfile: { name: "Lodha Group", headquarters: "Bengaluru", description: "A developer." },
     });
     expect(JSON.stringify(project)).not.toMatch(/BANKSECRET|PANSECRET/);
+  });
+
+  it("puts site, location and township plans under Project Plans, not Photos (as rezide.in)", () => {
+    const project = withProjectDetail(toProject(row(), ""), {
+      project: {
+        media: {
+          images: [
+            { url: "elev", label: "Artist Impression - Project Elevation" },
+            { url: "site", label: "Site Plan" },
+            { url: "loc", label: "Location Plan" },
+            { url: "town", label: "Township Plan" },
+          ],
+        },
+      },
+    });
+    expect(project.images).toEqual(["https://cdn.rezide.in/images/elev.jpeg"]);
+    expect(project.planImages).toEqual(["site", "loc", "town"].map((k) => `https://cdn.rezide.in/images/${k}.jpeg`));
+  });
+
+  it("reads the Compare Project fields from the detail record", () => {
+    const project = withProjectDetail(toProject(row(), ""), {
+      project: {
+        general_information: { project_type: { name: "Gated Amenities" }, completion_date: "2032-12-31T05:30:00.000Z" },
+        locality_and_address: { address: { region: "South Mumbai", sub_region: "Extended Wadala", locality: "Sewri" } },
+      },
+    });
+    expect(project).toMatchObject({ region: "South Mumbai", subRegion: "Extended Wadala", projectType: "Gated Amenities", completionDate: "2032-12-31T05:30:00.000Z" });
+  });
+
+  it("reads the Views tab from the detail record's apartment views", () => {
+    const base = toProject(row(), "");
+    expect(withProjectDetail(base, { project: { project_description: { apartment_views: [" city skyline ", "", "building / city"] } } }).views).toEqual(["city skyline", "building / city"]);
+    expect(withProjectDetail(base, { project: { project_description: {} } }).views).toEqual(base.views);
   });
 
   it("reads rezide.in's plan ranges, RERA registrations and developer profile", () => {
@@ -147,6 +206,13 @@ describe("mapping", () => {
 });
 
 describe("filters", () => {
+  it("sends the Filters drawer as rezide.in's Project Filters do", () => {
+    expect(
+      toProjectFilters(defaultProjectCriteria({ projectTypes: ["650c6732a3021fab1835c045"], unitTypes: ["Villa"], bhk: ["5 BHK"], areaMin: 3000, areaMax: 10000, media: ["Video"] })),
+    ).toMatchObject({ project_type: ["650c6732a3021fab1835c045"], building_type: ["Villa"], bhks: ["5 BHK"], area_min: ["3000"], area_max: ["10000"], project_with: ["Video"] });
+    expect(toProjectFilters(defaultProjectCriteria())).not.toHaveProperty("bhks");
+  });
+
   it("sends the backend's values", () => {
     expect(
       toProjectFilters(defaultProjectCriteria({ city: "Bengaluru", q: "Lodha", status: ["uc", "rtm", "nl"], views: ["Sea View"], budget: ["luxury"], perPage: 9 })),
@@ -189,6 +255,15 @@ describe("backend reads", () => {
     backend = new MockAdapter(api);
   });
   afterEach(() => backend.restore());
+
+  it("lists Compare Project's picker as rezide.in asks for it: locality and name together", async () => {
+    backend.onPost("/Inventory/project/filter/new").reply(200, { data: [row(), row({ _id: "b", project_name: " Lodha Park " })], result_count: 73 });
+    await expect(findProjectsByNames(["Sewri", " Lodha ", ""])).resolves.toEqual([
+      { id: "66f3ca67d7f5683ae57720fa", name: "Lodha Venezia" },
+      { id: "b", name: "Lodha Park" },
+    ]);
+    expect(JSON.parse(backend.history.post[0].data)).toEqual({ project_names_localities_subRegions: ["Sewri", "Lodha"] });
+  });
 
   it("searches with one page request, using the backend's total", async () => {
     backend.onPost("/Inventory/project/filter/new").reply(200, { data: [row()], result_count: 20 });
@@ -307,7 +382,7 @@ describe("backend reads", () => {
   });
 
   it("finds a listing's project with its stock, and never fails the listing", async () => {
-    backend.onPost("/Inventory/project/filter/new").reply(200, { data: [row({ _id: "p1" })] });
+    backend.onPost("/Inventory/project/ids").reply(200, { data: [row({ _id: "p1" })] });
     backend.onPost("/inventory/Listing/mobile/filter/count").reply(200, { result_sale: 4, result_rent: 2 });
     await expect(findListingProject("p1", "Mumbai")).resolves.toMatchObject({ project: { id: "p1", city: "Mumbai" }, projectStock: { sale: 4, rent: 2 } });
     backend.reset();
@@ -340,4 +415,16 @@ describe("backend reads", () => {
 it("keeps a project's actual city when fetched under another search city",()=>{
   expect(toProject({_id:'pune-project',project_name:'Pune Project',city:'Pune'},'Mumbai').city).toBe('Pune');
   expect(toProject({_id:'old-project',city:'  '},'Mumbai').city).toBe('Mumbai');
+});
+
+it("retains loaded configuration ranges on project activity cards", () => {
+ const project = toListingProject({_id:"507f1f77bcf86cd799439012",general_information:{project_name:"Example"},price_range:[{name:"1 BHK",minArea_search:373,maxArea_search:458},{name:"2 BHK",minArea_search:434,maxArea_search:720}],configuration:[]},"Mumbai");
+ expect(project.configurationPlans).toMatchObject([{bhk:"1 BHK",areaMin:373,areaMax:458},{bhk:"2 BHK",areaMin:434,areaMax:720}]);
+ expect(project.configurationPlans?.[0].saleMin).toBeUndefined();
+});
+
+it("maps project activity possession with the flat date taking priority over the nested date", () => {
+ const raw={_id:"507f1f77bcf86cd799439012",status:"Backend Status",general_information:{project_name:"Example",possession_data:{possession_date:"2026-11-01"}}};
+ expect(toListingProject(raw,"Mumbai")).toMatchObject({backendStatus:"Backend Status",possessionDate:"2026-11-01"});
+ expect(toListingProject({...raw,possession:"2027-12-01"},"Mumbai").possessionDate).toBe("2027-12-01");
 });

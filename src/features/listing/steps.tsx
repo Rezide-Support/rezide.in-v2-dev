@@ -12,6 +12,7 @@ import { PhoneInput } from "@/components/common/phone-input";
 import { Segmented } from "@/components/common/segmented";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { defaultProjectCriteria } from "@/features/search/criteria";
 import { projectQueries, realtorQueries } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { ListingCategory, ListingDraft, ListingIntent } from "@/types/models";
@@ -181,7 +182,7 @@ const nums = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) 
 export function PropertyStep({ draft, update, errors }: StepProps) {
   const city = draft.city ?? "Mumbai";
   const [q, setQ] = useState("");
-  const projects = useQuery(projectQueries.search({ city, q, status: [], localities: [], budget: [], years: [], views: [], sort: "latest", page: 1, perPage: 36 }));
+  const projects = useQuery(projectQueries.search(defaultProjectCriteria({ city, q, perPage: 36 })));
   const isLand = draft.category === "land";
   const listId = useId();
   const location = useLocationOptions(city, draft.region, draft.subRegion);

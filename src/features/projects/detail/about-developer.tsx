@@ -86,9 +86,9 @@ export function AboutDeveloper({ project: p, stats }: { project: Project; stats?
 
           {/* Two equal columns: this app's Button doesn't shrink, so two w-full buttons in a flex row overflow. */}
           <div className="mt-8 grid grid-cols-2 gap-2">
-            {/* rezide.in opens its developer page; this app lists the developer's projects instead. */}
+            {/* As rezide.in: the developer's page, in a new tab (their projects' search when the id isn't known). */}
             <Button asChild className="h-auto w-full rounded-md border border-black px-2 py-3.5 text-base font-medium text-white">
-              <Link href={projectSearchHref({ city: p.city, q: name })} target="_blank" rel="noopener">
+              <Link href={profile?.id ? `/developers/${profile.id}` : projectSearchHref({ city: p.city, q: name })} target="_blank" rel="noopener">
                 Builder Details
               </Link>
             </Button>

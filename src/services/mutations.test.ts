@@ -50,7 +50,7 @@ describe("submitListing", () => {
 
 describe("sendListingEnquiry", () => {
   let backend: MockAdapter;
-  const URL = "https://api.rezide.in/v1/contact/form";
+  const URL = "/api/properties/l1/enquiry";
   const enquiry = { name: "Asha Rao", phone: "9820012345", firmId: "f1", brokerId: "b1", listingId: "l1", enquiryType: "I'm interested" };
 
   beforeEach(() => {
@@ -58,16 +58,13 @@ describe("sendListingEnquiry", () => {
   });
   afterEach(() => backend.restore());
 
-  it("posts rezide.in's body to the contact form", async () => {
+  it("posts the enquiry through the same-origin listing proxy", async () => {
     backend.onPost(URL).reply(200, { message: "Thanks" });
 
     await expect(sendListingEnquiry(enquiry)).resolves.toEqual({ message: "Thanks" });
     expect(JSON.parse(backend.history.post[0].data)).toEqual({
       name: "Asha Rao",
-      firm_id: "f1",
-      phone: "+919820012345",
-      brokerId: "b1",
-      listing_id: "l1",
+      phone: "9820012345",
       enquiryType: "I'm interested",
     });
   });

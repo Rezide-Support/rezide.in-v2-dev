@@ -1,7 +1,7 @@
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { ApiError } from "@/lib/api/client";
 import { parseProjectCriteria } from "@/features/search/criteria";
-import { getProjectsByIds, searchProjects } from "@/services/projects";
+import { findProjectsByNames, getProjectsByIds, searchProjects } from "@/services/projects";
 
 /**
  * GET /api/projects?<the /projects/search page's query string>, or ?ids=a&ids=b&city=
@@ -14,6 +14,8 @@ export async function GET(request: Request) {
   try {
     const ids = params.getAll("ids").filter((id) => BACKEND_ID_PATTERN.test(id)).slice(0, 100);
     if (params.has("ids")) return Response.json(await getProjectsByIds(ids, params.get("city") ?? ""));
+    // Compare Project's picker: ?names=<locality>&names=<project name> (either may be empty).
+    if (params.has("names")) return Response.json(await findProjectsByNames(params.getAll("names").map((n) => n.slice(0, 100))));
     return Response.json(await searchProjects(parseProjectCriteria(params)));
   } catch (error) {
     if (!(error instanceof ApiError)) console.error("GET /api/projects failed", error);

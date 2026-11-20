@@ -1,6 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import { useSession } from "@/stores/session";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { LeadForm, type LeadListing, type LeadMode, type LeadProject } from "./lead-form";
 
@@ -33,8 +35,17 @@ export function LeadDialog({
   children: ReactNode;
   mobileSheet?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const params = useSearchParams();
+  const { status } = useSession();
+  const pending = params.get("enquiry");
+  useEffect(() => {
+    if (status !== "authenticated" || pending !== mode) return;
+    const frame = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(frame);
+  }, [status, pending, mode]);
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className={mobileSheet ? "sm:max-w-lg max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:max-h-[90dvh] max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none" : "sm:max-w-lg"}>
         <DialogHeader className="pr-10">
