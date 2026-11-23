@@ -19,7 +19,7 @@ import {
 import { useSearchSuggestions } from "@/features/search/use-search-suggestions";
 import { CATEGORIES, PROJECT_STATUS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { SearchSuggestion, SuggestionKind } from "@/services/locations";
+import type { SearchSuggestion, SuggestionKind, SuggestionScope } from "@/services/locations";
 import {
   parseProjectsHomePath,
   parsePropertiesHomePath,
@@ -48,11 +48,11 @@ const PROJECT_SUGGESTIONS: readonly SuggestionKind[] = [
 function HeroPhoto({ heroKey }: { heroKey: HeroKey }) {
   const hero = HERO_IMAGES[heroKey];
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="hero-photo absolute inset-0 overflow-hidden">
       {/* Keyed so only the active photo is requested; the fade replays when the tab changes. */}
       <div
         key={heroKey}
-        className="absolute inset-0 animate-in duration-500 fade-in"
+        className="hero-photo-frame absolute inset-0 animate-in duration-500 fade-in"
       >
         <Image
           src={hero.src}
@@ -69,6 +69,16 @@ function HeroPhoto({ heroKey }: { heroKey: HeroKey }) {
         className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.42)_0%,rgba(0,0,0,.36)_50%,rgba(0,0,0,.48)_100%)]"
       />
       {/* No photo credit on any tab (properties or projects). */}
+      {/* Photo credit, hidden for now:
+      <a
+        href={hero.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-2 left-1.5 z-10 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/90 hover:bg-black/85"
+      >
+        Photo by {hero.credit} on Unsplash
+      </a>
+      */}
     </div>
   );
 }
@@ -79,20 +89,48 @@ function HeroShell({
   title,
   children,
   footer,
+  fluid = false,
 }: {
   heroKey: HeroKey;
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Sizes follow the screen width (the projects home): smaller on laptops, full size on big monitors; phones unchanged. */
+  fluid?: boolean;
 }) {
   return (
-    <section className="relative flex min-h-[420px] items-center justify-center bg-rez-forest px-4 pt-12 pb-14 max-md:-mt-5 max-md:pt-[68px] md:min-h-[560px] md:px-8 md:pt-[88px] md:pb-20">
+    <section
+      data-hero-category={heroKey}
+      data-property-hero={CATEGORIES.some(category => category.id === heroKey) || undefined}
+      className={cn(
+        "relative flex min-h-[calc(420px*var(--property-space-scale,1))] items-center justify-center bg-rez-forest px-4 pt-12 pb-14 max-md:-mt-5 max-md:pt-[68px] md:px-8",
+        fluid
+          ? // The photo fills the screen below the 65px header (64px + 1px border) (taller only if the content needs it).
+            "md:min-h-[calc(100svh-65px)] md:pt-[clamp(56px,5.2vw,88px)] md:pb-[clamp(48px,4.7vw,80px)]"
+          : "md:min-h-[calc(560px*var(--property-space-scale,1))] md:pt-[calc(88px*var(--property-space-scale,1))] md:pb-20",
+      )}
+    >
       <HeroPhoto heroKey={heroKey} />
-      <div className="relative flex w-full max-w-[860px] flex-col items-center gap-5 md:gap-7">
-        <h1 className="text-center text-[36px] leading-[1.1] font-semibold tracking-[-0.02em] text-balance text-white sm:text-[clamp(40px,4.4vw,64px)]">
+      <div
+        className={cn(
+          "hero-content relative flex w-full flex-col items-center gap-5",
+          fluid ? "max-w-[860px] md:max-w-[clamp(700px,50vw,860px)] md:gap-[clamp(20px,1.6vw,28px)]" : "max-w-[min(100%,calc(860px*var(--property-space-scale,1)))] md:gap-7",
+        )}
+      >
+        <h1
+          className={cn(
+            "text-center text-[max(12px,calc(36px*var(--property-type-scale,1)))] leading-[1.1] font-semibold tracking-[-0.02em] text-balance text-white",
+            fluid ? "sm:text-[clamp(36px,3.65vw,64px)]" : "sm:text-[clamp(calc(40px*var(--property-type-scale,1)),calc(4.4vw*var(--property-type-scale,1)),calc(64px*var(--property-type-scale,1)))]",
+          )}
+        >
           {title}
         </h1>
-        <div className="flex w-full flex-col gap-3 rounded-[24px] bg-white p-3 shadow-rez-lg max-sm:gap-2.5 max-sm:rounded-[20px]">
+        <div
+          className={cn(
+            "flex w-full flex-col gap-3 bg-white shadow-rez-lg max-sm:gap-2.5 max-sm:rounded-[20px]",
+            fluid ? "rounded-[clamp(20px,1.4vw,24px)] p-[clamp(10px,0.7vw,12px)]" : "rounded-[24px] p-3",
+          )}
+        >
           {children}
         </div>
         {footer}
@@ -122,6 +160,8 @@ function SearchRow({
   city,
   kinds,
   onSearch,
+  fluid = false,
+  scope = "all",
 }: {
   label: string;
   placeholder: string;
@@ -129,13 +169,17 @@ function SearchRow({
   city: string;
   kinds: readonly SuggestionKind[];
   onSearch: (query: string) => void;
+  /** "developer": the backend's list that also has builders (the project search, as rezide.in). */
+  scope?: SuggestionScope;
+  /** Field and button sizes follow the screen width (the projects home); phones unchanged. */
+  fluid?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const inputId = useId();
   const listId = useId();
-  const { suggestions } = useSearchSuggestions(q, { city, kinds });
+  const { suggestions } = useSearchSuggestions(q, { city, kinds, scope });
   const showList = open && suggestions.length > 0;
 
   const pick = (s: SearchSuggestion) => {
@@ -163,7 +207,10 @@ function SearchRow({
       onSubmit={submit}
       role="search"
       aria-label={label}
-      className="flex flex-col gap-2.5 sm:min-h-16 sm:flex-row sm:items-center sm:gap-2 sm:rounded-full sm:border sm:border-rez-smoke sm:p-1.5"
+      className={cn(
+        "flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-2 sm:rounded-full sm:border sm:border-rez-smoke",
+        fluid ? "sm:min-h-[clamp(54px,3.7vw,64px)] sm:p-[clamp(5px,0.35vw,6px)]" : "sm:min-h-16 sm:p-1.5",
+      )}
     >
       {leading}
       <div className="flex items-center rounded-full border border-rez-smoke p-1 sm:contents">
@@ -194,7 +241,10 @@ function SearchRow({
             aria-activedescendant={
               showList && active >= 0 ? `${listId}-${active}` : undefined
             }
-            className="h-9 min-w-0 flex-1 bg-transparent px-2.5 text-[13px] outline-none placeholder:text-[#767a88] max-sm:placeholder:text-[12px] sm:h-12 sm:px-3 sm:text-[15px]"
+            className={cn(
+              "h-9 min-w-0 flex-1 bg-transparent px-2.5 text-[13px] outline-none placeholder:text-[#767a88] max-sm:placeholder:text-[12px] sm:px-3",
+              fluid ? "sm:h-[clamp(42px,2.8vw,48px)] sm:text-[clamp(14px,0.9vw,15px)]" : "sm:h-12 sm:text-[max(12px,calc(15px*var(--property-type-scale,1)))]",
+            )}
           />
           {showList && (
             <ul
@@ -222,7 +272,7 @@ function SearchRow({
                     size={16}
                     className="shrink-0 text-rez-graphite"
                   />
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
+                  <span className="min-w-0 flex-1 truncate text-[max(12px,calc(15px*var(--property-type-scale,1)))] font-medium">
                     {s.name}
                   </span>
                   <span className="shrink-0 text-[12px] text-rez-graphite">
@@ -237,7 +287,10 @@ function SearchRow({
         <Button
           type="submit"
           size="lg"
-          className="shrink-0 max-sm:h-8 max-sm:px-3.5 max-sm:text-[12px] sm:ml-2 sm:min-w-[140px]"
+          className={cn(
+            "shrink-0 max-sm:h-8 max-sm:px-3.5 max-sm:text-[12px] sm:ml-2",
+            fluid ? "sm:h-[clamp(42px,2.8vw,48px)] sm:min-w-[clamp(120px,8vw,140px)] sm:text-[clamp(15px,0.95vw,16px)]" : "sm:min-w-[140px]",
+          )}
         >
           Search
         </Button>
@@ -247,10 +300,7 @@ function SearchRow({
 }
 
 /** On phones the hero's tab sets become one underlined row, as in the design. */
-const MOBILE_TABS = "max-sm:border-b max-sm:border-rez-smoke";
-/** Phones: the tabs share the row in equal columns, each label centred, as in the design. */
-const MOBILE_TAB_LIST = "max-sm:flex max-sm:w-full max-sm:flex-nowrap max-sm:gap-0 max-sm:p-0";
-const MOBILE_TAB_ITEM = "max-sm:flex max-sm:flex-1 max-sm:justify-center";
+const MOBILE_TABS = "max-sm:border-b max-sm:border-rez-smoke max-sm:[&>ul]:flex max-sm:[&>ul]:w-full max-sm:[&>ul]:flex-nowrap max-sm:[&>ul]:justify-between";
 const MOBILE_TAB = "max-sm:h-8 max-sm:rounded-none max-sm:px-0.5 max-sm:text-[12px] max-sm:font-medium max-sm:text-rez-graphite max-sm:aria-[current=page]:bg-transparent max-sm:aria-[current=page]:font-bold max-sm:aria-[current=page]:text-black max-sm:aria-[current=page]:shadow-[inset_0_-2px_0_var(--rez-mocaccino)]";
 
 /** Short labels for phones, where the full ones don't fit on one row. */
@@ -258,7 +308,7 @@ const SHORT_STATUS: Partial<Record<ProjectStatus, string>> = { uc: "Under Const.
 
 /** The four promises under the property search card; homes and the commercial tabs differ. */
 const TRUST_BADGES: Record<
-  "homes" | "other" | "projects",
+  "homes" | "commercial" | "other" | "projects",
   readonly (readonly [string, string])[]
 > = {
   homes: [
@@ -267,6 +317,14 @@ const TRUST_BADGES: Record<
     // ["NAR-India", "Members"],
     // ["Tech enabled", "On Rezide"],
   ],
+  // Properties home, Offices to Land tabs (hidden for now).
+  commercial: [
+    // ["Real photos", "No fake listings"],
+    // ["Owner-authorised", "Verified properties"],
+    // ["RERA-registered", "All realtors"],
+    // ["Tech enabled", "On Rezide"],
+  ],
+  // Projects home, Ready to Move and New Launches tabs (hidden for now).
   other: [
     // ["Real photos", "No fake listings"],
     // ["Owner-authorised", "Verified properties"],
@@ -308,6 +366,7 @@ function TrustShield() {
 }
 
 function TrustBadges({ set }: { set: keyof typeof TRUST_BADGES }) {
+  if (TRUST_BADGES[set].length === 0) return null; // all items commented out: render nothing, no empty gap
   const mobileBadges = set === "homes" ? TRUST_BADGES.other : TRUST_BADGES[set];
   return (
     <ul className="mt-1 grid w-full grid-cols-2 gap-x-3 gap-y-3 sm:mt-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-9">
@@ -315,7 +374,7 @@ function TrustBadges({ set }: { set: keyof typeof TRUST_BADGES }) {
         <li key={title} className="flex items-center gap-2 text-white">
           <TrustShield />
           <span className="flex flex-col leading-tight">
-            <span className="text-[13px] font-semibold sm:text-[15px]">
+            <span className="text-[13px] font-semibold sm:text-[max(12px,calc(15px*var(--property-type-scale,1)))]">
               <span className="sm:hidden">{mobileBadges[index]?.[0]}</span>
               <span className="hidden sm:inline">{title}</span>
             </span>
@@ -343,7 +402,7 @@ export function PropertiesHeroView({
     <HeroShell
       heroKey={category}
       title="Genuine Listings Only!"
-      footer={<TrustBadges set={category === "homes" ? "homes" : "other"} />}
+      footer={<TrustBadges set={category === "homes" ? "homes" : "commercial"} />}
     >
       <LinkTabs
         label="Property type"
@@ -351,12 +410,10 @@ export function PropertiesHeroView({
         tone="ink"
         wrap
         className={MOBILE_TABS}
-        listClassName={MOBILE_TAB_LIST}
-        itemWrapClassName={MOBILE_TAB_ITEM}
         itemClassName={MOBILE_TAB}
         items={CATEGORIES.map((c) => ({
           href: propertiesHomeHref(c.id, intent),
-          label: c.label,
+          label: c.id === "homes" ? "Home" : c.label,
           active: c.id === category,
         }))}
       />
@@ -376,9 +433,7 @@ export function PropertiesHeroView({
           <LinkTabs
             label="Buy or rent"
             size="lg"
-            className="w-full sm:w-auto"
-            listClassName="max-sm:flex max-sm:w-full"
-            itemWrapClassName="max-sm:flex-1"
+            className="w-full sm:w-auto max-sm:[&>ul]:flex max-sm:[&>ul]:w-full max-sm:[&_li]:flex-1"
             itemClassName="min-w-[76px] justify-center max-sm:h-9 max-sm:w-full max-sm:text-[13px]"
             items={[
               {
@@ -417,6 +472,7 @@ export function ProjectsHeroView({ status }: { status: ProjectStatus }) {
     <HeroShell
       heroKey={status}
       title="Homes Every Stage"
+      fluid
       footer={<TrustBadges set={status === "uc" ? "projects" : "other"} />}
     >
       <LinkTabs
@@ -424,10 +480,8 @@ export function ProjectsHeroView({ status }: { status: ProjectStatus }) {
         appearance="bare"
         tone="ink"
         wrap
-        className={MOBILE_TABS}
-        listClassName={MOBILE_TAB_LIST}
-        itemWrapClassName={MOBILE_TAB_ITEM}
-        itemClassName={MOBILE_TAB}
+        className={MOBILE_TABS}
+        itemClassName={cn(MOBILE_TAB, "sm:h-[clamp(38px,2.3vw,40px)] sm:text-[clamp(14px,0.9vw,15px)]")}
         items={PROJECT_STATUS.map((s) => ({
           href: projectsHomeHref(s.id),
           label: SHORT_STATUS[s.id] ? (
@@ -446,6 +500,8 @@ export function ProjectsHeroView({ status }: { status: ProjectStatus }) {
         placeholder="Search project, developer or locality"
         city={city}
         kinds={PROJECT_SUGGESTIONS}
+        scope="developer"
+        fluid
         onSearch={(q) =>
           router.push(projectSearchHref({ city, q, status: [status] }))
         }

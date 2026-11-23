@@ -69,7 +69,8 @@ export function shortInr(n: number | undefined): string {
   if (n === undefined || !Number.isFinite(n)) return "";
   if (n >= 1_00_00_000) return `${(n / 1_00_00_000).toFixed(2)} Cr.`;
   if (n >= 1_00_000) return `${(n / 1_00_000).toFixed(2)}L`;
-  if (n >= 10_000) return `${n / 1000}K`;
+  // Up to two decimals, without trailing zeros: 67,001 → "67K" (not "67.001K"), 12,500 → "12.5K".
+  if (n >= 10_000) return `${Number((n / 1000).toFixed(2))}K`;
   return String(n);
 }
 

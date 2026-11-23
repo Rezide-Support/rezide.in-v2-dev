@@ -113,7 +113,7 @@ const CLEARED: Partial<PropertySearchCriteria> = {
 
 function Summary({ from, to, total, noun }: { from: number; to: number; total: number; noun: string }) {
   return (
-    <p className="text-[15px] text-rez-graphite" aria-live="polite">
+    <p className="text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-graphite" aria-live="polite">
       {total === 0 ? (
         `No ${noun} found`
       ) : (
@@ -371,7 +371,7 @@ export function PropertySearch() {
         noun={view === "loc" ? "localities" : "projects"}
       />
     ) : (
-      <p className="text-[15px] text-rez-graphite">Loading…</p>
+      <p className="text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-graphite">Loading…</p>
     )
   ) : data ? (
     <Summary
@@ -381,7 +381,7 @@ export function PropertySearch() {
       noun={drilledName ? `${data.total === 1 ? "listing" : "listings"} in ${drilledName}` : data.total === 1 ? "listing" : "listings"}
     />
   ) : (
-    <p className="text-[15px] text-rez-graphite">Loading listings…</p>
+    <p className="text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-graphite">Loading listings…</p>
   );
 
   const emptyState = () => {
@@ -441,7 +441,7 @@ export function PropertySearch() {
     }
     if (!data) {
       return (
-        <div className={cn("grid gap-4", variant === "grid" ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")}>
+        <div className={cn("grid gap-4", variant === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1")}>
           {Array.from({ length: variant === "grid" ? 6 : 3 }, (_, i) => (
             <PropertyCardSkeleton key={i} />
           ))}
@@ -451,7 +451,7 @@ export function PropertySearch() {
     if (data.total === 0) return emptyState();
     return (
       <>
-        <ul className={cn("grid grid-cols-1", variant === "grid" ? "gap-4 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 gap-4")}>
+        <ul className={cn("grid grid-cols-1", variant === "grid" ? "gap-4 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 gap-4")}>
           {data.items.map((p, i) => (
             <li key={p.id} className="flex">
               <div className="w-full">
@@ -565,13 +565,13 @@ export function PropertySearch() {
   /* ---------- Map view: full-bleed map with a results panel (prototype layout) ---------- */
   if (isMap) {
     return (
-      <div className="flex-1 bg-white">
+      <div className="property-page min-w-0 flex-1 bg-white">
         <h1 className="sr-only">
           {criteria.city} {cat.noun} {rent ? `for ${cat.lease.toLowerCase()}` : "for sale"}, map view
         </h1>
-        {/* Desktop: map and results fill the screen below the header (76px + 1px border); the results scroll in their panel. */}
+        {/* Desktop: map and results fill the screen below the header (64px + 1px border); the results scroll in their panel. */}
         {/* Dual-screen: map on one screen, results on the other (see fold-x / fold-y in globals.css). */}
-        <div className="grid grid-cols-1 lg:h-[calc(100dvh-77px)] lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[minmax(0,1fr)] fold-x:h-auto! fold-x:grid-cols-[var(--seg-0-width)_var(--seg-1-width)]! fold-x:grid-rows-none! fold-x:gap-x-(--hinge-width) fold-y:h-auto! fold-y:grid-cols-1! fold-y:grid-rows-none!">
+        <div className="grid grid-cols-1 lg:h-[calc(100dvh-65px)] lg:grid-cols-[minmax(0,1fr)_clamp(300px,28vw,340px)] lg:grid-rows-[minmax(0,1fr)] fold-x:h-auto! fold-x:grid-cols-[var(--seg-0-width)_var(--seg-1-width)]! fold-x:grid-rows-none! fold-x:gap-x-(--hinge-width) fold-y:h-auto! fold-y:grid-cols-1! fold-y:grid-rows-none!">
           <div className="relative isolate h-[60svh] min-h-[360px] overflow-hidden bg-rez-cloud lg:h-full lg:min-h-0 fold-x:sticky fold-x:top-0 fold-x:h-dvh! fold-x:self-start fold-y:sticky fold-y:top-0 fold-y:z-10 fold-y:h-(--seg-0-height)! fold-y:min-h-0">
             {/* Keyed by city so choosing another city re-centres the map. */}
             <MapExplorer key={criteria.city} city={criteria.city} intent={criteria.intent} category={criteria.category} onViewChange={onMapView} highlightedId={highlighted} highlightedProperty={data?.items.find(property => property.id === highlighted)} onHover={setHighlighted} renderToolbar={({ focused, clearFocus }) => (
@@ -605,7 +605,7 @@ export function PropertySearch() {
                     aria-expanded={searchOpen && q.trim() !== ""}
                     aria-controls={searchOpen && q.trim() !== "" ? suggestionListId : undefined}
                     aria-activedescendant={searchOpen && searchActive >= 0 ? `${suggestionListId}-${searchActive}` : undefined}
-                    className="h-full w-full min-w-0 bg-transparent px-2.5 text-[15px] outline-none placeholder:text-[#767a88]"
+                    className="h-full w-full min-w-0 bg-transparent px-2.5 text-[max(12px,calc(15px*var(--property-type-scale,1)))] outline-none placeholder:text-[#767a88]"
                   />
                   {suggestionPopup}
                 </div>
@@ -629,7 +629,7 @@ export function PropertySearch() {
               </button>
               <Button
                 onClick={() => changeView("list")}
-                aria-label="List View" className="pointer-events-auto h-[52px] shrink-0 rounded-full px-5 text-[15px] shadow-rez-md max-sm:size-11 max-sm:px-0"
+                aria-label="List View" className="pointer-events-auto h-[52px] shrink-0 rounded-full px-5 text-[max(12px,calc(15px*var(--property-type-scale,1)))] shadow-rez-md max-sm:size-11 max-sm:px-0"
               >
                 <Icon name="file-text" size={18} />
                 <span className="max-sm:sr-only">List View</span>
@@ -711,10 +711,10 @@ export function PropertySearch() {
 
   /* ---------- List and grouped views ---------- */
   return (
-    <div className="flex-1 bg-white px-4 pt-5 pb-24 md:px-8">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-[18px]">
+    <div className="property-page property-directory min-w-0 flex-1 bg-white px-4 pt-5 pb-24 md:px-8">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-[18px]">
         <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] break-words sm:text-[30px] xl:text-[32px]">
+          <h1 className="text-[max(12px,calc(26px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[-0.02em] break-words sm:text-[max(12px,calc(30px*var(--property-type-scale,1)))] xl:text-[max(12px,calc(32px*var(--property-type-scale,1)))]">
             <span className="font-extrabold">{criteria.city}</span> Properties.
             <span className="sr-only">
               {" "}
@@ -857,7 +857,7 @@ export function PropertySearch() {
               <Icon name="arrow-right" size={16} className="rotate-180" />
               {drilledLoc ? "All locations" : "All projects"}
             </button>
-            <h2 className="text-[22px] leading-tight font-semibold tracking-[-0.01em] md:text-[26px]">{drilledName}</h2>
+            <h2 className="text-[max(12px,calc(22px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[-0.01em] md:text-[max(12px,calc(26px*var(--property-type-scale,1)))]">{drilledName}</h2>
             {data && <span className="text-sm font-medium text-rez-graphite">{pluralize(data.total, "listing")}</span>}
           </div>
         )}

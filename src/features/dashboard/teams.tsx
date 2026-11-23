@@ -332,7 +332,7 @@ export function TeamsPage() {
             <span>Renews {longDate(renewsOn)}</span>
           </p>
         </div>
-        <Button asChild variant="warm" className="h-10 w-fit px-5 text-[15px]">
+        <Button asChild variant="warm" className="h-10 w-fit px-5 text-[max(12px,calc(15px*var(--property-type-scale,1)))]">
           <Link href="/realtor-corner#pricing">Buy Licenses</Link>
         </Button>
       </section>
@@ -401,7 +401,7 @@ export function TeamsPage() {
         ) : (
           <Card className="overflow-hidden">
             <div className="relative overflow-x-auto">
-              <table className="w-full min-w-[960px] text-sm">
+              <table className="w-full min-w-[calc(960px*var(--property-space-scale,1))] text-sm">
                 <caption className="sr-only">Team members</caption>
                 <THead>
                   <tr>
@@ -513,7 +513,7 @@ export function TeamsPage() {
       ) : (
         <Card className="overflow-hidden">
           <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[calc(900px*var(--property-space-scale,1))] text-sm">
               <caption className="sr-only">Teams</caption>
               <THead>
                 <tr>

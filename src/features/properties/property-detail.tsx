@@ -47,16 +47,16 @@ export function PropertyDetailView({ id }: { id: string }) {
   const leadListing = { id: p.id, firmId: p.realtorFirmId ?? "", brokerId: p.realtorId, name: p.title, path };
 
   return (
-    <div data-listing-detail className="px-2 pt-3 pb-[calc(140px+env(safe-area-inset-bottom))] sm:px-4 lg:px-8 lg:pt-5 lg:pb-20">
+    <div data-listing-detail className="property-page min-w-0 px-2 pt-3 pb-[calc(140px+env(safe-area-inset-bottom))] sm:px-4 lg:px-8 lg:pt-5 lg:pb-20">
       <ResumeListingAction property={p} />
 
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6">
         {/* ---------- Title row ---------- */}
         <header className="hidden gap-x-6 gap-y-2 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(170px,0.5fr)] lg:items-center">
           <div className="contents">
-            <h1 className="col-span-2 col-start-1 row-start-1 min-w-0 text-[26px] leading-tight font-semibold tracking-[-0.01em]">{p.title}<ViewedEye listingId={p.id} className="ml-2.5 size-5 text-black" /></h1>
+            <h1 className="col-span-2 col-start-1 row-start-1 min-w-0 text-[max(12px,calc(26px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[-0.01em]">{p.title}<ViewedEye listingId={p.id} className="ml-2.5 size-5 text-black" /></h1>
             <div className="col-start-1 row-start-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <p className="text-[15px] text-rez-graphite sm:text-base">
+              <p className="text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-graphite sm:text-base">
                 {!p.projectHidden && p.projectName && p.projectId ? (
                   <Link
                     href={`/projects/${p.projectId}`}
@@ -91,7 +91,7 @@ export function PropertyDetailView({ id }: { id: string }) {
           </div>
 
           <div className="col-start-3 row-span-2 row-start-1 flex flex-col items-end gap-2 text-right">
-            <p className="text-[22px] leading-none font-semibold tracking-[-0.01em]">{headerPrice}</p>
+            <p className="text-[max(12px,calc(22px*var(--property-type-scale,1)))] leading-none font-semibold tracking-[-0.01em]">{headerPrice}</p>
             <p className="text-[13px] text-rez-graphite">
               {rent
                 ? p.securityDeposit
@@ -105,7 +105,7 @@ export function PropertyDetailView({ id }: { id: string }) {
         </header>
 
         {/* Both desktop rows share the same wide gallery/content and narrow sidebar columns. */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-start">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,264px)] lg:items-start">
           <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="max-lg:order-0">
           <MediaGallery
@@ -232,7 +232,7 @@ export function PropertyDetailView({ id }: { id: string }) {
 
         {status === "authenticated" && similar.length > 0 && (
           <section id="similar" aria-labelledby="similar-heading" className="mt-6 flex scroll-mt-32 flex-col gap-5">
-            <SectionHeading id="similar-heading" className="text-center lg:text-[26px]">
+            <SectionHeading id="similar-heading" className="text-center lg:text-[max(12px,calc(26px*var(--property-type-scale,1)))]">
               Other {rent ? "Rental" : "Sale"} units in {p.projectName ?? project?.name ?? p.locality}
             </SectionHeading>
             <Rail label={`Other ${rent ? "rental" : "sale"} units in ${p.projectName ?? project?.name ?? p.locality}`} mobileStack itemClassName="max-lg:w-full lg:w-[calc((100%-2rem)/3)]" className="max-lg:[&_ul]:flex-col max-lg:[&_ul]:overflow-visible max-lg:[&>button]:hidden">

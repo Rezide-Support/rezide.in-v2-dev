@@ -148,7 +148,7 @@ export function GroupsPage() {
       ) : (
         <Card className="overflow-hidden">
           <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[860px] text-sm">
+            <table className="w-full min-w-[calc(860px*var(--property-space-scale,1))] text-sm">
               <caption className="sr-only">Contact groups</caption>
               <THead>
                 <tr>

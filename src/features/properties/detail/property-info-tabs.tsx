@@ -34,7 +34,7 @@ function InfoPanel({ stacked, value, title, className, children }: { stacked: bo
 const panel = "rounded-md border border-[#c4c4c4] bg-[#fafafa] p-5 sm:p-8 lg:min-h-[400px] lg:px-12 lg:py-10";
 
 function Empty({ children }: { children: string }) {
-  return <p className="py-10 text-center text-[15px] text-rez-graphite">{children}</p>;
+  return <p className="py-10 text-center text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-graphite">{children}</p>;
 }
 
 /** "18.58" (feet, two decimals, as rezide.in prints them). */
@@ -142,7 +142,7 @@ export function PropertyInfoTabs({ property: p, project, value, onValueChange }:
                 <Image src={project.images[0]} alt={project.name} fill sizes="(min-width: 768px) 30vw, 100vw" quality={70} className="object-cover" />
               </div>
               <div className="flex h-[350px] min-w-0 flex-col gap-4 bg-white p-4 lg:h-[420px]">
-                <h3 className="text-[15px] font-semibold tracking-[0.02em] uppercase">{project.name} – key features</h3>
+                <h3 className="text-[max(12px,calc(15px*var(--property-type-scale,1)))] font-semibold tracking-[0.02em] uppercase">{project.name} – key features</h3>
                 <div role="region" aria-label={`${project.name} description`} tabIndex={0} className="min-h-0 flex-1 overflow-y-auto pr-3 outline-none [scrollbar-color:#e1e1e6_transparent] [scrollbar-width:thin] focus-visible:ring-2 focus-visible:ring-rez-mocaccino">
                   <DashList items={project.highlights?.length ? project.highlights : project.description?.trim() ? [project.description] : [project.configurations, project.possessionLabel]} />
                 </div>

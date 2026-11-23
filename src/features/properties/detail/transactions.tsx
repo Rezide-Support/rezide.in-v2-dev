@@ -77,7 +77,7 @@ export function Transactions({
   return (
     <section id={live && rows && rows.length > 0 ? "recent" : undefined} aria-labelledby="txn-heading" className="flex scroll-mt-32 flex-col gap-5">
       <div className={cn("flex flex-wrap items-center gap-3", centered ? "justify-center text-center" : "justify-between")}>
-        <SectionHeading id="txn-heading" className={cn(centered && "lg:text-[26px]")}>
+        <SectionHeading id="txn-heading" className={cn(centered && "lg:text-[max(12px,calc(26px*var(--property-type-scale,1)))]")}>
           {kind === "sale" ? (toggle ? "Recent transactions" : "Sale transactions") : "Rental transactions"} in {title}
         </SectionHeading>
         {toggle && (

@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { loginWithPassword, requestOtp, verifyOtp } from "@/services/auth";
 import { useSessionStore } from "@/stores/session";
 import type { Session } from "@/types/models";
+import type { CountryIso2 } from "react-international-phone";
+import { CountryCodeSelect, dialCodeOf } from "@/components/common/country-code-select";
 
 /*
  * rezide.in's sign-in popup (?modal=signIn): "Sign In to your Rezide Account" with one field for
@@ -91,8 +93,12 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
   const [otpFor, setOtpFor] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  // As the old site: India by default; the flag opens every country with its dial code.
+  const [country, setCountry] = useState<CountryIso2>("in");
 
   const value = identity.trim();
+  // Indian numbers go as before; another country's number carries its own code ("+1 4155550123").
+  const phoneFor = (digits: string) => (country === "in" ? digits : `+${dialCodeOf(country)} ${digits}`);
   const isNumber = DIGITS.test(value);
   const isEmail = !isNumber && EMAIL.test(value);
   // As rezide.in: a number of five digits or more sends an OTP; an email needs a password of eight or more.
@@ -126,7 +132,7 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
         <DialogTitle className="text-center text-lg font-semibold">OTP Verification</DialogTitle>
         <DialogDescription className="sr-only">Enter the OTP sent to your mobile number</DialogDescription>
         <p className="mt-6 text-center text-sm text-[#6D6D6D]">
-          We have send OTP on <b>+91{otpFor}</b>
+          We have send OTP on <b>{otpFor.startsWith("+") ? otpFor.replace(" ", "") : `+91${otpFor}`}</b>
         </p>
         <p className="text-center text-sm text-[#6D6D6D]">Please enter OTP to proceed with Rezide</p>
         <form
@@ -169,11 +175,13 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
           e.preventDefault();
           setError("");
           if (canPassword) login.mutate();
-          else if (canOtp) sendOtp.mutate(value);
+          else if (canOtp) sendOtp.mutate(phoneFor(value));
         }}
       >
         <div className="flex items-center rounded-md border border-[#8C8C8C] focus-within:border-black focus-within:ring-1 focus-within:ring-black">
-          {canOtp && <span className="border-r border-input px-3 text-sm whitespace-nowrap">🇮🇳 +91</span>}
+          {/* As the old site: the flag and dial code open a list of every country (flag images, not emojis,
+              which show as letters such as "IN" on Windows). */}
+          {canOtp && <CountryCodeSelect value={country} onChange={setCountry} className="self-stretch" />}
           <input
             type="text"
             autoFocus

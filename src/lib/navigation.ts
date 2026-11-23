@@ -11,6 +11,7 @@ export type NavItem = {
   separatorBefore?: boolean;
 };
 
+
 export const NAV_ITEMS: NavItem[] = [
   {
     id: "properties",
@@ -38,7 +39,6 @@ export const FOOTER_COLUMNS: { label: string; href?: string }[][] = [
   [
     { label: "Explore", href: "/properties" },
     { label: "Features" },
-    { label: "Pricing", href: "/realtor-corner#pricing" },
     { label: "Newsletter" },
   ],
   [{ label: "Company" }, { label: "Careers" }, { label: "Blog" }, { label: "Learning center" }],

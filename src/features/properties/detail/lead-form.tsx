@@ -190,7 +190,7 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
         <div className="flex items-start gap-3 rounded-2xl bg-rez-timber px-[18px] py-4 text-rez-full-white">
           <Icon name="check-circle" size={22} className="mt-0.5" />
           <div className="flex flex-col gap-1">
-            <p className="text-[15px] font-semibold">{demo ? "Request recorded in demo mode." : "Request sent."}</p>
+            <p className="text-[max(12px,calc(15px*var(--property-type-scale,1)))] font-semibold">{demo ? "Request recorded in demo mode." : "Request sent."}</p>
             <p className="text-sm text-rez-full-white/85">
               {mutation.data.id ? `Reference ${mutation.data.id}. ` : null}
               {demo
@@ -257,7 +257,7 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
                     <SelectItem
                       key={intent}
                       value={intent}
-                      className="min-h-10 cursor-pointer rounded-lg px-2.5 py-2 text-[15px] whitespace-normal data-highlighted:bg-rez-cloud data-highlighted:text-black data-[state=checked]:bg-rez-cloud data-[state=checked]:font-medium data-[state=checked]:text-black"
+                      className="min-h-10 cursor-pointer rounded-lg px-2.5 py-2 text-[max(12px,calc(15px*var(--property-type-scale,1)))] whitespace-normal data-highlighted:bg-rez-cloud data-highlighted:text-black data-[state=checked]:bg-rez-cloud data-[state=checked]:font-medium data-[state=checked]:text-black"
                     >
                       {intent}
                     </SelectItem>

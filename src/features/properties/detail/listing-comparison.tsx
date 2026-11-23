@@ -372,7 +372,7 @@ export function ListingComparison({ property }: { property: Property }) {
 
   return (
     <section id="compare" className="listing-comparison mt-8 flex scroll-mt-32 flex-col gap-4" aria-label="Property comparison table">
-      <SectionHeading className="text-center lg:text-[26px]">{compareTitle}</SectionHeading>
+      <SectionHeading className="text-center lg:text-[max(12px,calc(26px*var(--property-type-scale,1)))]">{compareTitle}</SectionHeading>
 
       {records.isError && (
         <p role="alert" className="text-sm">

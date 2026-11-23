@@ -104,10 +104,10 @@ export type HeroKey =
 /** Hero photography with the credits shown in the prototype. */
 export const HERO_IMAGES: Record<HeroKey, { src: string; credit: string; href: string }> = {
   homes: { src: unsplash("photo-1758448755856-01d3add0177b", 2400), credit: "Aalo Lens", href: "https://unsplash.com/@aalolens" },
-  offices: { src: unsplash("photo-1741880893442-66f56ad8f3a4", 2400), credit: "Li Zhang", href: "https://unsplash.com/@sunx" },
-  retail: { src: unsplash("photo-1744595805485-5ed5de517e28", 2400), credit: "Grace Anne Bobadilla", href: "https://unsplash.com/@graceannefully" },
-  industrial: { src: unsplash("photo-1746970363282-0b03a51a0141", 2400), credit: "Ivan Prokhorov", href: "https://unsplash.com/@prokhorov" },
-  land: { src: unsplash("photo-1694730652852-9404a2d0214b", 2400), credit: "Jason Leung", href: "https://unsplash.com/@ninjason" },
+  offices: { src: "/images/property/office-hero.png", credit: "", href: "" },
+  retail: { src: "/images/property/retail-hero.png", credit: "", href: "" },
+  industrial: { src: "/images/property/industrial-hero.png", credit: "", href: "" },
+  land: { src: "/images/property/land-hero.png", credit: "", href: "" },
   uc: { src: unsplash("photo-1786618315979-2dbbfd3b38a7", 2400), credit: "Timur Seyfelmlyukov", href: "https://unsplash.com/@timurse" },
   rtm: { src: unsplash("photo-1759845565036-cbecbcfcb8e2", 2400), credit: "Joachim Lesne", href: "https://unsplash.com/@joaching" },
   nl: { src: unsplash("photo-1751054770504-c69daeec4721", 2400), credit: "John Kakuk", href: "https://unsplash.com/@lensatic" },

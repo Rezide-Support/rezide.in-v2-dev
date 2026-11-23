@@ -114,6 +114,7 @@ export function AccountSidebar({ session, active, className, compact = false }: 
         </div>
       )}
       <Segmented
+        itemClassName={compact ? "md:h-8" : undefined}
         label="Account view"
         value={owner ? "owner" : "seeker"}
         onChange={(r) => {
@@ -128,7 +129,7 @@ export function AccountSidebar({ session, active, className, compact = false }: 
         ]}
         className={cn(
           "border border-rez-smoke bg-white",
-          compact && "md:my-[10px] md:mx-[10px] md:h-[60px] md:w-[calc(100%_-_20px)] md:gap-0 md:rounded-full md:p-2.5",
+          compact && "md:my-[calc(10px*var(--property-space-scale,1))] md:mx-2 md:h-[calc(50px*var(--property-space-scale,1))] md:w-[calc(100%_-_16px)] md:gap-0 md:rounded-full md:p-1.5",
         )}
       />
       <nav
@@ -150,14 +151,14 @@ export function AccountSidebar({ session, active, className, compact = false }: 
                   scroll={false}
                   aria-current={on ? "page" : undefined}
                   className={cn(
-                    "relative flex h-11 w-full items-center gap-3 rounded-[14px] px-4 text-left text-[15px] hover:bg-rez-cloud md:h-12",
+                    "relative flex h-11 w-full items-center gap-3 rounded-[14px] px-4 text-left text-[max(12px,calc(15px*var(--property-type-scale,1)))] hover:bg-rez-cloud md:h-12",
                     on ? "bg-rez-cloud font-bold" : "font-medium",
-                    compact && "md:h-[71px] md:gap-4 md:rounded-none md:px-5 md:text-[18px] md:font-normal",
+                    compact && "md:h-[calc(60px*var(--property-space-scale,1))] md:gap-4 md:rounded-none md:px-5 md:text-[max(12px,calc(16px*var(--property-type-scale,1)))] md:font-normal",
                     compact && on && "md:bg-[#F3F4F6] md:font-medium",
                   )}
                 >
                   {compact && MenuIcon ? (
-                    <MenuIcon size={20} strokeWidth={1.8} aria-hidden />
+                    <MenuIcon size={18} strokeWidth={1.8} aria-hidden />
                   ) : (
                     <Icon name={icon} size={18} />
                   )}
@@ -186,11 +187,11 @@ export function AccountSidebar({ session, active, className, compact = false }: 
                 router.push("/");
               }}
               className={cn(
-                "flex h-11 w-full items-center gap-3 rounded-[14px] px-4 text-left text-[15px] font-medium hover:bg-rez-cloud md:h-12",
-                compact && "md:h-[71px] md:gap-4 md:rounded-none md:px-5 md:text-[18px]",
+                "flex h-11 w-full items-center gap-3 rounded-[14px] px-4 text-left text-[max(12px,calc(15px*var(--property-type-scale,1)))] font-medium hover:bg-rez-cloud md:h-12",
+                compact && "md:h-[calc(60px*var(--property-space-scale,1))] md:gap-4 md:rounded-none md:px-5 md:text-[max(12px,calc(16px*var(--property-type-scale,1)))]",
               )}
             >
-              {compact ? <LogOut size={20} strokeWidth={1.8} aria-hidden /> : <Icon name="arrow-right" size={18} />}
+              {compact ? <LogOut size={18} strokeWidth={1.8} aria-hidden /> : <Icon name="arrow-right" size={18} />}
               {compact ? "Logout" : "Sign out"}
             </button>
           </li>

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 /** v1 section heading: large, uppercase, tight. */
 export function SectionHeading({ id, children, className, as: As = "h2" }: { id?: string; children: ReactNode; className?: string; as?: "h2" | "h3" }) {
   return (
-    <As id={id} className={cn("text-[22px] leading-tight font-semibold tracking-[-0.01em] uppercase sm:text-[28px] lg:text-[32px]", className)}>
+    <As id={id} className={cn("text-[max(12px,calc(22px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[-0.01em] uppercase sm:text-[max(12px,calc(28px*var(--property-type-scale,1)))] lg:text-[max(12px,calc(32px*var(--property-type-scale,1)))]", className)}>
       {children}
     </As>
   );
@@ -24,7 +24,7 @@ export function DetailCard({ className, ...props }: ComponentProps<"div">) {
 /** Uppercase card title (KEY FEATURES, VISIT DETAILS). */
 export function CardTitle({ children, id, className }: { children: ReactNode; id?: string; className?: string }) {
   return (
-    <h2 id={id} className={cn("text-[15px] leading-tight font-semibold tracking-[0.02em] uppercase sm:text-[17px]", className)}>
+    <h2 id={id} className={cn("text-[max(12px,calc(15px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[0.02em] uppercase sm:text-[max(12px,calc(17px*var(--property-type-scale,1)))]", className)}>
       {children}
     </h2>
   );
@@ -35,7 +35,7 @@ export function UnderlinedField({ label, value, upper, center }: { label: string
   return (
     <div className={cn("flex min-w-0 flex-col gap-2", center && "text-center")}>
       <dt className={cn(upper ? "text-[11px] font-semibold tracking-[0.04em] text-rez-arsenic uppercase sm:text-xs" : "text-[13px] text-rez-graphite")}>{label}</dt>
-      <dd className="border-b border-rez-steel pb-1 break-words text-sm font-medium text-black sm:text-[15px]">{value}</dd>
+      <dd className="border-b border-rez-steel pb-1 break-words text-sm font-medium text-black sm:text-[max(12px,calc(15px*var(--property-type-scale,1)))]">{value}</dd>
     </div>
   );
 }
@@ -45,7 +45,7 @@ export function DashList({ items, className }: { items: string[]; className?: st
   return (
     <ul className={cn("flex flex-col gap-2.5", className)}>
       {items.map((f) => (
-        <li key={f} className="flex items-start gap-3 text-sm leading-snug text-rez-arsenic sm:text-[15px]">
+        <li key={f} className="flex items-start gap-3 text-sm leading-snug text-rez-arsenic sm:text-[max(12px,calc(15px*var(--property-type-scale,1)))]">
           <span aria-hidden className="mt-[9px] h-px w-3 shrink-0 bg-rez-graphite" />
           {f}
         </li>

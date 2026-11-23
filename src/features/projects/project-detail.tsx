@@ -81,7 +81,9 @@ export function ProjectDetailView({ id }: { id: string }) {
   const path = `/projects/${p.id}`;
 
   return (
-    <div className="px-4 pt-5 pb-20 md:px-8">
+    // On tablets and laptops the whole page is drawn a little smaller, so it fits the screen like on a big
+    // monitor (full size from 1600px; phones unchanged). Popups open outside this box and keep their size.
+    <div className="px-4 pt-5 pb-20 md:px-8 md:max-lg:[zoom:0.9] lg:max-[1439.98px]:[zoom:0.85] min-[1440px]:max-[1599.98px]:[zoom:0.92]">
       {session && <RecordView listingId={p.id} intent="project" />}
       <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
         {/* ---------- Title + gallery + highlights ---------- */}

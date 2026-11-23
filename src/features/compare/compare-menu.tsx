@@ -60,10 +60,10 @@ export function CompareMenu() {
         <button
           type="button"
           aria-label={total ? `Compare (${total})` : "Compare"}
-          className="relative flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-black bg-white hover:bg-rez-cloud"
+          className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-black bg-white hover:bg-rez-cloud"
           {...hover}
         >
-          <Scale className="size-[18px]" aria-hidden />
+          <Scale className="size-4" aria-hidden />
           {total > 0 && (
             <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-black text-[11px] leading-none font-bold text-rez-full-white">
               {total}

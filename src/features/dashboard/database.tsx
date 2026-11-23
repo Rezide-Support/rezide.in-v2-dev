@@ -94,7 +94,7 @@ export function DatabasePage() {
       ) : (
         <Card className="overflow-hidden">
           <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[1060px] text-sm">
+            <table className="w-full min-w-[calc(1060px*var(--property-space-scale,1))] text-sm">
               <caption className="sr-only">Uploaded files</caption>
               <THead>
                 <tr>
@@ -270,7 +270,7 @@ export function UploadFilePage({ id }: { id: string }) {
       </Link>
       <Card className="overflow-hidden">
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[680px] text-sm">
+          <table className="w-full min-w-[calc(680px*var(--property-space-scale,1))] text-sm">
             <caption className="sr-only">Records in {file.name}</caption>
             <THead>
               <tr>

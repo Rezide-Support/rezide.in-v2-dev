@@ -56,7 +56,7 @@ function hasProjectActivity(tab: Tab): tab is "viewed" | "shortlisted" {
 
 function AccountEmptyState({ large = false }: { large?: boolean } = {}) {
   return (
-    <div role="status" className={large ? "flex min-h-[560px] items-center justify-center lg:min-h-[600px]" : "flex min-h-[480px] items-center justify-center"}>
+    <div role="status" className={large ? "flex min-h-[calc(560px*var(--property-space-scale,1))] items-center justify-center lg:min-h-[calc(600px*var(--property-space-scale,1))]" : "flex min-h-[calc(480px*var(--property-space-scale,1))] items-center justify-center"}>
       <span className="sr-only">No results found.</span>
       <Image
         src="/images/empty.gif"
@@ -64,7 +64,7 @@ function AccountEmptyState({ large = false }: { large?: boolean } = {}) {
         width={large ? 640 : 480}
         height={large ? 640 : 480}
         unoptimized
-        className={large ? "h-auto w-full max-w-[640px]" : "h-auto w-full max-w-[480px]"}
+        className={large ? "h-auto w-full max-w-[calc(640px*var(--property-space-scale,1))]" : "h-auto w-full max-w-[calc(480px*var(--property-space-scale,1))]"}
       />
     </div>
   );
@@ -119,10 +119,10 @@ function ActivityList({ tab, filter, user }: { tab: ActivityTab; filter: Activit
         <AccountEmptyState />
       ) : (
         groups.map((g) => (
-          <section key={g.date} className="flex flex-col gap-6" aria-label={formatDate(g.date)}>
+          <section key={g.date} className="flex flex-col gap-6 md:gap-9" aria-label={formatDate(g.date)}>
             <div className="flex items-center gap-4" aria-hidden>
               <span className="h-px flex-1 bg-rez-smoke" />
-              <span className="rounded-full bg-rez-cloud px-4 py-2 text-[13px] font-semibold text-rez-graphite">{formatDate(g.date)}</span>
+              <span className="rounded-full bg-rez-cloud px-4 py-2 text-[13px] font-semibold text-rez-graphite md:text-[11px]">{formatDate(g.date)}</span>
               <span className="h-px flex-1 bg-rez-smoke" />
             </div>
             <ul className="flex flex-col gap-6">
@@ -164,7 +164,7 @@ function ActivityList({ tab, filter, user }: { tab: ActivityTab; filter: Activit
 //         ].map(([l, v]) => (
 //           <div key={l} className="flex flex-col-reverse gap-2 rounded-xl bg-rez-cloud px-5 py-[18px]">
 //             <dt className="text-[13px] font-medium text-rez-graphite">{l}</dt>
-//             <dd className="text-[28px] leading-none font-bold">{v}</dd>
+//             <dd className="text-[max(12px,calc(28px*var(--property-type-scale,1)))] leading-none font-bold">{v}</dd>
 //           </div>
 //         ))}
 //       </dl>
@@ -179,11 +179,11 @@ function ActivityList({ tab, filter, user }: { tab: ActivityTab; filter: Activit
 //               <div className="flex flex-col gap-3.5 px-[22px] py-5">
 //                 <div className="flex flex-wrap items-start justify-between gap-3">
 //                   <div className="flex min-w-0 flex-col gap-1">
-//                     <h3 className="text-[19px] leading-tight font-semibold">{p.title}</h3>
+//                     <h3 className="text-[max(12px,calc(19px*var(--property-type-scale,1)))] leading-tight font-semibold">{p.title}</h3>
 //                     <span className="text-sm text-rez-graphite">{p.locality}</span>
 //                   </div>
 //                   <div className="flex flex-col items-end gap-1">
-//                     <span className="text-[22px] leading-none font-bold">{p.price}</span>
+//                     <span className="text-[max(12px,calc(22px*var(--property-type-scale,1)))] leading-none font-bold">{p.price}</span>
 //                     <span className="text-xs font-medium text-rez-graphite">{p.intentLabel}</span>
 //                   </div>
 //                 </div>
@@ -278,7 +278,7 @@ function Profile({ user, owner }: { user: Session["user"]; owner: boolean }) {
         <div className="flex min-w-0 items-center gap-[18px]">
           <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-black text-2xl font-bold text-rez-full-white sm:size-24">{initials(name)}</span>
           <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-[22px] font-semibold break-words">{name}</span>
+            <span className="text-[max(12px,calc(22px*var(--property-type-scale,1)))] font-semibold break-words">{name}</span>
             <span className="text-[13px] font-medium text-rez-graphite">{owner ? "Property owner" : "Property seeker"}</span>
           </div>
         </div>
@@ -336,7 +336,7 @@ export function AccountView() {
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("buy");
 
   if (status === "loading") {
-    return <div className="mx-auto h-[60vh] w-full max-w-[1156px] animate-pulse px-4 py-2 md:px-0 xl:w-[calc(100%_-_80px)] xl:max-w-[1600px]" aria-busy="true" />;
+    return <div className="mx-auto h-[60vh] w-full max-w-[1156px] animate-pulse px-4 py-2 md:px-0 xl:w-[calc(100%_-_64px)] xl:max-w-[1600px]" aria-busy="true" />;
   }
   if (!session) return <div className="min-h-[60vh]" aria-busy="true" />;
   if (session.user.role === "realtor") {
@@ -384,16 +384,16 @@ export function AccountView() {
   })();
 
   return (
-    <div className="mx-auto grid w-full max-w-[1156px] flex-1 grid-cols-1 items-start gap-4 px-4 py-2 md:grid-cols-[280px_minmax(0,1fr)] md:gap-6 md:px-0 xl:w-[calc(100%_-_80px)] xl:max-w-[1600px] xl:grid-cols-[364px_minmax(0,1fr)] xl:gap-9">
+    <div className="mx-auto grid w-full max-w-[1156px] flex-1 grid-cols-1 items-start gap-4 px-4 py-2 md:grid-cols-[calc(280px*var(--property-space-scale,1))_minmax(0,1fr)] md:gap-6 md:px-0 xl:w-[calc(100%_-_64px)] xl:max-w-[1600px] xl:grid-cols-[calc(364px*var(--property-space-scale,1))_minmax(0,1fr)] xl:gap-9">
       <div className="flex min-w-0 flex-col md:sticky md:top-5">
         <AccountSidebar key={pathname} session={session} active={tab} compact />
       </div>
-      <section className="flex min-w-0 flex-col gap-6 pt-2 md:pt-1" aria-label={tab === "settings" ? "Settings" : undefined} aria-labelledby={tab === "settings" ? undefined : "account-title"}>
+      <section className="flex min-w-0 flex-col gap-6 pt-2 md:gap-9 md:pt-1" aria-label={tab === "settings" ? "Settings" : undefined} aria-labelledby={tab === "settings" ? undefined : "account-title"}>
         {comingSoon || tab === "settings" ? content : (
           <>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 id="account-title" className={`text-[22px] leading-tight font-semibold tracking-[-0.02em] ${ownerActivity ? "lg:text-[26px]" : ""}`}>
+                <h1 id="account-title" className={`text-[22px] md:text-[max(12px,calc(26px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[-0.02em] ${ownerActivity ? "lg:text-[max(12px,calc(26px*var(--property-type-scale,1)))]" : ""}`}>
                   {TITLES[tab](owner)}
                 </h1>
               </div>

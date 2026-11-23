@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useState } from "react";
-import { ChevronDown, ChevronUp, Download, Info, Phone } from "lucide-react";
+import { Fragment, useId, useState } from "react";
+import { Building, ChevronDown, ChevronUp, Download, House, Info, LayoutGrid, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -69,7 +69,28 @@ const STATUS_GRADIENT: Record<Project["status"], string> = {
 const ACTION = "size-9 rounded-full bg-gray-50 p-2 text-gray-500 hover:text-black [&_svg]:size-4 max-sm:size-7 max-sm:p-1.5";
 
 /** Wide project card (prototype "project mode" layout). */
-export function ProjectCard({ project: p, priority }: { project: Project; priority?: boolean }) {
+/** A backend upload's logo, through this site's /api/files (which sends the right image type); other URLs as they are. */
+export function logoSrc(url: string): string {
+  const key = url.match(/\/v1\/admin\/file\/upload\/([a-f0-9]{16,64})$/i)?.[1];
+  return key ? `/api/files/${key}` : url;
+}
+
+/** Sizes for a card whose sizes follow the screen width (the project search): full size on big monitors, a bit smaller on laptops. */
+const FLUID = {
+  grid: "xl:grid-cols-[clamp(236px,15.6vw,300px)_minmax(0,1fr)_clamp(228px,14.9vw,260px)] sm:gap-[clamp(18px,1.37vw,24px)] sm:p-[clamp(16px,1.15vw,20px)] short:py-3",
+  title: "sm:text-[clamp(20px,1.37vw,24px)]",
+  value: "sm:text-[clamp(15px,0.92vw,16px)]",
+  range: "text-[clamp(16px,0.97vw,17px)]",
+  button: "sm:px-[clamp(28px,2.29vw,40px)] short:h-9",
+  /** Tighter rows on laptops (tighter still on short windows), so the whole first card fits on the first screen. */
+  row: "sm:gap-1 sm:py-[clamp(7px,0.62vw,12px)] short:gap-0.5 short:py-1.5",
+  body: "sm:gap-[clamp(10px,0.83vw,16px)] short:gap-2",
+  footer: "sm:py-[clamp(10px,0.83vw,16px)] short:py-2",
+  photo: "short:aspect-[16/10]",
+  media: "short:[&_button>span:first-child]:h-10 short:[&_svg]:size-8",
+};
+
+export function ProjectCard({ project: p, priority, fluid = false }: { project: Project; priority?: boolean; fluid?: boolean }) {
   // rezide.in's "Details": the per-configuration table, opened from the Configurations row or the side panel.
   const [configOpen, setConfigOpen] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
@@ -77,14 +98,33 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
   const ranges = p.configurationPlans ?? [];
   const hasRanges = ranges.length > 0;
   const toggle = () => setConfigOpen((o) => !o);
+  // "17 Acres • 13 Towers • 2,632 Units", as on rezide.in (singular for 1).
+  const sizeParts = [
+    p.acres ? `${p.acres} ${p.acres === 1 ? "Acre" : "Acres"}` : "",
+    p.towers ? `${p.towers} ${p.towers === 1 ? "Tower" : "Towers"}` : "",
+    p.units ? `${formatNumber(p.units)} ${p.units === 1 ? "Unit" : "Units"}` : "",
+  ].filter(Boolean);
   return (
     <article className="relative flex flex-col overflow-hidden rounded-xl border border-rez-smoke bg-white transition-shadow hover:shadow-rez-md">
-      <div className="grid grid-cols-1 gap-6 p-5 max-sm:gap-0 max-sm:p-0 md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_260px]">
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-6 p-5 max-sm:gap-0 max-sm:p-0 md:grid-cols-[calc(240px*var(--property-space-scale,1))_minmax(0,1fr)] xl:grid-cols-[calc(300px*var(--property-space-scale,1))_minmax(0,1fr)_calc(260px*var(--property-space-scale,1))]",
+          fluid && FLUID.grid,
+        )}
+      >
         <div className="flex min-w-0 flex-col gap-2 max-sm:gap-0">
         {/* Above the card's stretched link, so the photo arrows and dots work (rezide.in shows up to 5 photos).
             Phones, as rezide.in: a full-width darkened photo (swipe to change it), no arrows or dots. */}
-        <div className="relative z-10 aspect-[4/3] overflow-hidden rounded-lg bg-rez-cloud max-sm:aspect-auto max-sm:h-[15.5rem] max-sm:rounded-t-xl max-sm:rounded-b-2xl max-sm:[&_button]:hidden">
-          <Viewer key={p.id} images={p.images.slice(0, 5)} label={p.name} cardHref={projectHref(p)} priority={priority} />
+        <div
+          className={cn(
+            "relative z-10 aspect-[4/3] overflow-hidden rounded-lg bg-rez-cloud max-sm:aspect-auto max-sm:h-[15.5rem] max-sm:rounded-t-xl max-sm:rounded-b-2xl max-sm:[&_button]:hidden",
+            fluid && FLUID.photo,
+          )}
+        >
+          {/* As the old site: the arrows show while the photo is hovered, only → on the first photo,
+              and → on the last photo opens the project. They sit a little below the middle so they
+              clear the builder logo above. */}
+          <Viewer key={p.id} images={p.images.slice(0, 5)} label={p.name} cardHref={projectHref(p)} priority={priority} linear arrowClassName="top-[calc(50%+14px)]" />
           <span aria-hidden className="pointer-events-none absolute inset-0 bg-black/40 sm:hidden" />
           {p.priceFrom > 0 && (
             <span className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col text-white sm:hidden">
@@ -96,19 +136,21 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
           )}
           <span className="pointer-events-none absolute top-3 left-3 flex size-11 items-center justify-center overflow-hidden rounded-full border border-rez-smoke bg-white text-[13px] font-bold max-sm:top-2 max-sm:left-2 max-sm:size-10">
             {p.developerLogo && !logoFailed ? (
-              <Image src={p.developerLogo} alt={`${p.developer} logo`} width={44} height={44} className="size-full object-contain" onError={() => setLogoFailed(true)} />
+              // Backend uploads come without a Content-Type, so Next's image resizer refuses SVG logos
+              // (e.g. Lodha Group's) and browsers won't show them; /api/files adds the right type.
+              <Image src={logoSrc(p.developerLogo)} alt={`${p.developer} logo`} width={44} height={44} unoptimized className="size-full object-contain" onError={() => setLogoFailed(true)} />
             ) : (
               initials(p.developer)
             )}
           </span>
         </div>
         {/* rezide.in's video and 360 buttons under the photo. */}
-        <ProjectMediaButtons project={p} className="max-sm:px-2 max-sm:pt-2" />
+        <ProjectMediaButtons project={p} className={cn("max-sm:px-2 max-sm:pt-2", fluid && FLUID.media)} />
         </div>
-        <div className="flex min-w-0 flex-col gap-4 max-sm:gap-3 max-sm:px-4 max-sm:pt-4">
+        <div className={cn("flex min-w-0 flex-col gap-4 max-sm:gap-3 max-sm:px-4 max-sm:pt-4", fluid && FLUID.body)}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 flex-col gap-1">
-              <h3 className="text-2xl leading-tight font-semibold tracking-[-0.01em] max-sm:text-lg">
+              <h3 className={cn("text-2xl leading-tight font-semibold tracking-[-0.01em] max-sm:text-lg", fluid && FLUID.title)}>
                 <Link href={projectHref(p)} className="after:absolute after:inset-0">
                   {p.name}
                 </Link>
@@ -138,16 +180,33 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
               <ShareProjectButton project={p} className={ACTION} />
             </div>
           </div>
-          {/* Phones, as rezide.in: a grey label over a bold value underlined by a hairline. */}
+          {/* Rows with a round icon (laptop and up). Phones, as rezide.in: a grey label over a bold value underlined by a hairline. */}
           <dl className="flex flex-col max-sm:gap-4 max-sm:pb-4">
-            <div className="flex flex-col gap-1.5 border-t border-rez-smoke py-3 max-sm:border-t-0 max-sm:py-0">
-              <dt className="text-xs text-rez-graphite max-sm:text-sm">Project size</dt>
-              <dd className="text-base leading-snug font-medium max-sm:border-b max-sm:border-rez-smoke max-sm:pb-1 max-sm:text-sm max-sm:font-semibold">
-                {[p.acres ? `${p.acres} acres` : "", p.towers ? `${p.towers} towers` : "", p.units ? `${formatNumber(p.units)} units` : ""].filter(Boolean).join(" · ") || "Not provided"}
+            <div className={cn("grid grid-cols-1 gap-y-1 border-t border-rez-smoke py-3 max-sm:border-t-0 max-sm:py-0 md:grid-cols-[2.75rem_minmax(0,1fr)] md:gap-x-4", fluid && FLUID.row)}>
+              <span aria-hidden className="hidden size-11 items-center justify-center self-start rounded-full bg-rez-cloud md:row-span-2 md:flex">
+                <Building className="size-6" strokeWidth={2} />
+              </span>
+              <dt className="text-sm text-rez-graphite">Project Size</dt>
+              <dd className={cn("flex flex-wrap items-center gap-x-4 text-base leading-snug text-black max-sm:border-b max-sm:border-rez-smoke max-sm:pb-1 max-sm:text-sm max-sm:font-semibold", fluid && FLUID.value)}>
+                {sizeParts.length
+                  ? sizeParts.map((part, i) => (
+                      <Fragment key={part}>
+                        {i > 0 && (
+                          <span aria-hidden className="text-xs">
+                            •
+                          </span>
+                        )}
+                        <span>{part}</span>
+                      </Fragment>
+                    ))
+                  : "Not provided"}
               </dd>
             </div>
-            <div className="flex flex-col gap-1.5 border-t border-rez-smoke py-3 max-sm:border-t-0 max-sm:py-0">
-              <dt className="flex items-center gap-4 text-xs text-rez-graphite max-sm:text-sm">
+            <div className={cn("grid grid-cols-1 gap-y-1 border-t border-rez-smoke py-3 max-sm:border-t-0 max-sm:py-0 md:grid-cols-[2.75rem_minmax(0,1fr)] md:gap-x-4", fluid && FLUID.row)}>
+              <span aria-hidden className="hidden size-11 items-center justify-center self-start rounded-full bg-rez-cloud md:row-span-2 md:flex">
+                <LayoutGrid className="size-6" strokeWidth={2} />
+              </span>
+              <dt className="flex items-center gap-4 text-sm text-rez-graphite">
                 Configurations
                 {hasRanges && (
                   <button
@@ -162,7 +221,7 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
                   </button>
                 )}
               </dt>
-              <dd className="text-base leading-snug font-medium max-sm:border-b max-sm:border-rez-smoke max-sm:pb-1 max-sm:text-sm max-sm:font-semibold">
+              <dd className={cn("text-base leading-snug text-black max-sm:border-b max-sm:border-rez-smoke max-sm:pb-1 max-sm:text-sm max-sm:font-semibold", fluid && FLUID.value)}>
                 {configOpen && hasRanges ? (
                   <ConfigurationTable id={tableId} rows={ranges} />
                 ) : (
@@ -174,27 +233,33 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
                 )}
               </dd>
             </div>
-            <div className="flex flex-col gap-1.5 border-t border-rez-smoke py-3 max-sm:hidden">
-              <dt className="text-xs text-rez-graphite">Amenities</dt>
-              <dd className="text-base leading-snug font-medium">{p.amenities.slice(0, 2).join(" · ") + (p.amenities.length > 2 ? ` +${p.amenities.length - 2}` : "")}</dd>
+            <div className={cn("grid grid-cols-1 gap-y-1 border-t border-rez-smoke py-3 max-sm:hidden md:grid-cols-[2.75rem_minmax(0,1fr)] md:gap-x-4", fluid && FLUID.row)}>
+              <span aria-hidden className="hidden size-11 items-center justify-center self-start rounded-full bg-rez-cloud md:row-span-2 md:flex">
+                <House className="size-6" strokeWidth={2} />
+              </span>
+              <dt className="text-sm text-rez-graphite">Amenities</dt>
+              <dd className={cn("text-base leading-snug text-black", fluid && FLUID.value)}>{p.amenities.slice(0, 2).join(" · ") + (p.amenities.length > 2 ? ` +${p.amenities.length - 2}` : "")}</dd>
             </div>
           </dl>
         </div>
         {/* Phones show the sale range on the photo and the area under Configurations, as rezide.in does. */}
-        <div className="flex flex-col justify-center gap-4 rounded-lg bg-rez-cloud p-5 text-center max-sm:hidden md:col-span-2 xl:col-span-1">
+        <div className={cn("flex flex-col justify-center gap-4 rounded-lg bg-rez-cloud p-5 text-center max-sm:hidden md:col-span-2 xl:col-span-1", fluid && "p-[clamp(16px,1.15vw,20px)]")}>
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-rez-graphite">Area range</span>
-            <span className="text-[17px] font-bold">
+            <span className={cn("text-[max(12px,calc(17px*var(--property-type-scale,1)))] font-bold", fluid && FLUID.range)}>
               {p.areaMin ? `${formatNumber(p.areaMin)} – ${formatNumber(p.areaMax)} sq ft` : "Not provided"}
             </span>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs text-rez-graphite">Price range</span>
-            <span className="text-[17px] font-bold">
-              {p.priceFrom ? `${formatPrice(p.priceFrom, { compact: true })} – ${formatPrice(p.priceTo, { compact: true })}` : "Price on request"}
-            </span>
-            {p.ratePerSqft > 0 && <span className="text-xs text-rez-graphite">₹ {formatNumber(p.ratePerSqft)} per sq ft</span>}
-          </div>
+          {/* Price range is hidden when the project has no price (was: "Price on request"). */}
+          {p.priceFrom ? (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs text-rez-graphite">Price range</span>
+              <span className={cn("text-[max(12px,calc(17px*var(--property-type-scale,1)))] font-bold", fluid && FLUID.range)}>
+                {`${formatPrice(p.priceFrom, { compact: true })} – ${formatPrice(p.priceTo, { compact: true })}`}
+              </span>
+              {p.ratePerSqft > 0 && <span className="text-xs text-rez-graphite">₹ {formatNumber(p.ratePerSqft)} per sq ft</span>}
+            </div>
+          ) : null}
           {hasRanges && (
             <button
               type="button"
@@ -209,7 +274,7 @@ export function ProjectCard({ project: p, priority }: { project: Project; priori
           )}
         </div>
       </div>
-      <ProjectCardFooter project={p} />
+      <ProjectCardFooter project={p} fluid={fluid} />
     </article>
   );
 }
@@ -265,13 +330,13 @@ function MobileStatusLine({ project: p }: { project: Project }) {
 }
 
 /** rezide.in's project card footer: status and possession badges, RERA ids in a tooltip, Brochure and Contact. */
-export function ProjectCardFooter({ project: p, backendBadges = false }: { project: Project; backendBadges?: boolean }) {
+export function ProjectCardFooter({ project: p, backendBadges = false, fluid = false }: { project: Project; backendBadges?: boolean; fluid?: boolean }) {
   const { possessionDate: labelDate, reraIds } = statusInfo(p);
   const statusLabel = backendBadges ? p.backendStatus?.trim() : PROJECT_STATUS_LABEL[p.status];
   const parsedDate = p.possessionDate?.trim() ? new Date(p.possessionDate) : null;
   const possessionDate = backendBadges ? (parsedDate && Number.isFinite(parsedDate.getTime()) ? parsedDate.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : undefined) : labelDate;
   return (
-  <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-gray-300 bg-gray-100 p-4 max-sm:p-3">
+  <div className={cn("relative z-10 flex flex-wrap items-center justify-between gap-3 border-t border-gray-300 bg-gray-100 p-4 max-sm:p-3", fluid && FLUID.footer)}>
     {/* Phones show this as a text line under the name instead (MobileStatusLine), as rezide.in does. */}
     <div className="flex flex-wrap items-center gap-4 max-sm:hidden">
       {statusLabel && <span className={cn(BADGE, backendBadges ? "rounded-[6px] from-[#2ECC71] to-[#17A855]" : STATUS_GRADIENT[p.status])}>
@@ -308,7 +373,7 @@ export function ProjectCardFooter({ project: p, backendBadges = false }: { proje
     <div className="flex items-center gap-4 max-sm:w-full max-sm:gap-2 max-sm:[&>*]:flex-1">
       <BrochureButton
         variant="outline"
-        className="h-10 rounded-md border-black bg-white px-10 text-black hover:bg-white max-sm:w-full max-sm:px-3"
+        className={cn("h-10 rounded-md border-black bg-white px-10 text-black hover:bg-white max-sm:w-full max-sm:px-3", fluid && FLUID.button)}
         url={p.brochureUrl}
         fileName={projectBrochureFileName(p.name)}
         path={projectHref(p)}
@@ -324,7 +389,7 @@ export function ProjectCardFooter({ project: p, backendBadges = false }: { proje
         intents={PROJECT_INTENTS}
         submitLabel="Send request"
       >
-        <Button className="h-10 rounded-md px-10 max-sm:w-full max-sm:px-3">
+        <Button className={cn("h-10 rounded-md px-10 max-sm:w-full max-sm:px-3", fluid && FLUID.button)}>
           <Phone className="size-4" aria-hidden /> Contact
         </Button>
       </LeadDialog>

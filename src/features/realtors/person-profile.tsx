@@ -42,8 +42,8 @@ function PersonDetails({ person, popup = false }: { person: DirectoryPersonDetai
           const url = person.socials.find(link => link.label.toLowerCase() === social.label.toLowerCase())?.url;
           const safeUrl = url && (url.startsWith("https://") || url.startsWith("http://")) ? url : undefined;
           const icon = <Image src={`/images/social-${social.icon}.svg`} width={18} height={18} alt="" />;
-          const className = "flex size-9 items-center justify-center rounded-[6px] bg-[#18181b] text-white shadow-sm";
-          return safeUrl ? <a key={social.label} href={safeUrl} target="_blank" rel="noopener noreferrer" aria-label={social.label} className={className}>{icon}</a> : <span key={social.label} role="img" aria-label={`${social.label} unavailable`} title={`${social.label} unavailable`} className={cn(className, "opacity-40")}>{icon}</span>;
+          const className = "flex size-9 items-center justify-center rounded-[6px] bg-black text-white shadow-sm";
+          return safeUrl ? <a key={social.label} href={safeUrl} target="_blank" rel="noopener noreferrer" aria-label={social.label} className={className}>{icon}</a> : <span key={social.label} role="img" aria-label={`${social.label} unavailable`} title={`${social.label} unavailable`} className={className}>{icon}</span>;
         })}
       </nav>
       {popup && <div className="mt-6"><DirectoryLeadForm firmId={person.firmId} recipient={person.name} stacked /></div>}

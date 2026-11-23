@@ -213,8 +213,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-dvh bg-white">
-      <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 overflow-y-auto border-r border-[#E0E0E0] bg-white lg:block">
+    <div className="dashboard-page flex min-h-dvh min-w-0 bg-white">
+      <aside className="sticky top-0 hidden h-dvh w-[calc(248px*var(--property-space-scale,1))] shrink-0 overflow-y-auto border-r border-[#E0E0E0] bg-white lg:block">
         <SidebarBody />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">

@@ -87,7 +87,7 @@ function KV({ k, children }: { k: string; children: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5 border-b border-[#E8E8E8] pb-3">
       <dt className="text-xs text-rez-graphite">{k}</dt>
-      <dd className="flex min-w-0 items-center gap-2 text-[15px] break-words">{children}</dd>
+      <dd className="flex min-w-0 items-center gap-2 text-[max(12px,calc(15px*var(--property-type-scale,1)))] break-words">{children}</dd>
     </div>
   );
 }
@@ -219,7 +219,7 @@ function PropsTab({ c }: { c: Contact }) {
       </div>
       {c.properties.length ? (
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[calc(760px*var(--property-space-scale,1))] text-sm">
             <caption className="sr-only">Properties linked to {displayName(c)}</caption>
             <THead>
               <tr>
@@ -280,7 +280,7 @@ function LeadsTab({ c }: { c: Contact }) {
       </div>
       {c.leads.length ? (
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full min-w-[calc(860px*var(--property-space-scale,1))] text-sm">
             <caption className="sr-only">Leads for {displayName(c)}</caption>
             <THead>
               <tr>
@@ -420,7 +420,7 @@ export function ContactView({ id }: { id: string }) {
     <>
       {header}
       <FilterChips chips={chips} onClear={clear} />
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[calc(300px*var(--property-space-scale,1))_minmax(0,1fr)]">
         <div className="hidden lg:block">
           <ListPanel rows={rows} total={all.length} activeId={id} />
         </div>
@@ -435,7 +435,7 @@ export function ContactView({ id }: { id: string }) {
               <Card className="flex flex-wrap items-center gap-4 p-5">
                 <Avatar name={name} size={60} className="text-lg" />
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <h2 className="text-[22px] leading-tight font-semibold">{isCompany(c) ? name : [c.salutation, name].join(" ")}</h2>
+                  <h2 className="text-[max(12px,calc(22px*var(--property-type-scale,1)))] leading-tight font-semibold">{isCompany(c) ? name : [c.salutation, name].join(" ")}</h2>
                   <span className="flex flex-wrap items-center gap-2 text-sm text-rez-arsenic">
                     <TypePill type={c.type} />
                     {[c.subType, c.type === "Developer" || isCompany(c) ? subLine(c) : c.details.organisation].filter(Boolean).join(" · ")}
@@ -475,7 +475,7 @@ export function ContactView({ id }: { id: string }) {
                         document.getElementById(`tab-${n}`)?.focus();
                       }
                     }}
-                    className={cn("-mb-px flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-[15px]", tab === t ? "border-black font-semibold text-black" : "border-transparent text-rez-graphite hover:text-black")}
+                    className={cn("-mb-px flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-[max(12px,calc(15px*var(--property-type-scale,1)))]", tab === t ? "border-black font-semibold text-black" : "border-transparent text-rez-graphite hover:text-black")}
                   >
                     {tabLabel[t]}
                     {counts[t] !== null && <span className="text-sm font-normal text-rez-space">{counts[t]}</span>}

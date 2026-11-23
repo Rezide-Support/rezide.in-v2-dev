@@ -34,13 +34,13 @@ export function SiteFooter() {
   );
 }
 /** One-line footer for the customer workspace (account, listing wizard), as in the prototype. */
-export function SlimFooter() {
-  return (
-    <footer className="bg-black px-4 py-6 text-sm text-rez-full-white md:px-8">
-      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <p>© 2026 Rezide. Powering India&apos;s Leading Realtors.</p>
-        <p className="text-rez-steel">Customer account · sample data</p>
-      </div>
-    </footer>
-  );
-}
+// export function SlimFooter() {
+//   return (
+//     <footer className="bg-black px-4 py-6 text-sm text-rez-full-white md:px-8">
+//       <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-x-6 gap-y-2">
+//         <p>© 2026 Rezide. Powering India&apos;s Leading Realtors.</p>
+//         <p className="text-rez-steel">Customer account · sample data</p>
+//       </div>
+//     </footer>
+//   );
+// }

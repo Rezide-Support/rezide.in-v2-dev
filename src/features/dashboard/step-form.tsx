@@ -30,7 +30,7 @@ export function StepFormLayout({
   busy?: boolean;
 }) {
   return (
-    <div className={cn("grid items-start gap-5", preview && "xl:grid-cols-[minmax(0,1fr)_340px]")}>
+    <div className={cn("grid items-start gap-5", preview && "xl:grid-cols-[minmax(0,1fr)_calc(340px*var(--property-space-scale,1))]")}>
       <div className="flex min-w-0 flex-col gap-4 rounded-[24px] bg-[#F4F4F4] p-3 md:p-5">
         {steps.length > 1 && (
           <ol className="relative mx-auto grid w-full max-w-[640px] px-2 pt-2 pb-1" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }} aria-label="Steps">
@@ -94,7 +94,7 @@ export function LivePreview({ title, titleMuted, sub, line, tags, sections, onEd
       <h2 className="px-1 pt-1 text-lg font-semibold">Live Preview</h2>
       <div className="flex flex-col gap-5 rounded-[16px] bg-white p-3.5">
         <div className="flex flex-col gap-1.5 rounded-[12px] border border-rez-smoke p-3.5">
-          <b className={cn("text-[15px] font-semibold", titleMuted && "text-rez-steel")}>{title}</b>
+          <b className={cn("text-[max(12px,calc(15px*var(--property-type-scale,1)))] font-semibold", titleMuted && "text-rez-steel")}>{title}</b>
           <span className="text-xs text-rez-graphite">{sub}</span>
           {line && <span className="text-[13px] break-words">{line}</span>}
           <ul className="mt-1 flex flex-wrap gap-1.5">

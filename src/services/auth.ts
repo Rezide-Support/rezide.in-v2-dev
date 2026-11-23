@@ -48,8 +48,12 @@ export type VerifyOtpInput = {
  */
 const backendRole = (role: UserRole = "seeker") => (role === "realtor" ? "broker" : "customer");
 
-/** The backend keeps numbers with the country code and no "+": 9820012345 → 919820012345. */
-export const toBackendPhone = (phone: string) => `91${phone.replace(/\D/g, "").slice(-10)}`;
+/**
+ * The backend keeps numbers with the country code and no "+": 9820012345 → 919820012345.
+ * A number given with its own code ("+1 4155550123", from the sign-in country picker) keeps it.
+ */
+export const toBackendPhone = (phone: string) =>
+  phone.trim().startsWith("+") ? phone.replace(/\D/g, "") : `91${phone.replace(/\D/g, "").slice(-10)}`;
 
 /** 919820012345 or +91 98200 12345 → 9820012345, the form the UI uses. */
 export const fromBackendPhone = (phone: string) => phone.replace(/\D/g, "").slice(-10);

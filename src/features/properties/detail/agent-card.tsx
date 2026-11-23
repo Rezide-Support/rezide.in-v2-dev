@@ -39,7 +39,7 @@ export function AgentCard({ realtor, propertyId, listing, defaultIntent }: { rea
             <Image src={realtor.photo} alt="" fill sizes="48px" quality={70} className="object-cover" />
           </span>
           <div className="min-w-0">
-            <h2 id="agent-name" className="text-[17px] leading-tight font-semibold">
+            <h2 id="agent-name" className="text-[max(12px,calc(17px*var(--property-type-scale,1)))] leading-tight font-semibold">
               <Link href={realtorHref(realtor)} className="hover:underline">
                 {realtor.name}
               </Link>
@@ -48,7 +48,7 @@ export function AgentCard({ realtor, propertyId, listing, defaultIntent }: { rea
           </div>
         </div>
       ) : (
-        <h2 id="agent-name" className="mb-5 text-[17px] font-semibold">
+        <h2 id="agent-name" className="mb-5 text-[max(12px,calc(17px*var(--property-type-scale,1)))] font-semibold">
           Contact about this property
         </h2>
       )}

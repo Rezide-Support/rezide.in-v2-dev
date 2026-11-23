@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { ProjectSearchCriteria, ProjectSortKey, ProjectStatus } from "@/types/models";
 import { LocationDialog } from "./location-dialog";
 import { ProjectCard } from "./project-card";
+import { ProjectSearchInput } from "./project-search-input";
 import { ProjectFilterDrawer, RESET_DRAWER, countDrawerFilters, drawerChips } from "./project-filter-drawer";
 
 type FilterKey = "status" | "budget" | "localities" | "views" | "years";
@@ -105,10 +106,11 @@ export function ProjectSearch() {
   };
 
   return (
-    <div className="flex-1 px-4 pt-5 pb-24 md:px-8">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-[18px]">
+    <div className="flex-1 px-4 pt-5 pb-24 md:px-8 short:pt-3">
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-[18px] sm:gap-[clamp(12px,0.8vw,18px)] short:gap-2.5">
         <div className="flex flex-wrap items-center justify-between gap-4 max-sm:gap-3">
-          <h1 className="text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] max-sm:text-xl md:text-[32px]">
+          {/* Sizes on this page follow the screen width: full size on big monitors, a bit smaller on laptops; phones unchanged. */}
+          <h1 className="text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] max-sm:text-xl md:text-[clamp(26px,1.83vw,32px)]">
             {/* Phones: rezide.in's "Projects (6063)". */}
             <span className="sm:hidden">Projects{data ? ` (${data.total})` : ""}</span>
             <span className="max-sm:hidden">
@@ -130,7 +132,7 @@ export function ProjectSearch() {
                     setOpenKey(k);
                   }}
                   className={cn(
-                    "flex h-12 shrink-0 items-center gap-2.5 rounded-full border pr-4 pl-[22px] text-[15px] whitespace-nowrap hover:border-black max-sm:h-10 max-sm:gap-1.5 max-sm:pr-3 max-sm:pl-4 max-sm:text-sm",
+                    "flex h-[clamp(40px,2.75vw,48px)] short:h-9 shrink-0 items-center gap-2.5 rounded-full border pr-[clamp(12px,0.92vw,16px)] pl-[clamp(16px,1.26vw,22px)] text-[clamp(14px,0.86vw,15px)] whitespace-nowrap hover:border-black max-sm:h-10 max-sm:gap-1.5 max-sm:pr-3 max-sm:pl-4 max-sm:text-sm",
                     vals.length ? "border-black bg-rez-cloud font-bold" : "border-rez-smoke bg-white font-medium",
                   )}
                 >
@@ -152,17 +154,17 @@ export function ProjectSearch() {
             Search project, developer or locality
           </label>
           <Icon name="search" size={18} className="ml-3 shrink-0 text-rez-graphite sm:ml-1" />
-          <input
+          {/* As rezide.in: suggests projects, builders and places from 3 letters, with hints before that. */}
+          <ProjectSearchInput
             id={inputId}
-            type="search"
-            enterKeyHint="search"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search project, developer or locality"
-            className="h-10 min-w-0 flex-1 bg-transparent px-2.5 text-sm outline-none placeholder:text-[#767a88] sm:h-12 sm:px-3 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
+            onChange={setQ}
+            onPick={(name) => update({ q: name })}
+            city={criteria.city}
+            className="h-10 min-w-0 flex-1 bg-transparent px-2.5 text-sm outline-none placeholder:text-[#767a88] sm:h-[clamp(40px,2.75vw,48px)] short:h-9 sm:px-3 sm:text-[clamp(14px,0.86vw,15px)] [&::-webkit-search-cancel-button]:hidden"
           />
           {/* Phones search from the keyboard's Search key, as on rezide.in. */}
-          <Button type="submit" size="lg" className="px-6 max-sm:hidden">
+          <Button type="submit" size="lg" className="h-[clamp(40px,2.75vw,48px)] short:h-9 px-[clamp(18px,1.37vw,24px)] text-[clamp(15px,0.92vw,16px)] max-sm:hidden">
             <Icon name="search" size={20} />
             Search
           </Button>
@@ -174,7 +176,7 @@ export function ProjectSearch() {
           onClick={() => setDrawerOpen(true)}
           aria-label={drawerCount ? `Filters, ${drawerCount} applied` : "Filters"}
           className={cn(
-            "relative flex size-10 shrink-0 items-center justify-center rounded-md border bg-white hover:border-black sm:size-[62px] sm:rounded-full sm:shadow-rez-sm",
+            "relative flex size-10 shrink-0 items-center justify-center rounded-md border bg-white hover:border-black sm:size-[clamp(52px,3.55vw,62px)] short:size-12 sm:rounded-full sm:shadow-rez-sm",
             drawerCount ? "border-black" : "border-rez-smoke",
           )}
         >
@@ -236,8 +238,8 @@ export function ProjectSearch() {
         )}
 
         {/* rezide.in leaves the count, per-page and sort bar off phones (sort is the funnel above). */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-rez-smoke pt-2 max-sm:hidden">
-          <p className="text-[15px] text-rez-graphite" aria-live="polite">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-rez-smoke pt-2 max-sm:hidden short:pt-1.5">
+          <p className="text-[clamp(14px,0.86vw,15px)] text-rez-graphite" aria-live="polite">
             {data ? (
               data.total ? (
                 <>
@@ -257,7 +259,7 @@ export function ProjectSearch() {
           <div className="flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
               Per page
-              <SearchSelect size="sm" value={criteria.perPage} onValueChange={(value) => update({ perPage: Number(value) })} aria-label="Projects per page">
+              <SearchSelect size="sm" className="short:data-[size=default]:h-9" value={criteria.perPage} onValueChange={(value) => update({ perPage: Number(value) })} aria-label="Projects per page">
                 {PER_PAGE_OPTIONS.map((n) => (
                   <option key={n} value={n}>
                     {n}
@@ -267,7 +269,7 @@ export function ProjectSearch() {
             </label>
             <label className="flex items-center gap-2.5 text-sm font-medium text-rez-graphite">
               Sort by
-              <SearchSelect size="sm" value={criteria.sort} onValueChange={(value) => update({ sort: value as ProjectSortKey })} aria-label="Sort projects">
+              <SearchSelect size="sm" className="short:data-[size=default]:h-9" value={criteria.sort} onValueChange={(value) => update({ sort: value as ProjectSortKey })} aria-label="Sort projects">
                 {PROJECT_SORT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -298,14 +300,16 @@ export function ProjectSearch() {
                 ) : null
               }
             >
-              Sample projects cover Mumbai, Bengaluru, Pune, Hyderabad, Gurugram and Noida.
+              {chips.length || moreChips.length || criteria.q
+                ? "Try a different search, or remove some filters."
+                : `No projects are listed in ${criteria.city} yet.`}
             </EmptyState>
           ) : (
             <>
               <ul className="flex flex-col gap-5">
                 {data.items.map((p, i) => (
                   <li key={p.id}>
-                    <ProjectCard project={p} priority={i < 2} />
+                    <ProjectCard project={p} priority={i < 2} fluid />
                   </li>
                 ))}
               </ul>

@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/brand/icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+
 
 export function EmptyState({
-  icon = "search",
   title,
   children,
   action,
@@ -23,9 +24,7 @@ export function EmptyState({
         className,
       )}
     >
-      <span className="flex size-16 items-center justify-center rounded-full bg-rez-cloud">
-        <Icon name={icon} size={26} />
-      </span>
+      <Image src="/image/empty.gif" alt="" width={160} height={160} unoptimized />
       <h3 className="text-[22px] leading-tight font-semibold">{title}</h3>
       {children && <div className="max-w-md text-[15px] leading-relaxed text-rez-graphite">{children}</div>}
       {action && <div className="mt-2 flex flex-wrap justify-center gap-2">{action}</div>}

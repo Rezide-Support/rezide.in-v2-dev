@@ -60,8 +60,9 @@ export function ProjectWideCard({ project: p }: { project: Project }) {
             </div>
           </div>
           <div className="mt-2">
-            <Row icon={Building2} label="Project size">
-              {p.acres} Acre · {p.towers} Towers · {formatNumber(p.units)} Units
+            <Row icon={Building2} label="Project Size">
+              {/* Singular for 1: "1 Tower", "2 Towers". */}
+              {p.acres} {p.acres === 1 ? "Acre" : "Acres"} · {p.towers} {p.towers === 1 ? "Tower" : "Towers"} · {formatNumber(p.units)} {p.units === 1 ? "Unit" : "Units"}
             </Row>
             <Row
               icon={LayoutGrid}

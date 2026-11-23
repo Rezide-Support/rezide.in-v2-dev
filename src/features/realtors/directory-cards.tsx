@@ -48,6 +48,7 @@ export function DirectoryPhoto({
           alt={name}
           fill
           unoptimized
+          loading="eager"
           sizes="180px"
           className={
             portrait ? "object-cover object-top" : "object-contain p-5"
@@ -55,16 +56,7 @@ export function DirectoryPhoto({
           onError={() => setFailedSrc(src)}
         />
       ) : (
-        <span
-          className="text-3xl font-bold text-rez-graphite"
-          aria-label={`${name}: no photo`}
-        >
-          {name
-            .split(/\s+/)
-            .slice(0, 2)
-            .map((w) => w[0])
-            .join("")}
-        </span>
+        <Image src="/images/empty.gif" alt="" width={160} height={160} unoptimized />
       )}
     </div>
   );
@@ -91,6 +83,8 @@ export function DirectoryCard({
       className={cn(
         "grid h-full grid-cols-1 overflow-hidden rounded-[18px] border border-rez-smoke bg-white shadow-[0_2px_6px_0_#2c2c2c1f] sm:grid-cols-[135px_minmax(0,1fr)]",
         !person && "min-h-[305px] sm:grid-cols-[180px_minmax(0,1fr)]",
+        // Firm cards on laptops: a narrower logo column and a shorter card.
+        !person && "lg:max-[1599.98px]:min-h-[250px] lg:max-[1599.98px]:grid-cols-[150px_minmax(0,1fr)]",
       )}
     >
       <Link
@@ -102,7 +96,7 @@ export function DirectoryCard({
           src={person ? person.photo : firm.logo}
           name={name}
           portrait={!!person}
-          className="min-h-[246px] w-full sm:w-full"
+          className={cn("min-h-[246px] w-full sm:w-full", !person && "lg:max-[1599.98px]:min-h-[200px]")}
         />
       </Link>
       <div className="flex min-w-0 flex-col gap-5 px-4 py-3.5 sm:gap-4">
@@ -125,7 +119,7 @@ export function DirectoryCard({
             <h3
               className={cn(
                 "text-lg leading-5 font-semibold [overflow-wrap:anywhere]",
-                !person && "text-base leading-8 sm:text-xl",
+                !person && "text-base leading-8 sm:text-xl lg:max-[1599.98px]:text-lg lg:max-[1599.98px]:leading-7",
               )}
             >
               <Link className="hover:underline" href={profileHref}>
@@ -172,8 +166,14 @@ export function DirectoryCard({
             label="Specializing"
             className={!person ? "col-span-2" : undefined}
           >
-            {(person?.specializations || firm.specializations).join(", ") ||
-              "Not provided"}
+            {person ? (
+              person.specializations.join(", ") || "Not provided"
+            ) : (
+              // Firm cards on laptops: long lists stop after 3 lines (hover shows all; the firm page has them in full).
+              <span className="lg:max-[1599.98px]:line-clamp-3" title={firm.specializations.join(", ") || undefined}>
+                {firm.specializations.join(", ") || "Not provided"}
+              </span>
+            )}
           </DirectoryDetail>
           {person ? (
             <>
@@ -188,9 +188,9 @@ export function DirectoryCard({
           ) : (
             <>
               <DirectoryDetail label="Location" className="col-span-2">
-                {[...new Set([...firm.subRegions, ...firm.localities])].join(
-                  ", ",
-                ) || "Not provided"}
+                <span className="lg:max-[1599.98px]:line-clamp-4" title={[...new Set([...firm.subRegions, ...firm.localities])].join(", ") || undefined}>
+                  {[...new Set([...firm.subRegions, ...firm.localities])].join(", ") || "Not provided"}
+                </span>
               </DirectoryDetail>
               <DirectoryDetail label="Since">
                 {firm.since || "Not provided"}

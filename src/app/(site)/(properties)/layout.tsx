@@ -8,11 +8,11 @@ import { PropertiesHero, PropertiesHeroView } from "@/features/home/home-hero";
  */
 export default function PropertiesHomeLayout({ children }: LayoutProps<"/">) {
   return (
-    <>
+    <div className="property-page min-w-0">
       <Suspense fallback={<PropertiesHeroView category="homes" intent="buy" />}>
         <PropertiesHero />
       </Suspense>
       {children}
-    </>
+    </div>
   );
 }

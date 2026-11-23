@@ -1,0 +1,132 @@
+/* Property and dashboard density: real layout/type sizes, scoped away from the site navbar.
+   Mobile keeps its established sizes and touch targets. No CSS/browser zoom is applied. */
+.property-page,
+.dashboard-page {
+  --property-type-scale: 1;
+  --property-space-scale: 1;
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .property-page,
+  .dashboard-page {
+    --property-type-scale: .9;
+    --property-space-scale: .9;
+    --spacing: .225rem;
+    --text-xs: .6875rem;
+    --text-sm: .8125rem;
+    --text-base: .9375rem;
+    --text-lg: 1rem;
+    --text-xl: 1.125rem;
+    --text-2xl: 1.375rem;
+    --text-3xl: 1.6875rem;
+    --text-4xl: 2rem;
+    font-size: .9375rem;
+  }
+}
+@media (min-width: 1024px) {
+  .property-page,
+  .dashboard-page {
+    --property-type-scale: .8;
+    --property-space-scale: .8;
+    --spacing: .2rem;
+    --text-xs: .6875rem;
+    --text-sm: .75rem;
+    --text-base: .8125rem;
+    --text-lg: .9375rem;
+    --text-xl: 1rem;
+    --text-2xl: 1.25rem;
+    --text-3xl: 1.5rem;
+    --text-4xl: 1.8125rem;
+    font-size: .8125rem;
+  }
+}
+
+/* Keep the discovery photo at its natural proportions on wider screens.
+   Center the controls in the visible hero area, even when the full photo is taller. */
+@media (min-width: 768px) {
+  .property-page [data-property-hero] {
+    display: grid;
+    padding: 0;
+    min-height: 0;
+  }
+  .property-page [data-property-hero] > .hero-photo,
+  .property-page [data-property-hero] .hero-photo-frame {
+    position: relative;
+    inset: auto;
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+  .property-page [data-property-hero] .hero-photo-frame img {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    animation: none;
+    scale: none;
+    translate: none;
+    will-change: auto;
+  }
+  .property-page [data-property-hero] > .hero-content {
+    position: absolute;
+    inset: 0 0 auto;
+    height: min(100%, calc(100svh - 76px));
+    justify-content: center;
+    margin-inline: auto;
+    padding-block: 32px;
+    width: calc(100% - 48px);
+  }
+}
+
+/* Match the discovery grid's broad canvas without scaling up its typography. */
+@media (min-width: 768px) {
+  .property-page .property-discovery-rail {
+    padding-inline: clamp(24px, 5.5vw, 104px);
+    padding-block: 56px;
+  }
+  .property-page .property-discovery-rail > div {
+    max-width: 1600px;
+    padding-inline: 0;
+  }
+  .property-page .property-discovery-rail ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(16px, 2.5vw, 32px);
+  }
+}
+@media (min-width: 1024px) {
+  .property-page .property-discovery-rail ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Property heroes share the slow zoom; the search overlay stays still. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .property-page [data-hero-category="homes"] .hero-photo-frame img,
+  .property-page [data-hero-category="offices"] .hero-photo-frame img,
+  .property-page [data-hero-category="retail"] .hero-photo-frame img,
+  .property-page [data-hero-category="industrial"] .hero-photo-frame img,
+  .property-page [data-hero-category="land"] .hero-photo-frame img {
+    animation: rez-ken-burns 24s ease-in-out infinite alternate;
+    will-change: scale, translate;
+  }
+}
+
+/* Give the directory and listing detail the same side gutters as the homepage. */
+@media (min-width: 768px) {
+  .property-page.property-directory,
+  .property-page[data-listing-detail] {
+    padding-inline: clamp(24px, 5.5vw, 104px);
+  }
+}
+
+/* Customer dashboard header follows the compact reference at desktop sizes. */
+@media (min-width: 1024px) {
+  [data-dashboard-compact] {
+    --spacing: .2rem;
+  }
+  [data-dashboard-compact] > .mx-auto {
+    height: 58px;
+  }
+  [data-dashboard-compact] a[aria-label="Rezide home"] svg {
+    height: 16px;
+    width: 111px;
+  }
+}

@@ -67,7 +67,7 @@ export function CreditsPage() {
         crumbs={["Admin", "Manage Account"]}
         title="View Credits"
         actions={
-          <Button asChild className="h-10 px-5 text-[15px]">
+          <Button asChild className="h-10 px-5 text-[max(12px,calc(15px*var(--property-type-scale,1)))]">
             <Link href="/realtor-corner#pricing">
               <Icon name="plus" size={18} /> Buy Credits
             </Link>
@@ -78,7 +78,7 @@ export function CreditsPage() {
         {cards.map((k) => (
           <div key={k.label} className={cn("flex min-h-[146px] flex-col gap-2 rounded-[16px] border p-5", k.dark ? "border-black bg-black text-rez-full-white" : "border-[#E0E0E0] bg-white")}>
             <span className={cn("text-xs font-bold tracking-[0.08em] uppercase", k.dark ? "text-rez-full-white" : "text-rez-arsenic")}>{k.label}</span>
-            <span className="text-[30px] leading-none font-semibold">{k.value}</span>
+            <span className="text-[max(12px,calc(30px*var(--property-type-scale,1)))] leading-none font-semibold">{k.value}</span>
             <span className={cn("text-[13px]", k.dark ? "text-rez-full-white/85" : "text-rez-graphite")}>{k.sub}</span>
             {k.link && (
               <Link href="/dashboard/teams" className="mt-1 w-fit text-xs font-bold tracking-[0.04em] uppercase underline underline-offset-4">
@@ -130,7 +130,7 @@ export function CreditsPage() {
           <p className="border-t border-[#E8E8E8] px-5 py-10 text-center text-sm text-rez-graphite">No credit activity in this period.</p>
         ) : (
           <div className="relative overflow-x-auto border-t border-[#E0E0E0] outline-none focus-visible:ring-[3px] focus-visible:ring-rez-mocaccino/60" tabIndex={0} role="region" aria-label="Credit history table (scrolls sideways)">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full min-w-[calc(640px*var(--property-space-scale,1))] text-sm">
               <caption className="sr-only">Credit statement</caption>
               <THead>
                 <tr>

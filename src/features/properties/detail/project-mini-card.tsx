@@ -23,7 +23,7 @@ export function ProjectMiniCard({ project: p, stock }: { project: Project; stock
       <div className="flex flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[17px] leading-tight font-semibold">
+            <h2 className="text-[max(12px,calc(17px*var(--property-type-scale,1)))] leading-tight font-semibold">
               <Link href={`/projects/${p.id}`} className="hover:underline">
                 {p.name}
               </Link>

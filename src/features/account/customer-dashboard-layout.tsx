@@ -14,7 +14,7 @@ export function CustomerDashboardLayout({ children }: { children: ReactNode }) {
  useEffect(() => { if(customer && status !== "loading" && !session) router.replace("/"); }, [customer,status,session,router]);
  if(customer) {
   if(status === "loading" || !session) return <div aria-busy="true" className="min-h-dvh" />;
-  return <><SiteHeader/><main id="main" className="flex flex-1 flex-col"><Suspense fallback={<div aria-busy="true" className="min-h-[60vh]"/>}>{children}</Suspense></main><SiteFooter/></>;
+  return <><SiteHeader compact/><main id="main" className="dashboard-page flex min-w-0 flex-1 flex-col"><Suspense fallback={<div aria-busy="true" className="min-h-[60vh]"/>}>{children}</Suspense></main><SiteFooter/></>;
  }
  return <DashboardShell>{children}</DashboardShell>;
 }

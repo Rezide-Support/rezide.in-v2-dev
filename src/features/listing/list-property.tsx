@@ -4,14 +4,15 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { OwnerEnquiryForm } from "./owner-enquiry-form";
 export function ListProperty() {
  return <>
-      <section className="bg-rez-forest px-4 py-12 text-rez-full-white md:px-8 md:py-[72px]">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-12">
-          <div className="flex max-w-[640px] min-w-0 flex-[1_1_min(100%,520px)] flex-col gap-7">
+    <div className="property-page list-property-page min-w-0">
+      <section className="bg-rez-forest px-4 py-12 text-rez-full-white md:px-8 md:py-[calc(72px*var(--property-space-scale,1))]">
+        <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,.95fr)_minmax(0,1.05fr)] lg:gap-12">
+          <div className="flex max-w-[640px] min-w-0 flex-col gap-7">
             <span className="eyebrow text-rez-mocaccino">List property</span>
-            <h1 className="text-[40px] leading-[1.02] font-semibold tracking-[-0.025em] md:text-[clamp(44px,5.5vw,76px)]">
+            <h1 className="text-[clamp(32px,8vw,40px)] leading-[1.02] font-semibold tracking-[-0.025em] md:text-[clamp(calc(44px*var(--property-type-scale,1)),calc(5.5vw*var(--property-type-scale,1)),calc(76px*var(--property-type-scale,1)))]">
               Sell or rent faster. <span className="text-rez-mocaccino">100% free.</span>
             </h1>
-            <p className="max-w-[560px] text-[17px] leading-normal text-rez-full-white/85 md:text-[19px]">
+            <p className="max-w-[560px] text-[max(15px,calc(17px*var(--property-type-scale,1)))] leading-normal text-rez-full-white/85 md:text-[max(15px,calc(19px*var(--property-type-scale,1)))]">
               List in minutes to connect with verified buyers and tenants.
               <br />
               <span className="text-rez-mocaccino">Want assistance? Top local realtors can assist, if you choose.</span>
@@ -25,11 +26,11 @@ export function ListProperty() {
               ))}
             </ul>
           </div>
-          <div className="w-full min-w-0 flex-[1_1_min(100%,560px)]"><OwnerEnquiryForm /></div>
+          <div className="w-full min-w-0"><OwnerEnquiryForm /></div>
         </div>
       </section>
-<div className="flex min-h-[350px] flex-col items-center justify-center bg-white px-4 text-center text-black">
-  <h1 className="text-5xl font-bold uppercase tracking-tight sm:text-7xl md:text-8xl">
+<div className="flex min-h-[calc(350px*var(--property-space-scale,1))] flex-col items-center justify-center bg-white px-4 text-center text-black">
+  <h1 className="text-5xl font-bold uppercase tracking-tight sm:text-7xl md:text-[calc(96px*var(--property-type-scale,1))]">
     Coming
     <span className="block text-black/40">Soon.</span>
   </h1>
@@ -118,6 +119,6 @@ export function ListProperty() {
           </div>
         </div>
       </section> */}
-      <SiteFooter />
+    </div>
 </>;
 }

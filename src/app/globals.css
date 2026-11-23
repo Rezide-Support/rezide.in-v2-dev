@@ -20,6 +20,9 @@
 @custom-variant fold-x (&:where([data-fold="x"], [data-fold="x"] *));
 @custom-variant fold-y (&:where([data-fold="y"], [data-fold="y"] *));
 
+/* A short laptop window (e.g. 1280 × 590 at 150% Windows scaling): pages that opt in tighten their spacing. */
+@custom-variant short (@media (min-width: 640px) and (max-height: 760px));
+
 /*
  * Rezide design tokens (Visual Identity §1.8–1.9), ported from the prototype's
  * design-system bundle. shadcn/ui semantic variables are mapped onto them below.

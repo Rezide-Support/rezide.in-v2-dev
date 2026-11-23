@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -128,7 +129,7 @@ export function MediaGallery({
           ) : (
             <div className="flex aspect-[16/9] flex-col items-center justify-center gap-3 rounded-lg bg-rez-cloud px-6 text-center sm:aspect-[21/10]">
               <t.icon className="size-8 text-rez-graphite" aria-hidden />
-              <p className="max-w-sm text-[15px] text-rez-arsenic">{t.empty}</p>
+              <p className="max-w-sm text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-arsenic">{t.empty}</p>
             </div>
           )}
         </TabsContent>
@@ -139,11 +140,21 @@ export function MediaGallery({
 
 type CarouselApi = NonNullable<ReturnType<typeof useEmblaCarousel>[1]>;
 
-function GalleryArrows({ api, previous, next }: { api?: CarouselApi; previous: boolean; next: boolean }) {
+function GalleryArrows({ api, previous, next, className, onEnd, endLabel }: {
+  api?: CarouselApi;
+  previous: boolean;
+  next: boolean;
+  /** Extra classes for both arrows (e.g. to clear a logo above them). */
+  className?: string;
+  /** When set, the next arrow stays on the last slide and calls this (e.g. opens the card's page). */
+  onEnd?: () => void;
+  endLabel?: string;
+}) {
   const arrow = "pointer-events-none absolute top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm opacity-0 transition-opacity group-hover/carousel:pointer-events-auto group-hover/carousel:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 disabled:invisible disabled:pointer-events-none [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100";
+  const atEnd = !next && !!onEnd;
   return <>
-    <button type="button" aria-label="Previous slide" disabled={!previous} onClick={() => api?.scrollPrev()} className={cn(arrow, "left-6")}><ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden /></button>
-    <button type="button" aria-label="Next slide" disabled={!next} onClick={() => api?.scrollNext()} className={cn(arrow, "right-6")}><ArrowRight className="size-4" strokeWidth={1.5} aria-hidden /></button>
+    <button type="button" aria-label="Previous slide" disabled={!previous} onClick={() => api?.scrollPrev()} className={cn(arrow, "left-6", className)}><ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden /></button>
+    <button type="button" aria-label={atEnd ? endLabel ?? "Open" : "Next slide"} disabled={!next && !onEnd} onClick={() => (atEnd ? onEnd?.() : api?.scrollNext())} className={cn(arrow, "right-6", className)}><ArrowRight className="size-4" strokeWidth={1.5} aria-hidden /></button>
   </>;
 }
 
@@ -155,7 +166,7 @@ function keyboardScroll(event: KeyboardEvent, api?: CarouselApi) {
   else api?.scrollNext();
 }
 
-export function Viewer({ images, slides: photoSlides, label, cardHref, priority, sample = false, caption, overlay }: {
+export function Viewer({ images, slides: photoSlides, label, cardHref, priority, sample = false, caption, overlay, linear = false, arrowClassName }: {
   images: GalleryImage[];
   slides?: PropertyPhoto[];
   label: string;
@@ -165,7 +176,12 @@ export function Viewer({ images, slides: photoSlides, label, cardHref, priority,
   caption?: string;
   overlay?: ReactNode;
   reserveBadgeSpace?: boolean;
+  /** Card only: next on the last photo opens `cardHref` (the project card, as the old site's project search). */
+  linear?: boolean;
+  /** Card only: extra classes for the two arrows (e.g. to clear a logo above them). */
+  arrowClassName?: string;
 }) {
+  const router = useRouter();
   const slides = labelledSlides(photoSlides ?? images);
   const n = slides.length;
   const [mainRef, mainApi] = useEmblaCarousel({ loop: false });
@@ -210,13 +226,13 @@ export function Viewer({ images, slides: photoSlides, label, cardHref, priority,
       {!cardHref && <span className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white tabular-nums" aria-live="polite">{n ? selected + 1 : 0}/{n}</span>}
       {sample && <SampleBadge className="absolute top-3 left-3">Sample photo</SampleBadge>}
       {overlay && <div className="absolute top-3 right-[3.75rem] z-10 lg:hidden">{overlay}</div>}
-      {n > 1 && <GalleryArrows api={mainApi} previous={main.previous} next={main.next} />}
+      {n > 1 && <GalleryArrows api={mainApi} previous={main.previous} next={main.next} className={arrowClassName} onEnd={linear && cardHref ? () => router.push(cardHref) : undefined} endLabel={"View " + label} />}
     </div>
     {!cardHref && n > 0 && <div role="region" aria-roledescription="carousel" aria-label={label + " thumbnails"} tabIndex={0} onKeyDown={event => keyboardScroll(event, thumbApi)} className="group/carousel relative min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-rez-mocaccino">
       <div ref={thumbRef} className="overflow-hidden">
         <div className="flex touch-pan-y gap-4">
           {slides.map((slide, i) => <div key={slide.url + ":" + i} className="min-w-0 flex-[0_0_33.333%] md:flex-[0_0_50%] lg:flex-[0_0_25%]">
-            <button type="button" onClick={() => mainApi?.scrollTo(i)} aria-label={"Show photo " + (i + 1) + " of " + n} aria-current={i === selected ? "true" : undefined} className={cn("relative block h-[50px] w-full overflow-hidden bg-rez-cloud transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rez-mocaccino lg:h-[117px]", i === selected ? "opacity-100" : "opacity-50")}>
+            <button type="button" onClick={() => mainApi?.scrollTo(i)} aria-label={"Show photo " + (i + 1) + " of " + n} aria-current={i === selected ? "true" : undefined} className={cn("relative block h-[50px] w-full overflow-hidden bg-rez-cloud transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rez-mocaccino lg:h-[calc(117px*var(--property-space-scale,1))]", i === selected ? "opacity-100" : "opacity-50")}>
               <Image src={failed.has(slide.url) ? FALLBACK_SRC : thumbnailSrc(slide.url)} onError={() => fail(slide.url)} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 33vw" quality={70} className="object-cover" />
             </button>
           </div>)}

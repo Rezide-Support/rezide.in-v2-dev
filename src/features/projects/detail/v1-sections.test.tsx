@@ -21,6 +21,10 @@ describe("rezide.in formats", () => {
     expect(shortInr(56100000)).toBe("5.61 Cr.");
     expect(shortInr(200000)).toBe("2.00L");
     expect(shortInr(34000)).toBe("34K");
+    // Thousands are rounded, not shown with three decimals.
+    expect(shortInr(67001)).toBe("67K");
+    expect(shortInr(12500)).toBe("12.5K");
+    expect(shortInr(45678)).toBe("45.68K");
     expect(rsInr(56100000)).toBe("Rs 5,61,00,000");
   });
 

@@ -5,7 +5,14 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PROJECTS } from "@/mocks/fixtures/projects";
 import type { Project } from "@/types/models";
-import { ProjectCard } from "./project-card";
+import { logoSrc, ProjectCard } from "./project-card";
+
+describe("logoSrc", () => {
+  it("sends backend uploads through /api/files, which adds the image type", () => {
+    expect(logoSrc("https://api.rezide.in/v1/admin/file/upload/721f61d29a93c1e11709e0bd01c4bcab")).toBe("/api/files/721f61d29a93c1e11709e0bd01c4bcab");
+    expect(logoSrc("https://cdn.rezide.in/images/logo.png")).toBe("https://cdn.rezide.in/images/logo.png");
+  });
+});
 
 // The Shortlist and Compare buttons send guests to sign in.
 vi.mock("next/navigation", () => ({
@@ -69,11 +76,16 @@ describe("project card: configurations Details (as rezide.in)", () => {
     renderCard(<ProjectCard project={arbor({ images })} />);
     expect(screen.getAllByRole("button", { name: /^Show photo/ })).toHaveLength(5);
     expect(screen.getByAltText("Arbor Vista, photo 1 of 5")).toBeInTheDocument();
+    // As the old site: the first photo shows only the next arrow.
+    expect(screen.queryByRole("button", { name: "Previous photo of Arbor Vista" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Next photo of Arbor Vista" }));
     expect(screen.getByAltText("Arbor Vista, photo 2 of 5")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Previous photo of Arbor Vista" }));
-    await user.click(screen.getByRole("button", { name: "Previous photo of Arbor Vista" }));
-    expect(screen.getByAltText("Arbor Vista, photo 5 of 5")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Previous photo of Arbor Vista" })).not.toBeInTheDocument();
+    // On the last photo the next arrow opens the project instead of looping round.
+    for (let i = 0; i < 4; i++) await user.click(screen.getByRole("button", { name: "Next photo of Arbor Vista" }));
+    expect(screen.queryByRole("button", { name: "Next photo of Arbor Vista" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View Arbor Vista" })).toBeInTheDocument();
   });
 
   it("slides the photos (as rezide.in's carousel) instead of swapping them", async () => {

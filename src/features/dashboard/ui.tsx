@@ -77,7 +77,7 @@ export function PageHeader({
             </li>
           </ol>
         </nav>
-        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] md:text-[28px]">{title}</h1>
+        <h1 className="text-[max(12px,calc(26px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[-0.02em] md:text-[max(12px,calc(28px*var(--property-type-scale,1)))]">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-rez-graphite">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -352,7 +352,7 @@ export function TableFooter({
 
 export function HeaderButton({ icon, children, variant = "secondary", asChild, ...props }: ComponentProps<typeof Button> & { icon?: IconName }) {
   return (
-    <Button variant={variant} className="h-10 px-5 text-[15px]" asChild={asChild} {...props}>
+    <Button variant={variant} className="h-10 px-5 text-[max(12px,calc(15px*var(--property-type-scale,1)))]" asChild={asChild} {...props}>
       {asChild ? (
         children
       ) : (

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { fontVariables } from "./fonts";
 import { Providers } from "./providers";
 import "./globals.css";
+import "@/features/properties/property-density.css";
 
 export const metadata: Metadata = {
   title: {

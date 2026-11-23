@@ -47,12 +47,12 @@ export function PropertyCard({ property: p, priority, layout = "stack" }: { prop
   const retail = p.category === "retail" || /shop|showroom/i.test(p.unitType || p.specs[0]?.value || "");
   const features = [
     { Icon: retail ? Store : office ? Building2 : BedDouble, label: retail ? "Retail type" : office ? "Office type" : "Bedrooms", value: office || retail ? p.specs[0]?.value || p.unitType || "Not provided" : p.bhk ? `${p.bhk} BHK` : p.specs[0]?.value || p.unitType || "Not provided" },
-    { Icon: Bath, label: "Bathrooms", value: p.bathrooms !== undefined ? `${p.bathrooms} Baths` : "Not provided" },
-    { Icon: Car, label: "Parking", value: p.parking !== undefined ? `${p.parking} Parks` : "Not provided" },
+    { Icon: Bath, label: "Bathrooms", value: p.bathrooms !== undefined ? `${p.bathrooms} ${p.bathrooms === 1 ? "Bath" : "Baths"}` : "Not provided" },
+    { Icon: Car, label: "Parking", value: p.parking !== undefined ? `${p.parking} ${p.parking === 1 ? "Parking" : "Parks"}` : "Not provided" },
     { Icon: Sofa, label: "Furnishing", value: p.furnishing || p.specs.find(spec => spec.label === "Furnishing")?.value || "Not provided" },
   ];
   return <article className={cn("group relative flex w-full max-w-[640px] min-w-0 flex-col overflow-hidden rounded-xl border border-rez-smoke bg-white shadow-[0_1px_3px_#0000001f]", row && "md:grid md:max-w-none md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)] md:rounded-lg")}>
-    <div className={cn("relative h-[240px] shrink-0 bg-rez-cloud", row && "md:h-auto md:min-h-[208px] xl:min-h-[250px] 2xl:min-h-[280px]")}>
+    <div className={cn("relative h-[calc(240px*var(--property-space-scale,1))] shrink-0 bg-rez-cloud", row && "md:h-auto md:min-h-[calc(208px*var(--property-space-scale,1))] xl:min-h-[calc(250px*var(--property-space-scale,1))] 2xl:min-h-[calc(280px*var(--property-space-scale,1))]")}>
       <PropertyCardImageCarousel key={p.id} images={p.images} label={p.title || "Property listing"} href={path} priority={priority} />
       <div className="pointer-events-none absolute top-5 left-3 flex max-w-[calc(100%-148px)] items-center gap-2">
         {availabilityLabel(p) && <span className="rounded-[4px] bg-black px-3 py-1 text-[11px] font-semibold text-white sm:text-xs">{availabilityLabel(p)}</span>}
@@ -171,7 +171,7 @@ export function PropertyPhotoCard({
         <VerificationPill property={p} small />
       </div>
       <div className="flex flex-col gap-2 px-[18px] pt-3.5 pb-4">
-        <span className="text-[21px] leading-none font-bold tracking-[-0.01em]">{priceLabel(p)}</span>
+        <span className="text-[max(12px,calc(21px*var(--property-type-scale,1)))] leading-none font-bold tracking-[-0.01em]">{priceLabel(p)}</span>
         <h3 className="truncate text-sm font-semibold">
           <Link href={propertyHref(p)} className="after:absolute after:inset-0">
             {p.title}

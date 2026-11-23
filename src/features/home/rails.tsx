@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { projectSearchHref, propertySearchHref } from "@/features/search/criteria";
 import { BUDGET_TIERS, PROJECT_STATUS, categoryById } from "@/lib/constants";
 import { homeQueries } from "@/lib/queries";
+import { cn } from "@/lib/utils";
 import { PHOTO_IDS, unsplash } from "@/content/media";
 import { usePreferredCity } from "@/stores/preferences";
 import type { Intent, ProjectStatus, PropertyCategory } from "@/types/models";
@@ -28,14 +29,20 @@ function RailGrid({
   pool,
   loading,
   noun = "listing",
+  fluid = false,
 }: {
   cards: RailCard[];
   pool: readonly string[];
   loading: boolean;
+  /** Card text and gaps follow the screen width (the projects home); phones unchanged. */
+  fluid?: boolean;
   noun?: string;
 }) {
   return (
-    <ul aria-busy={loading} className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-5">
+    <ul
+      aria-busy={loading}
+      className={cn("grid grid-cols-[repeat(auto-fill,minmax(min(100%,calc(300px*var(--property-space-scale,1))),1fr))]", fluid ? "gap-5 md:gap-[clamp(18px,1.2vw,20px)]" : "gap-5")}
+    >
       {/* The cards themselves come from the API, so placeholders hold their place until it answers. */}
       {loading && cards.length === 0
         ? Array.from({ length: 6 }, (_, i) => (
@@ -44,7 +51,7 @@ function RailGrid({
             </li>
           ))
         : null}
-      {!loading && cards.length === 0 ? <li className="col-span-full py-10 text-center text-[15px] text-rez-graphite">Nothing to show here for this city yet.</li> : null}
+      {!loading && cards.length === 0 ? <li className="col-span-full py-10 text-center text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-graphite">Nothing to show here for this city yet.</li> : null}
       {cards.map((c, i) => (
         <li key={c.label}>
           <Link
@@ -58,9 +65,14 @@ function RailGrid({
               className="transition-transform duration-500 ease-rez group-hover:scale-[1.03]"
             />
             <span aria-hidden className="scrim-bottom absolute inset-0" />
-            <span className="absolute inset-x-6 bottom-[22px] flex flex-col gap-1.5 text-rez-full-white">
-              <span className="text-[15px]">{loading ? "Counting…" : countLabel(c.count, c.plus, noun)}</span>
-              <span className="text-[22px] leading-tight font-bold tracking-[-0.01em] text-balance">{c.label}</span>
+            <span
+              className={cn(
+                "absolute inset-x-6 bottom-[22px] flex flex-col gap-1.5 text-rez-full-white",
+                fluid && "md:inset-x-[clamp(20px,1.4vw,24px)] md:bottom-[clamp(18px,1.3vw,22px)] md:gap-[clamp(5px,0.35vw,6px)]",
+              )}
+            >
+              <span className={cn("text-[max(12px,calc(15px*var(--property-type-scale,1)))]", fluid && "md:text-[clamp(14px,0.9vw,15px)]")}>{loading ? "Counting…" : countLabel(c.count, c.plus, noun)}</span>
+              <span className={cn("text-[max(12px,calc(22px*var(--property-type-scale,1)))] leading-tight font-bold tracking-[-0.01em] text-balance", fluid && "md:text-[clamp(19px,1.3vw,22px)]")}>{c.label}</span>
             </span>
           </Link>
         </li>
@@ -143,10 +155,10 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
   const verb = intent === "buy" ? "Sale" : "Rent";
 
   return (
-    <section aria-labelledby={headingId} className="px-4 pt-12 pb-16 md:px-8 md:pt-[88px] md:pb-[88px]">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-6 max-sm:flex-col max-sm:items-stretch max-sm:gap-4">
-          <h2 id={headingId} className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty max-sm:text-center max-sm:text-[22px] md:text-[36px]">
+    <section aria-labelledby={headingId} className="property-discovery-rail px-4 pt-12 pb-16 md:px-8 md:pt-[88px] md:pb-[88px]">
+      <div className="mx-auto flex max-w-[min(100%,calc(1280px*var(--property-space-scale,1)))] flex-col gap-8 md:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-6 max-lg:flex-col max-lg:items-center max-lg:gap-4">
+          <h2 id={headingId} className="text-[max(12px,calc(28px*var(--property-type-scale,1)))] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty max-lg:text-center max-sm:text-[max(12px,calc(22px*var(--property-type-scale,1)))] md:text-[max(12px,calc(36px*var(--property-type-scale,1)))]">
             <span className="text-rez-mocaccino-ink">{city}</span> {category === "offices" ? "Office" : cat.noun} for{" "}
             <span className={intent === "buy" ? "text-rez-burgundy" : "text-rez-timber"}>{verb}</span>
           </h2>
@@ -215,10 +227,10 @@ export function ProjectRails({ status }: { status: ProjectStatus }) {
           }));
 
   return (
-    <section aria-labelledby={headingId} className="px-4 pt-12 pb-16 md:px-8 md:pt-[88px] md:pb-[88px]">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-6 max-sm:flex-col max-sm:items-stretch max-sm:gap-4">
-          <h2 id={headingId} className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty max-sm:text-center max-sm:text-[22px] md:text-[36px]">
+    <section aria-labelledby={headingId} className="px-4 pt-12 pb-16 md:px-8 md:pt-[clamp(56px,5.2vw,88px)] md:pb-[clamp(56px,5.2vw,88px)]">
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:max-w-[clamp(1040px,74vw,1280px)] md:gap-[clamp(26px,1.9vw,32px)] md:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-6 max-lg:flex-col max-lg:items-center max-lg:gap-4">
+          <h2 id={headingId} className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty max-lg:text-center max-sm:text-[22px] md:text-[clamp(28px,2.1vw,36px)]">
             <span className="text-rez-mocaccino-ink">{city}</span>{" "}
             {status === "uc" ? (
               <>
@@ -235,7 +247,7 @@ export function ProjectRails({ status }: { status: ProjectStatus }) {
             onChange={setTab}
             options={tabs}
             className="rounded-[14px] max-sm:flex max-sm:w-full max-sm:rounded-full"
-            itemClassName="min-w-[112px] rounded-[10px] text-[13px] aria-checked:font-semibold max-sm:h-9 max-sm:min-w-0 max-sm:flex-1 max-sm:rounded-full max-sm:px-2 max-sm:text-[12px]"
+            itemClassName="min-w-[112px] sm:h-[clamp(36px,2.4vw,40px)] sm:min-w-[clamp(100px,6.6vw,112px)] rounded-[10px] text-[13px] aria-checked:font-semibold max-sm:h-9 max-sm:min-w-0 max-sm:flex-1 max-sm:rounded-full max-sm:px-2 max-sm:text-[12px]"
           />
         </div>
         {stats.isError ? (
@@ -246,7 +258,7 @@ export function ProjectRails({ status }: { status: ProjectStatus }) {
             </button>
           </p>
         ) : null}
-        <RailGrid cards={cards} pool={PHOTO_IDS.projects} loading={stats.isPending} noun="project" />
+        <RailGrid cards={cards} pool={PHOTO_IDS.projects} loading={stats.isPending} noun="project" fluid />
         <ViewAll href={projectSearchHref({ city, status: [status] })} label={`View all ${statusLabel.toLowerCase()} projects in ${city}`} />
       </div>
     </section>

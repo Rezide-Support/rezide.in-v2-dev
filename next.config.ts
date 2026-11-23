@@ -18,7 +18,7 @@ const csp = [
   `object-src 'none'`,
   `frame-ancestors 'none'`,
   `form-action 'self'`,
-  `img-src 'self' data: blob: https://images.unsplash.com https://cdn.rezide.in https://api.rezide.in https://tile.openstreetmap.org https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com`,
+  `img-src 'self' data: blob: https://images.unsplash.com https://cdn.rezide.in https://api.rezide.in https://tile.openstreetmap.org https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://cdnjs.cloudflare.com`,
   `font-src 'self' data: https://fonts.gstatic.com`,
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   `script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com${isDev ? " 'unsafe-eval'" : ""}`,
