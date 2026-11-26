@@ -1,3 +1,4 @@
+import type { Intent, PropertyCategory, PropertySearchCriteria } from "@/types/models";
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { backOff, expandBbox, readCache, shared, withCallerAbort, takeToken, writeCache, type BBox } from "./map-request-policy";
 
@@ -18,19 +19,20 @@ export const SPATIAL_API_URL = (process.env.NEXT_PUBLIC_SPATIAL_API_URL || "http
   .replace(/\/+$/, "");
 
 /** H3 + Supercluster below zoom 13, Supercluster above (GeoEstate's default "ALGORITHM_1"). */
-const ENDPOINT = "/v1/locations/search";
+const ENDPOINT = "/v1/locations/search-hybrid";
 export const MAX_MAP_ZOOM = 18;
 /** The service groups up to zoom 24, past what map tiles allow: the deepest map zoom asks for its deepest split. */
 const MAX_API_ZOOM = 24;
 const RADIUS = 64;
 export const MAP_LIMIT = 5000;
 
-export type ClusterItem = { type: "cluster"; clusterId: string; count: number; lat: number; lng: number };
+export type ClusterItem = { bounds?: BBox; expansionZoom?: number | null; listings?: ProjectListing[]; type: "cluster"; clusterId: string; count: number; lat: number; lng: number };
 /** A listing a project pin carries. */
-export type ProjectListing = { listingId?: string; title: string; price?: number | string; lat?: number; lng?: number };
-export type ProjectItem = { type: "project"; projectId: string; projectName?: string; count: number; clusterId?: string; lat: number; lng: number; listings?: ProjectListing[] };
+export type ProjectListing = { listingId?: string; title: string; listingType?: string; price?: number | string; lat?: number; lng?: number };
+export type ProjectItem = { type: "project"; expansionZoom?: number | null; minPrice?: number; projectId: string; projectName?: string; count: number; clusterId?: string; lat: number; lng: number; listings?: ProjectListing[] };
 export type ListingItem = {
   type: "listing";
+  listingType?: string;
   listingId?: string;
   title: string;
   price?: number | string;
@@ -59,7 +61,12 @@ export type MapResult = {
 };
 
 /** The view as the map reports it: [west, south, east, north] and the whole zoom. */
-export type MapView = { bbox: BBox; zoom: number };
+export type MapFilters = { type?: "home" | "office" | "retail" | "industrial" | "land"; intend?: Intent; minPrice?: number; maxPrice?: number };
+const MAP_TYPES: Record<PropertyCategory, NonNullable<MapFilters["type"]>> = { homes: "home", offices: "office", retail: "retail", industrial: "industrial", land: "land" };
+export function mapFiltersFor(criteria: Pick<PropertySearchCriteria, "category" | "intent" | "budgetMin" | "budgetMax">): MapFilters {
+  return { type: MAP_TYPES[criteria.category], intend: criteria.intent, minPrice: criteria.budgetMin, maxPrice: criteria.budgetMax };
+}
+export type MapView = MapFilters & { bbox: BBox; zoom: number; focus?: string };
 
 /** Markers for the view. `fresh` skips the response cache ("Try again"). */
 export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = false } = {}): Promise<MapResult> {
@@ -67,7 +74,7 @@ export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = f
   const zoom = Math.round(view.zoom);
   const requestZoom = zoom >= MAX_MAP_ZOOM ? MAX_API_ZOOM : zoom;
   // Grouping depends only on zoom, so a response for larger bounds at the same zoom serves any view inside them.
-  const scope = `${ENDPOINT}|${requestZoom}`;
+  const scope = `${ENDPOINT}|${requestZoom}|${view.focus ?? ""}|${view.type ?? ""}|${view.intend ?? ""}|${view.minPrice ?? ""}|${view.maxPrice ?? ""}`;
   let data = fresh ? null : readCache<SearchData>(scope, view.bbox);
   if (!data) {
     const fetchBbox = expandBbox(view.bbox, zoom);
@@ -76,7 +83,15 @@ export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = f
       zoom: String(requestZoom),
       radius: String(RADIUS),
       limit: String(MAP_LIMIT),
+      mapMaxZoom: String(MAX_MAP_ZOOM),
     });
+    if (view.focus) params.set("focus", view.focus);
+    if (view.type) params.set("type", view.type);
+    if (view.intend) params.set("intend", view.intend);
+    for (const key of ["minPrice", "maxPrice"] as const) {
+      const value = view[key];
+      if (value !== undefined && Number.isFinite(value) && value >= 0) params.set(key, String(value));
+    }
     const url = `${SPATIAL_API_URL}${ENDPOINT}?${params}`;
     data = await withCallerAbort(shared(url, async () => {
       await takeToken();
@@ -86,6 +101,7 @@ export async function searchMap(view: MapView, signal?: AbortSignal, { fresh = f
         backOff((Number(response.headers.get("Retry-After")) || 30) * 1000);
         throw new Error("Too many map searches right now. Please wait a moment and try again.");
       }
+      if (response.status === 410) throw new Error("The map data was updated. Exit the focused area and try again.");
       if (!response.ok) throw new Error(`Couldn't load map listings (HTTP ${response.status}). Please try again.`);
       const body = (await response.json()) as { success?: boolean; message?: string; data?: SearchData };
       if (body.success === false) throw new Error(body.message || "The map search failed.");

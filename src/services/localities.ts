@@ -137,3 +137,39 @@ export async function fetchLocality(id: string, cityName?: (cityId: string) => P
     images: (data.media?.images ?? []).map((i) => i.url?.trim() ?? "").filter(Boolean).map(cdnImage),
   };
 }
+
+/** A locality card in the properties page's Localities tab, as rezide.in's NeighborhoodCard. */
+export type LocalityListItem = { id: string; name: string; images: string[]; rent: number; sale: number };
+export type LocalityListPage = { items: LocalityListItem[]; total: number; page: number; pageSize: number };
+export type LocalityListFilters = { cityId?: string; regionId?: string; subRegionId?: string; q?: string; page: number; pageSize?: number };
+
+/**
+ * rezide.in's /find-property/locality list: POST /Repository/Locality/filter (12 a page), filtered by
+ * city, region, sub-region and a locality name (an exact name, as its search picks one).
+ */
+export async function fetchLocalityList({ cityId, regionId, subRegionId, q, page, pageSize = 12 }: LocalityListFilters): Promise<LocalityListPage> {
+  const { data } = await api.post<{ data?: (BackendLocality & { total_listing_rental_count?: number; total_listing_sale_count?: number })[]; result_count?: number }>(
+    "/Repository/Locality/filter",
+    {
+      sub_regions: subRegionId ? [subRegionId] : null,
+      regions: regionId ? [regionId] : null,
+      searchQuery: q?.trim() ? [q.trim()] : null,
+      ...(cityId ? { city: cityId } : {}),
+    },
+    { params: { page, pageSize } },
+  );
+  const items = (data?.data ?? []).flatMap((l) => {
+    const name = l.general_information?.locality_name?.trim();
+    if (!l._id || !name) return [];
+    return [
+      {
+        id: l._id,
+        name,
+        images: (l.media?.images ?? []).map((i) => i.url?.trim() ?? "").filter(Boolean).slice(0, 5).map(cdnImage),
+        rent: Number(l.total_listing_rental_count) || 0,
+        sale: Number(l.total_listing_sale_count) || 0,
+      },
+    ];
+  });
+  return { items, total: Number(data?.result_count) || 0, page, pageSize };
+}

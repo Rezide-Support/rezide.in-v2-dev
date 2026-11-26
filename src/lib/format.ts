@@ -37,6 +37,8 @@ export function formatDate(iso: string): string {
 
 /** "+91 98200 87676" */
 export function formatPhone(phone: string): string {
+  // Another country's number already carries its code ("+1 4155550123", from the sign-in country picker).
+  if (phone.trim().startsWith("+") && !phone.trim().startsWith("+91")) return phone.trim();
   const digits = phone.replace(/\D/g, "").slice(-10);
   return digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : phone;
 }

@@ -48,3 +48,25 @@ export const directoryQueries = {
   people: (filters: DirectoryFilters) => queryOptions({ queryKey: ["realtor-directory", "people", filters], queryFn: ({ signal }) => loadAllFirms(filters, signal), staleTime: 60_000 }),
   suggestions: (q: string) => queryOptions({ queryKey: ["realtor-directory", "suggestions", q], queryFn: ({ signal }) => directoryRequest<{ result: DirectorySuggestion[] }>(`/api/search?scope=broker&q=${encodeURIComponent(q)}`, undefined, signal), enabled: !!q.trim(), staleTime: 300_000 }),
 };
+
+/** Which of a firm's areas a count is for (rezide.in's /brokers/{kind}/count/{firmId}). */
+export type FirmAreaKind = "sub-region" | "locality" | "project";
+const AREA_BODY_KEY: Record<FirmAreaKind, string> = { "sub-region": "sub_region", locality: "localities", project: "projects" };
+
+/**
+ * How many of the firm's listings are in each of its areas, as rezide.in's firm page shows them
+ * (the number next to "Chembur"): POST /brokers/{kind}/count/{firmId} on the Rezide backend.
+ */
+export async function fetchFirmAreaCounts(firmId: string, kind: FirmAreaKind, names: string[]): Promise<Record<string, number>> {
+  const { api } = await import("@/lib/api/client");
+  const { data } = await api.post<{ data?: { _id?: string; listing_count?: number }[] }>(
+    `/brokers/${kind}/count/${encodeURIComponent(firmId)}`,
+    { type: "firm_id", [AREA_BODY_KEY[kind]]: names },
+  );
+  return Object.fromEntries((data?.data ?? []).flatMap((r) => (r._id ? [[r._id, Number(r.listing_count) || 0]] : [])));
+}
+
+export const firmAreaQueries = {
+  counts: (firmId: string, kind: FirmAreaKind, names: string[]) =>
+    queryOptions({ queryKey: ["realtor-directory", "area-counts", firmId, kind, names], queryFn: () => fetchFirmAreaCounts(firmId, kind, names), staleTime: 60_000, enabled: names.length > 0 }),
+};

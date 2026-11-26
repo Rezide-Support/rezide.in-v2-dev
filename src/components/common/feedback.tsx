@@ -24,7 +24,7 @@ export function EmptyState({
         className,
       )}
     >
-      <Image src="/image/empty.gif" alt="" width={160} height={160} unoptimized />
+      <Image src="/images/empty.gif" alt="" width={160} height={160} unoptimized />
       <h3 className="text-[22px] leading-tight font-semibold">{title}</h3>
       {children && <div className="max-w-md text-[15px] leading-relaxed text-rez-graphite">{children}</div>}
       {action && <div className="mt-2 flex flex-wrap justify-center gap-2">{action}</div>}

@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { realtorHref } from "@/features/realtors/realtor-cards";
+// import { realtorHref } from "@/features/realtors/realtor-cards";
 import type { Realtor } from "@/types/models";
 import { LeadForm, PROPERTY_INTENTS, type LeadListing } from "./lead-form";
 
@@ -32,17 +32,18 @@ export function ListingWhatsAppButton({ listingId, brokerId, title, className }:
 /** v1 agent contact card: photo, name, firm, then the short lead form. */
 export function AgentCard({ realtor, propertyId, listing, defaultIntent }: { realtor: Realtor | null; propertyId: string; listing?: LeadListing; defaultIntent?: string }) {
   return (
-    <section id="enquire" aria-labelledby="agent-name" className="scroll-mt-24 rounded-xl border border-rez-smoke bg-rez-cream-warm p-4 shadow-rez-sm sm:p-[18px]">
+    <section id="enquire" aria-labelledby="agent-name" className="scroll-mt-24 rounded-[12px] border border-rez-smoke bg-[#fafafa] p-3 shadow-rez-sm">
       {realtor ? (
-        <div className="mb-5 flex items-center gap-4">
-          <span className="relative size-12 shrink-0 overflow-hidden rounded-full bg-rez-cloud">
+        <div className="mb-7 flex items-start gap-4">
+          <span className="relative size-10 shrink-0 overflow-hidden rounded-full bg-rez-cloud">
             <Image src={realtor.photo} alt="" fill sizes="48px" quality={70} className="object-cover" />
           </span>
           <div className="min-w-0">
-            <h2 id="agent-name" className="text-[max(12px,calc(17px*var(--property-type-scale,1)))] leading-tight font-semibold">
-              <Link href={realtorHref(realtor)} className="hover:underline">
+            <h2 id="agent-name" className="text-base leading-normal font-semibold">
+              {/* <Link href={realtorHref(realtor)} className="hover:underline">
                 {realtor.name}
-              </Link>
+              </Link> */}
+              {realtor.name}
             </h2>
             <p className="truncate text-[13px] text-rez-graphite">{realtor.firm}</p>
           </div>
@@ -53,6 +54,7 @@ export function AgentCard({ realtor, propertyId, listing, defaultIntent }: { rea
         </h2>
       )}
       <LeadForm
+        agentCard
         compact
         mode="contact"
         intents={PROPERTY_INTENTS}

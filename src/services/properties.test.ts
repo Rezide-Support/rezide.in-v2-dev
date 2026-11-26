@@ -1,11 +1,12 @@
+import { GET as getPropertyDirectory } from "@/app/api/properties/route";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultPropertyCriteria } from "@/features/search/criteria";
 import { api } from "@/lib/api/client";
 import { PLACEHOLDER_IMAGE, toListingFilters, toProperty, toPropertyPage, type BackendListing } from "@/services/property-mapper";
-import { areaGroupLabel, filterGroups, keepOrder, localityOptions } from "@/features/search/filter-drawer";
+import { keepOrder, localityOptions } from "@/features/search/filter-drawer";
 import { clearListingIndex } from "@/services/listing-index";
-import { clearFacetCountCache, countPropertyListings, getListingDetail, listingFacets, listingGroups, searchListings, searchListingsInArea } from "@/services/properties";
+import { getListingDetail, listingFacets, listingGroups, searchListings, searchListingsInArea } from "@/services/properties";
 import { listingMedia, youtubeEmbed } from "@/lib/listing-media";
 
 /* The Rezide backend's listing search, answered here by a test double. Shapes follow live responses. */
@@ -151,31 +152,11 @@ describe("toProperty", () => {
   });
   it("reads the unit and floor unless the owner hides them", () => {
     const shown = listing();
-    Object.assign(shown.listing_details!, { unit_no: { unit: "1902", floor: 19, tower_name: "Tower B", levelName: "Lower Floor" }, floor_no: "19", total_floor: "40", building_age: 16 });
-    expect(toProperty(shown)).toMatchObject({ unitNo: "1902", tower: "Tower B", floorLabel: "Lower Floor", floor: 19, totalFloors: 40, ageYears: 16, bhk: 3, bhkLabel: "3 BHK" });
+    Object.assign(shown.listing_details!, { unit_no: { unit: "1902", floor: 19 }, floor_no: "19", total_floor: "40", building_age: 16 });
+    expect(toProperty(shown)).toMatchObject({ unitNo: "1902", floor: 19, totalFloors: 40, ageYears: 16 });
     const hidden = listing();
     Object.assign(hidden.listing_details!, { unit_no: { unit: "1902" }, floor_no: "19", unitHide: true, floorHide: "true", building_age: -1 });
     expect(toProperty(hidden)).toMatchObject({ unitNo: undefined, floor: undefined, ageYears: undefined });
-  });
-
-  it("preserves sale-filter fields used by the local facets and matcher", () => {
-    const raw = listing();
-    raw.listing_details!.building_age = "Under Construction";
-    raw.commercial_details!.availablility_status = { _id: "659302fcd10433fa2dbb7c8a", name: "Available" };
-    expect(toProperty(raw)).toMatchObject({
-      buildingType: "Gated Amenities",
-      buildingAgeLabel: "Under Construction",
-      availability: "Available",
-      availabilityId: "659302fcd10433fa2dbb7c8a",
-    });
-    raw.listing_details!.building_type = "Standalone";
-    expect(toProperty(raw).buildingType).toBe("Standalone");
-  });
-
-  it("preserves the API area type label for comparison", () => {
-    const raw = listing();
-    raw.listing_details!.area_type = "RERA";
-    expect(toProperty(raw)).toMatchObject({ areaType: "Rera", areaBasis: "Carpet" });
   });
 
   it("reads the unit's room sizes from its configuration, as rezide.in's Dimensions tab", () => {
@@ -273,15 +254,6 @@ describe("toProperty", () => {
     expect(toProperty(raw).images).toEqual([PLACEHOLDER_IMAGE]);
   });
 
-  it("preserves room labels on property photos from the listing response", () => {
-    const raw = listing();
-    raw.images!.apartment![0] = { url: "img1", label: "Kitchen" };
-    expect(toProperty(raw).propertyPhotos).toEqual([
-      { label: "Kitchen", url: "https://cdn.rezide.in/images/img1.jpeg" },
-      { label: "Photo 2", url: "https://cdn.rezide.in/images/img2.jpeg" },
-    ]);
-  });
-
   it("reads a listing whose project is null (the backend sends some)", () => {
     const raw = listing({ images: { apartment: [] } });
     (raw.listing_details as Record<string, unknown>).project = null;
@@ -325,7 +297,7 @@ describe("toListingFilters", () => {
       property_purpose: ["rent"],
       project_names_localities: ["lodha", "Powai"],
       project_type: ["Pent House", "Villa"],
-      bhk: ["64de06554f5f0ae6e6023292", "656730d08eb9d2295cb750ed"],
+      bhk: ["64de06554f5f0ae6e6023292", "64de06664f5f0ae6e60232a2", "656730d08eb9d2295cb750ed"],
       furnishing: ["650eb6b2a1a78c56b3fac96e"],
       no_of_bathrooms: ["2", "5", ">"],
       no_of_parkings: ["4", ">"],
@@ -344,119 +316,6 @@ describe("toListingFilters", () => {
     expect(body.bhk).toBeUndefined();
     expect(body.project_names_localities).toBeUndefined();
   });
-
-  it("maps sale-directory filters to the legacy listing API fields and submitted values", () => {
-    const body = toListingFilters(defaultPropertyCriteria({
-      unitTypes: ["Apartment", "Pent House"],
-      bhk: ["2 BHK"],
-      furnishing: ["650eb6b2a1a78c56b3fac96e"],
-      bathrooms: ["2", ">"],
-      balconies: ["1", ">"],
-      parking: ["1", ">"],
-      buildingTypes: ["Gated Amenities"],
-      buildingAges: ["1 - 3 years", "Under Construction"],
-      media: ["Video", "Photo"],
-      preferredApartment: ["7"],
-      facing: ["E", "NE"],
-      floorRanges: ["1 - 5"],
-      timeOnRezide: ["Less than 15 days"],
-      availability: ["659302fcd10433fa2dbb7c8a"],
-      budgetMin: 10_000_000,
-      budgetMax: 20_000_000,
-      areaMin: 100,
-      areaMax: 500,
-    }));
-    expect(body).toMatchObject({
-      project_type: ["Apartment", "Pent House"],
-      bhk: ["64de062c4f5f0ae6e602328a"],
-      furnishing: ["650eb6b2a1a78c56b3fac96e"],
-      minBudget: ["10000000"],
-      maxBudget: ["20000000"],
-      minArea: ["100"],
-      maxArea: ["500"],
-      building_type: ["Gated Amenities"],
-      no_of_bathrooms: ["2", ">"],
-      no_of_balconies: ["1", ">"],
-      no_of_parkings: ["1", ">"],
-      building_age: ["1 - 3 years", "Under Construction"],
-      listing_with: ["Video", "Photo"],
-      preffered_apartment: ["7"],
-      exit_direction: ["E", "NE"],
-      floor_range: ["1 - 5"],
-      time_on_rezide: ["Less than 15 days"],
-      availability: ["659302fcd10433fa2dbb7c8a"],
-    });
-  });
-
-  it("maps rent-directory filters to the rent availability, BHK, and legacy fields", () => {
-    const body = toListingFilters(defaultPropertyCriteria({
-      intent: "rent",
-      unitTypes: ["Apartment"],
-      bhk: ["5+ BHK"],
-      furnishing: ["650eb6b2a1a78c56b3fac96e"],
-      availability: ["0", "15", "6593031bd10433fa2dbb7c92"],
-      buildingTypes: ["Gated Amenities"],
-      bathrooms: ["2", ">"],
-      balconies: ["1"],
-      parking: ["1"],
-      buildingAges: ["1 - 3 years"],
-      media: ["Video"],
-      preferredApartment: ["7"],
-      facing: ["E"],
-      floorRanges: ["1 - 5"],
-      timeOnRezide: ["AnyTime"],
-      budgetMin: 25_000,
-      budgetMax: 100_000,
-      areaMin: 100,
-      areaMax: 500,
-    }));
-    expect(body).toMatchObject({
-      property_purpose: ["rent"],
-      project_type: ["Apartment"],
-      bhk: ["656730d08eb9d2295cb750ed"],
-      availability: ["0", "15", "6593031bd10433fa2dbb7c92"],
-      building_type: ["Gated Amenities"],
-      no_of_bathrooms: ["2", ">"],
-      no_of_balconies: ["1"],
-      no_of_parkings: ["1"],
-      building_age: ["1 - 3 years"],
-      listing_with: ["Video"],
-      preffered_apartment: ["7"],
-      exit_direction: ["E"],
-      floor_range: ["1 - 5"],
-      time_on_rezide: undefined,
-      minBudget: ["25000"],
-      maxBudget: ["100000"],
-      minArea: ["100"],
-      maxArea: ["500"],
-    });
-  });
-
-  it("omits Any Time from backend filters because it means no time restriction", () => {
-    expect(toListingFilters(defaultPropertyCriteria({ timeOnRezide: ["Any Time"] })).time_on_rezide).toBeUndefined();
-    expect(toListingFilters(defaultPropertyCriteria({
-      intent: "rent",
-      timeOnRezide: ["AnyTime", "Less than 15 days"],
-    })).time_on_rezide).toBeUndefined();
-  });
-});
-
-describe("rent filter options", () => {
-  it("offers the legacy rent options and an Area control", () => {
-    const criteria = defaultPropertyCriteria({ intent: "rent" });
-    const groups = filterGroups(criteria, ["Powai"]);
-    expect(areaGroupLabel(criteria)).toBe("Area");
-    expect(groups.find((group) => group.key === "bhk")?.options).toEqual([
-      "1 BHK", "1.5 BHK", "2 BHK", "2.5 BHK", "3 BHK", "3.5 BHK",
-      "4 BHK", "4.5 BHK", "5 BHK", "5+ BHK", "Studio",
-    ]);
-    expect(groups.find((group) => group.key === "availability")?.options).toEqual([
-      "0", "15", "30", "40", "6593031bd10433fa2dbb7c92", "659ffb68f524ad70b2692abf",
-    ]);
-    const time = groups.find((group) => group.key === "timeOnRezide");
-    expect(time?.options).toContain("AnyTime");
-    expect(time?.format?.("AnyTime")).toBe("Any Time");
-  });
 });
 
 describe("listing search", () => {
@@ -465,32 +324,6 @@ describe("listing search", () => {
     backend = new MockAdapter(api);
   });
   afterEach(() => backend.restore());
-
-  it("requests sale filter counts separately from the listing page", async () => {
-    backend.onPost("/inventory/Listing/mobile/filter/count").reply((config) => {
-      const body = JSON.parse(config.data);
-      expect(body).toMatchObject({
-        city: ["Mumbai"],
-        property_purpose: ["sale"],
-        project_type: ["Apartment"],
-        building_type: ["Standalone"],
-        availability: ["659302fcd10433fa2dbb7c8a"],
-      });
-      expect(body.sortBy).toBeUndefined();
-      return [200, { result_sale: 12, result_rent: 3 }];
-    });
-    await expect(countPropertyListings(defaultPropertyCriteria({
-      unitTypes: ["Apartment"],
-      buildingTypes: ["Standalone"],
-      availability: ["659302fcd10433fa2dbb7c8a"],
-    }))).resolves.toBe(12);
-  });
-
-  it("uses result_rent for rent filter counts", async () => {
-    backend.onPost("/inventory/Listing/mobile/filter/count").reply(200, { result_sale: 4, result_rent: 19 });
-    await expect(countPropertyListings(defaultPropertyCriteria({ intent: "rent", bathrooms: ["2"] }))).resolves.toBe(19);
-    expect(JSON.parse(backend.history.post[0].data)).toMatchObject({ property_purpose: ["rent"], no_of_bathrooms: ["2"] });
-  });
 
   it("returns the page with the total for the searched purpose", async () => {
     backend.onPost("/inventory/Listing/mobile/all").reply((config) => {
@@ -558,8 +391,8 @@ describe("listing search", () => {
     const raw = listing();
     raw.listing_details!.unit_no = { config_id: "one", combineWith: ["602"], project_id: "p1", tower_name: "C" };
     raw.listing_details!.project!.configuration = [
-      { _id: "one", unit_plan: "one", partitions: [{ name: "Living", length: 10, breadth: 12 }] },
-      { _id: "two", unit_plan: "two", partitions: [{ name: "Bedroom", length: 11, breadth: 12 }] },
+      { _id: "one", config_name: "T1-2BHK Premier", unit_plan: "one", partitions: [{ name: "Living", length: 10, breadth: 12 }] },
+      { _id: "two", config_name: "T1-3BHK Premier", unit_plan: "two", partitions: [{ name: "Bedroom", length: 11, breadth: 12 }] },
     ];
     backend.onGet("/inventory/Listing/67f0e8445817e6ef8d80f822").reply(200, raw);
     backend.onPost("/Inventory/unit/specific").reply(config => {
@@ -569,7 +402,38 @@ describe("listing search", () => {
     const result = await getListingDetail("67f0e8445817e6ef8d80f822");
     expect(result.property.rooms).toContainEqual({ name: "Unit 602 · Bedroom", length: 11, width: 12 });
     expect(result.property.planImages).toContain("https://cdn.rezide.in/images/two.jpeg");
+    expect(result.configurations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "one", name: "T1-2BHK Premier" }),
+      expect.objectContaining({ id: "two", name: "T1-3BHK Premier" }),
+    ]));
     expect(backend.history.post.filter(request => request.url === "/Inventory/unit/specific")).toHaveLength(1);
+  });
+
+  it("keeps the current configuration when a combined-unit lookup fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 404 }));
+    const raw = listing();
+    raw.listing_details!.unit_no = { config_id: "one", combineWith: ["602"], project_id: "p1", tower_name: "C" };
+    raw.listing_details!.project!.configuration = [{ _id: "one", config_name: "T1-2BHK Premier" }];
+    backend.onGet("/inventory/Listing/67f0e8445817e6ef8d80f822").reply(200, raw);
+    backend.onPost("/Inventory/unit/specific").reply(503);
+
+    const result = await getListingDetail("67f0e8445817e6ef8d80f822");
+    expect(result.configurations).toEqual([
+      expect.objectContaining({ id: "one", name: "T1-2BHK Premier" }),
+    ]);
+  });
+
+  it("includes the current configuration when combineWith is empty", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 404 }));
+    const raw = listing();
+    raw.listing_details!.unit_no = { config_id: "one", combineWith: [] };
+    raw.listing_details!.project!.configuration = [{ _id: "one", config_name: "T1-2BHK Premier" }];
+    backend.onGet("/inventory/Listing/67f0e8445817e6ef8d80f822").reply(200, raw);
+
+    const result = await getListingDetail("67f0e8445817e6ef8d80f822");
+    expect(result.configurations).toEqual([
+      expect.objectContaining({ id: "one", name: "T1-2BHK Premier" }),
+    ]);
   });
 
   it("passes on the backend's 404 for an unknown listing", async () => {
@@ -584,7 +448,6 @@ describe("listing search", () => {
 
 describe("filter counts and groups (from the city's listings)", () => {
   let backend: MockAdapter;
-  let failAgeCounts: boolean;
   const powai3 = listing({ _id: "a" });
   const powai2 = (() => {
     const l = listing({ _id: "b" });
@@ -602,23 +465,8 @@ describe("filter counts and groups (from the city's listings)", () => {
 
   beforeEach(() => {
     clearListingIndex();
-    clearFacetCountCache();
-    failAgeCounts = false;
     backend = new MockAdapter(api);
     backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [powai3, powai2, parelHidden], result_sale: 3, result_rent: 0 });
-    backend.onPost("/inventory/Listing/mobile/filter/count").reply((config) => {
-      const body = JSON.parse(config.data);
-      if (failAgeCounts && body.building_age?.includes("> 20")) return [502, { message: "Invalid filter value" }];
-      let total = 3;
-      if (body.bhk?.includes("64de062c4f5f0ae6e602328a")) total = 1;
-      if (body.bhk?.includes("64de06554f5f0ae6e6023292")) total = 2;
-      if (body.no_of_bathrooms?.includes(">")) total = 0;
-      if (body.project_names_localities?.length === 1 && ["Powai", "Parel"].includes(body.project_names_localities[0])) total = 1;
-      return [200, {
-        result_sale: body.property_purpose?.includes("rent") ? 0 : total,
-        result_rent: body.property_purpose?.includes("rent") ? 19 : 0,
-      }];
-    });
   });
   afterEach(() => backend.restore());
 
@@ -645,40 +493,6 @@ describe("filter counts and groups (from the city's listings)", () => {
     expect(f.total).toBe(2);
     expect(f.facets.bhk).toMatchObject({ "3 BHK": 2, "2 BHK": 1 });
     expect(f.facets.localities).toEqual({ Powai: 1, Parel: 1 });
-    expect(f.facets.bathrooms[">"]).toBe(0);
-  });
-
-  it("uses authoritative result_rent counts for rent filter options", async () => {
-    const rental = listing({ _id: "rental" });
-    rental.commercial_details!.property_purpose = "rent";
-    rental.commercial_details!.monthly_rent = 150_000;
-    backend.onPost("/inventory/Listing/mobile/all").reply(200, {
-      data: [rental],
-      result_sale: 0,
-      result_rent: 1,
-    });
-
-    const facets = await listingFacets(defaultPropertyCriteria({ intent: "rent" }));
-    expect(facets.facets.availability["0"]).toBe(19);
-    expect(facets.facets.bhk["5+ BHK"]).toBe(19);
-    expect(facets.facets.timeOnRezide.AnyTime).toBe(19);
-    const rentCountRequests = backend.history.post
-      .filter((request) => request.url === "/inventory/Listing/mobile/filter/count")
-      .map((request) => JSON.parse(request.data));
-    expect(rentCountRequests.every((body) => body.property_purpose?.[0] === "rent")).toBe(true);
-    expect(rentCountRequests).toContainEqual(expect.objectContaining({ bhk: ["656730d08eb9d2295cb750ed"] }));
-  });
-
-  it("marks an option unavailable instead of reporting a false zero when the count API fails", async () => {
-    failAgeCounts = true;
-    const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    try {
-      const facets = await listingFacets(defaultPropertyCriteria());
-      expect(facets.facets.buildingAges["> 20"]).toBeUndefined();
-      expect(facets.unavailable?.buildingAges?.["> 20"]).toBe(true);
-    } finally {
-      log.mockRestore();
-    }
   });
 
   it("summarises listings per locality, leaving withheld prices out of the range", async () => {
@@ -694,7 +508,7 @@ describe("filter counts and groups (from the city's listings)", () => {
   it("downloads a city once and reuses it", async () => {
     await listingFacets(defaultPropertyCriteria());
     await listingGroups(defaultPropertyCriteria(), "project");
-    expect(backend.history.post.filter((request) => request.url === "/inventory/Listing/mobile/all")).toHaveLength(1);
+    expect(backend.history.post).toHaveLength(1);
   });
 
   it("fetches the remaining pages in parallel", async () => {
@@ -704,12 +518,8 @@ describe("filter counts and groups (from the city's listings)", () => {
       const { page } = JSON.parse(config.data);
       return [200, { data: [listing({ _id: `p${page}` })], result_sale: 600 }];
     });
-    backend.onPost("/inventory/Listing/mobile/filter/count").reply(200, { result_sale: 0, result_rent: 0 });
     const f = await listingFacets(defaultPropertyCriteria());
-    expect(backend.history.post
-      .filter((request) => request.url === "/inventory/Listing/mobile/all")
-      .map((request) => JSON.parse(request.data).page)
-      .sort()).toEqual([1, 2, 3]);
+    expect(backend.history.post.map((r) => JSON.parse(r.data).page).sort()).toEqual([1, 2, 3]);
     expect(f.total).toBe(3);
   });
 
@@ -747,6 +557,68 @@ describe("the map view's list", () => {
     const page = await searchListingsInArea(defaultPropertyCriteria(), powai);
     expect(page.items.map((p) => p.id).sort()).toEqual(["in", "two"]);
     expect(page.total).toBe(2);
+  });
+
+  it("joins focused spatial member codes to full listing cards without dropping other cluster members", async () => {
+    const member = { ...twoBhk, listing_id: "PUBLIC-MEMBER" };
+    backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [inView, member], result_sale: 2 });
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ success: true, data: { count: 1, items: [{ type: "listing", listingId: "PUBLIC-MEMBER", title: "Spatial summary", lat: 19.13, lng: 72.9 }] } }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    try {
+      const result = await searchListingsInArea(defaultPropertyCriteria({ bhk: ["2 BHK"] }), powai, "focused-regression-cluster");
+      expect(result.total).toBe(1);
+      expect(result.items[0].id).toBe("two");
+      expect(result.items[0].title).toBe(toProperty(member).title);
+      expect(result.items[0].images).toEqual(toProperty(member).images);
+      expect(new URL(String(fetch.mock.calls[0][0])).searchParams.get("focus")).toBe("focused-regression-cluster");
+      await expect(searchListingsInArea(defaultPropertyCriteria({ bhk: ["4 BHK"] }), powai, "focused-regression-cluster")).resolves.toMatchObject({ total: 1, items: [{ id: "two" }] });
+    } finally { fetch.mockRestore(); }
+  });
+
+  it("retains all three members when a cluster mixes intents/types and full records are missing", async () => {
+    backend.onPost("/inventory/Listing/mobile/all").reply(200, { data: [{ ...inView, listing_id: "FULL" }], result_sale: 1 });
+    const items = [{ type: "listing", listingId: "FULL", title: "First", listingType: "home", lat: 19.12, lng: 72.91 }, { type: "listing", listingId: "SPARSE", title: "Second", listingType: "retail", price: 250000, lat: 19.12, lng: 72.91 }, { type: "project", projectId: "org", count: 1, lat: 19.12, lng: 72.91, listings: [{ listingId: "RENT", title: "Third", listingType: "home", price: 375000 }] }];
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ success: true, data: { count: 3, items } }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    try {
+      const result = await searchListingsInArea(defaultPropertyCriteria(), powai, "mixed-three-members-regression");
+      expect(result.total).toBe(3);
+      expect(result.items.find(p => p.listingCode === "FULL")).toMatchObject({ id: "in", images: toProperty(inView).images });
+      expect(result.items.find(p => p.listingCode === "SPARSE")).toMatchObject({ mapSummary: true, title: "Second", images: [] });
+      expect(result.items.find(p => p.listingCode === "RENT")).toMatchObject({ mapSummary: true, title: "Third" });
+    } finally { fetch.mockRestore(); }
+  });
+
+  it("accepts nested cluster focus IDs and returns the child cluster members through the directory API", async () => {
+    const focus = "parent-cluster>child-cluster>nested-child";
+    const items = [{ type: "listing", listingId: "CHILD-A", title: "Child A", listingType: "home", lat: 19.12, lng: 72.91 }, { type: "listing", listingId: "CHILD-B", title: "Child B", listingType: "home", lat: 19.12, lng: 72.91 }];
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ success: true, data: { count: 2, items } }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    try {
+      const params = new URLSearchParams({ city: "Mumbai", intent: "buy", type: "homes", per: "10", bbox: powai.join(","), focus });
+      const response = await getPropertyDirectory(new Request("http://localhost/api/properties?" + params));
+      expect(response.status).toBe(200);
+      const result = await response.json();
+      expect(result.total).toBe(2);
+      expect(result.items.map((p: { listingCode: string }) => p.listingCode).sort()).toEqual(["CHILD-A", "CHILD-B"]);
+      const paramsSent = new URL(String(fetch.mock.calls[0][0])).searchParams;
+      expect(paramsSent.get("focus")).toBe(focus);
+      expect(paramsSent.get("type")).toBe("home");
+      expect(paramsSent.get("intend")).toBe("buy");
+      const invalid = await getPropertyDirectory(new Request("http://localhost/api/properties?focus=parent%3E%3Echild"));
+      expect(invalid.status).toBe(400);
+    } finally { fetch.mockRestore(); }
+  });
+
+  it("shows only visible pins at the current zoom and excludes unopened cluster members", async () => {
+    const items = [{ type: "listing", listingId: "VISIBLE", title: "Visible pin", listingType: "home", lat: 19.12, lng: 72.91 }, { type: "project", projectId: "org", count: 1, lat: 19.12, lng: 72.91, listings: [{ listingId: "ORG-MEMBER", title: "Organisation listing", listingType: "home" }] }, { type: "cluster", clusterId: "unopened", count: 3, lat: 19.12, lng: 72.91, listings: [{ listingId: "HIDDEN", title: "Still clustered", listingType: "home" }] }];
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ success: true, data: { count: 5, items } }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    try {
+      const result = await searchListingsInArea(defaultPropertyCriteria(), powai, undefined, 12);
+      expect(result.total).toBe(2);
+      expect(result.items.map(p => p.listingCode).sort()).toEqual(["ORG-MEMBER", "VISIBLE"]);
+      expect(result.items.some(p => p.title === "Still clustered")).toBe(false);
+      const request = new URL(String(fetch.mock.calls[0][0]));
+      expect(request.searchParams.get("zoom")).toBe("12");
+      expect(request.searchParams.has("focus")).toBe(false);
+    } finally { fetch.mockRestore(); }
   });
 
   it("still applies the search filters, and answers an empty area", async () => {

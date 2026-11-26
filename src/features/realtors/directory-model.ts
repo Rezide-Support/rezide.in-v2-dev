@@ -25,10 +25,13 @@ export type DirectoryFirm = {
   people: DirectoryPerson[];
 };
 export type DirectoryPage = { data: DirectoryFirm[]; broker_count: number };
+/** One office address, as the backend stores it. */
+export type FirmAddress = { type: string; line1: string; line2: string; city: string; pincode: string };
 export type DirectoryFirmDetail = DirectoryFirm & {
   about: string;
   entityType: string;
   addresses: string[];
+  addressCards: FirmAddress[];
   socials: { label: string; url: string }[];
 };
 export type DirectoryPersonDetail = DirectoryPerson & {

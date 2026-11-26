@@ -20,6 +20,11 @@ const isServer = typeof window === "undefined";
 
 export type { PropertyFacets, PropertyGroupBy, PropertyGroupSummary };
 export type PropertyGroups = { groupBy: PropertyGroupBy; groups: PropertyGroupSummary[] };
+export type PropertyConfigurationOption = {
+  id: string;
+  name: string;
+  property: Property;
+};
 /** Query of GET /properties/stats (same parameter names as the search). */
 export type PropertyStatsQuery = { city: string; intent: string; category: string };
 
@@ -36,6 +41,11 @@ export type PropertyDetail = {
   property: Property;
   realtor: Realtor | null;
   similar: Property[];
+  configurations?: {
+    id: string;
+    name: string;
+    property: Property;
+  }[];
   /** The project the unit belongs to, when any (detail-page project card). */
   project?: Project | null;
   /** Live listings in that project. */

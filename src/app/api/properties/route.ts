@@ -17,6 +17,10 @@ import { searchListings, searchListingsInArea } from "@/services/properties";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const area = parseMapArea(searchParams.get("bbox"));
+  const focus = searchParams.get("focus") || undefined;
+  if (focus && (focus.length > 2000 || !/^[a-zA-Z0-9_.:-]+(?:>[a-zA-Z0-9_.:-]+)*$/.test(focus))) return Response.json({ message: "Invalid map focus." }, { status: 400 });
+  const mapZoom = searchParams.has("mapZoom") ? Number(searchParams.get("mapZoom")) : undefined;
+  if (mapZoom !== undefined && (!Number.isInteger(mapZoom) || mapZoom < 0 || mapZoom > 18)) return Response.json({ message: "Invalid map zoom." }, { status: 400 });
   const parsed = parsePropertyCriteria(searchParams);
   // The map view's list loads MAP_PAGE_SIZE at a time; the page's own sizes (9, 18…) stay as they are.
   const criteria = area && Number(searchParams.get("per")) === MAP_PAGE_SIZE ? { ...parsed, perPage: MAP_PAGE_SIZE } : parsed;
@@ -24,7 +28,7 @@ export async function GET(request: Request) {
   // takes seconds to download: start now so it's ready when the user opens them.
   warmListingIndex(criteria.city, criteria.intent, criteria.category);
   try {
-    return Response.json(await (area ? searchListingsInArea(criteria, area) : searchListings(criteria)));
+    return Response.json(await (area ? searchListingsInArea(criteria, area, focus, mapZoom) : searchListings(criteria)));
   } catch (error) {
     if (!(error instanceof ApiError)) console.error("GET /api/properties failed", error);
     const status = error instanceof ApiError && [400, 404, 422].includes(error.status) ? error.status : 502;

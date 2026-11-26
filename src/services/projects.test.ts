@@ -6,6 +6,8 @@ import { sendProjectEnquiry } from "@/services/mutations";
 import type { ProjectSortKey } from "@/types/models";
 import { projectMediaOf, toAreaRange, toBhkOptions, toProject, toListingProject, toProjectFilters, withProjectDetail } from "@/services/project-mapper";
 import { findListingProject, findProjectsByNames, getProjectDetail, resetProjectCache, searchProjects } from "@/services/projects";
+import { buildingFilters } from "@/features/search/building-criteria";
+import { searchBuildingProjects } from "@/services/building-projects";
 
 /* The Rezide backend's project endpoints, answered by a test double. Shapes follow live responses. */
 
@@ -49,6 +51,15 @@ const detail = {
 };
 
 describe("mapping", () => {
+  it("builds the buildings default and chooses only the most specific geographic names", () => {
+    expect(buildingFilters(new URLSearchParams())).toEqual({ page: 1, pageSize: 9, project_names_localities_subRegions: [], listingExist: "exist", sortBy: "listingExist" });
+    const query = new URLSearchParams("city=Mumbai&region=South+Mumbai&sub_region=Parel&locality=Lalbaug,Worli&searchQuery=Crescent,Bay&page=2&pageSize=18");
+    expect(buildingFilters(query)).toEqual({ page: 2, pageSize: 18, city: ["Mumbai"], project_names_localities_subRegions: ["Crescent", "Bay", "Lalbaug", "Worli"], listingExist: "exist", sortBy: "listingExist" });
+    query.delete("locality");
+    expect(buildingFilters(query).project_names_localities_subRegions).toEqual(["Crescent", "Bay", "Parel"]);
+    query.delete("sub_region");
+    expect(buildingFilters(query).project_names_localities_subRegions).toEqual(["Crescent", "Bay", "South Mumbai"]);
+  });
   it("preserves the listing project's entire photo gallery and its own logo", () => {
     const raw = { _id: "project-1", general_information: { project_name: "L&T Crescent Bay", logo: "project-logo" }, media: { images: [{ url: "exterior-1" }, { url: "exterior-2" }, { url: "exterior-3" }] } };
     const project = toListingProject(raw, "Mumbai");
@@ -255,6 +266,19 @@ describe("backend reads", () => {
     backend = new MockAdapter(api);
   });
   afterEach(() => backend.restore());
+
+  it("loads one filtered buildings page and its count without detail hydration", async () => {
+    const body = buildingFilters(new URLSearchParams("city=Mumbai&page=3&locality=Lalbaug"));
+    backend.onPost("/Inventory/project/filter/new", body).reply(200, { result_count: 37, data: [row({ rental_count: "4", sale_count: 7, logo: "logo-key", private_notes: "PRIVATE" })] });
+    const result = await searchBuildingProjects(body);
+    expect(result.result_count).toBe(37);
+    expect(result.data[0]).toMatchObject({ rentalCount: 4, saleCount: 7, project: { id: "66f3ca67d7f5683ae57720fa", name: "Lodha Venezia", locality: "Lalbaug", subRegion: "Parel" } });
+    expect(result.data[0].project.images).toEqual(["https://cdn.rezide.in/images/photo1.jpeg"]);
+    expect(result.data[0].project.logo).toContain("/v1/admin/file/upload/logo-key");
+    expect(JSON.stringify(result)).not.toContain("PRIVATE");
+    expect(backend.history.post).toHaveLength(1);
+    expect(backend.history.get).toHaveLength(0);
+  });
 
   it("lists Compare Project's picker as rezide.in asks for it: locality and name together", async () => {
     backend.onPost("/Inventory/project/filter/new").reply(200, { data: [row(), row({ _id: "b", project_name: " Lodha Park " })], result_count: 73 });

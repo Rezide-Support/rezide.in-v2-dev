@@ -16,6 +16,14 @@ describe("cluster circle", () => {
     expect(area.radius).toBeLessThan(2000);
   });
 
+  it("uses the server member bounds for an exact cluster focus", () => {
+    const area = clusterArea("cluster-one", [19, 72], 12, [72.8, 19.0, 72.82, 19.02]);
+    expect(area.exact).toBe(true);
+    expect(area.center[0]).toBeCloseTo(19.01);
+    expect(area.center[1]).toBeCloseTo(72.81);
+    expect(area.radius).toBeGreaterThan(distanceMetres(area.center, [19, 72.8]));
+  });
+
   it("falls back to the grouping radius for a Supercluster id", () => {
     const area = clusterArea("SC_123", [19, 72], 12);
     expect(area.cell).toBeUndefined();
@@ -65,7 +73,7 @@ describe("popups", () => {
   });
 
   it("opens a project's listings, or searches for the project", () => {
-    expect(popupHtml([{ type: "project", projectId: "Garodia Palace", count: 2, lat: 19, lng: 72 }], CONTEXT)).toMatch(/q=Garodia(\+|%20)Palace[^>]*>Explore listings/);
+    expect(popupHtml([{ type: "project", projectId: "Garodia Palace", count: 2, lat: 19, lng: 72 }], CONTEXT)).toMatch(/searchQuery=Garodia(\+|%20)Palace[^>]*>Explore listings/);
     expect(popupHtml([{ type: "project", projectId: "p", count: 1, lat: 19, lng: 72, listings: [{ listingId: "L", title: "Unit 4" }] }], CONTEXT)).toContain("Unit 4");
   });
 

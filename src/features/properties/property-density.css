@@ -41,39 +41,19 @@
   }
 }
 
-/* Keep the discovery photo at its natural proportions on wider screens.
-   Center the controls in the visible hero area, even when the full photo is taller. */
-@media (min-width: 768px) {
-  .property-page [data-property-hero] {
-    display: grid;
-    padding: 0;
-    min-height: 0;
-  }
-  .property-page [data-property-hero] > .hero-photo,
-  .property-page [data-property-hero] .hero-photo-frame {
-    position: relative;
-    inset: auto;
-    grid-area: 1 / 1;
-    min-width: 0;
-  }
-  .property-page [data-property-hero] .hero-photo-frame img {
-    position: relative !important;
-    width: 100% !important;
-    height: auto !important;
-    animation: none;
-    scale: none;
-    translate: none;
-    will-change: auto;
-  }
-  .property-page [data-property-hero] > .hero-content {
-    position: absolute;
-    inset: 0 0 auto;
-    height: min(100%, calc(100svh - 76px));
-    justify-content: center;
-    margin-inline: auto;
-    padding-block: 32px;
-    width: calc(100% - 48px);
-  }
+/* Both discovery heroes use the shared fluid sizing. Keep the property
+   page's compact content density from shrinking its hero controls again. */
+.property-page [data-property-hero] {
+  --property-type-scale: 1;
+  --property-space-scale: 1;
+  --spacing: .25rem;
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  font-size: 1rem;
 }
 
 /* Match the discovery grid's broad canvas without scaling up its typography. */
@@ -109,24 +89,9 @@
   }
 }
 
-/* Give the directory and listing detail the same side gutters as the homepage. */
-@media (min-width: 768px) {
-  .property-page.property-directory,
-  .property-page[data-listing-detail] {
-    padding-inline: clamp(24px, 5.5vw, 104px);
-  }
-}
-
-/* Customer dashboard header follows the compact reference at desktop sizes. */
-@media (min-width: 1024px) {
-  [data-dashboard-compact] {
-    --spacing: .2rem;
-  }
-  [data-dashboard-compact] > .mx-auto {
-    height: 58px;
-  }
-  [data-dashboard-compact] a[aria-label="Rezide home"] svg {
-    height: 16px;
-    width: 111px;
-  }
+/* Radix uses data-state; keep selected tab text above the shared hover color. */
+.property-page [aria-label="Property information"] [role="tab"][data-state="active"],
+.property-page [aria-label="Property information"] [role="tab"][data-state="active"]:hover,
+.property-page [aria-label="Property information"] [role="tab"][data-state="active"]:focus-visible {
+  color: #fff;
 }

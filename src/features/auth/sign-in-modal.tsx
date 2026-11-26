@@ -137,6 +137,7 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
         <p className="text-center text-sm text-[#6D6D6D]">Please enter OTP to proceed with Rezide</p>
         <form
           noValidate
+          className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (code.length !== OTP_LENGTH) return setError(`Enter the ${OTP_LENGTH}-digit OTP.`);
@@ -144,8 +145,8 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
           }}
         >
           <OtpBoxes value={code} onChange={setCode} />
-          <div className="flex justify-end sm:mr-11">
-            <Button type="button" variant="link" className="text-sm font-normal text-[#6D6D6D]" disabled={sendOtp.isPending} onClick={() => sendOtp.mutate(otpFor)}>
+          <div className="flex justify-end sm:px-10">
+            <Button type="button" variant="link" className="min-h-8 py-1 text-sm font-normal text-[#6D6D6D]" disabled={sendOtp.isPending} onClick={() => sendOtp.mutate(otpFor)}>
               Resend OTP
             </Button>
           </div>
@@ -154,7 +155,7 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
               {error}
             </p>
           )}
-          <div className="mb-5 px-10">
+          <div className="mb-5 sm:px-10">
             <Button type="submit" className="w-full" disabled={verify.isPending}>
               {verify.isPending ? "Verifying…" : "Verify"}
             </Button>
@@ -181,7 +182,7 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
         <div className="flex items-center rounded-md border border-[#8C8C8C] focus-within:border-black focus-within:ring-1 focus-within:ring-black">
           {/* As the old site: the flag and dial code open a list of every country (flag images, not emojis,
               which show as letters such as "IN" on Windows). */}
-          {canOtp && <CountryCodeSelect value={country} onChange={setCountry} className="self-stretch" />}
+          {canOtp && <CountryCodeSelect value={country} onChange={setCountry} className="h-12 shrink-0 self-center py-0 leading-none data-[size=default]:h-12" />}
           <input
             type="text"
             autoFocus
@@ -221,7 +222,7 @@ function SignInForm({ onSignedIn, signUpHref }: { onSignedIn: (s: Session) => vo
         </Button>
       </form>
       <p className="text-center text-sm leading-5 text-[#7C7D89]">
-        Don&apos;t have an account?
+        Don&apos;t have an account?{" "}
         <Link href={signUpHref} className="font-medium text-blue-500">
           Sign Up
         </Link>

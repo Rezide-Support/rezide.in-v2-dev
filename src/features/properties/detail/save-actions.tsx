@@ -145,9 +145,9 @@ function SaveButton({ list, kind, id, title, intent, compact, className }: { lis
       onClick={run}
       aria-pressed={on}
       aria-label={compact ? `${COPY[list].label} ${title}` : undefined}
-      className={cn(!compact && "px-2.5 font-medium whitespace-nowrap", on && "text-rez-mocaccino-ink", className, compact && on && (list === "shortlist" ? "text-[#ef4444]" : "text-[#22c55e]"))}
+      className={cn(!compact && "px-2.5 font-medium whitespace-nowrap", on && "text-rez-mocaccino-ink", className, compact && "bg-white text-[#747480] hover:bg-white hover:text-black", compact && on && (list === "shortlist" ? "text-[#ef4444] hover:text-[#ef4444]" : "text-[#22c55e] hover:text-[#22c55e]"))}
     >
-      <IconCmp className={cn("size-[18px]", on && !compact && (list === "shortlist" ? "text-[#ef4444]" : "text-[#22c55e]"))} fill={on && (list === "shortlist" || kind === "project") ? "currentColor" : "none"} stroke={on && list === "shortlist" ? "#374151" : "currentColor"} strokeWidth={on ? 2.25 : 2} aria-hidden />
+      <IconCmp className={cn("size-[18px]", on && !compact && (list === "shortlist" ? "text-[#ef4444]" : "text-[#22c55e]"))} fill={on && (list === "shortlist" || kind === "project") ? "currentColor" : "none"} stroke={on && list === "shortlist" ? "#747480" : "currentColor"} strokeWidth={on ? 2.25 : 2} aria-hidden />
       {!compact && <span className="text-black">{on && kind === "property" ? (list === "compare" ? "Compared" : "Shortlisted") : COPY[list].label}</span>}
     </Button>
   );

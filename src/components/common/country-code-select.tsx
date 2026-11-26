@@ -31,7 +31,7 @@ export function CountryCodeSelect({ value, onChange, className }: { value: Count
     <Select value={value} onValueChange={(v) => onChange(v as CountryIso2)}>
       <SelectTrigger
         aria-label={`Country code: ${current?.name ?? ""} +${current?.dialCode ?? ""}`}
-        className={cn("h-auto w-auto gap-2 rounded-none border-0 border-r border-input bg-transparent px-3 text-sm shadow-none focus-visible:ring-0", className)}
+        className={cn("w-auto gap-2 rounded-none border-0 border-r border-input bg-transparent px-3 py-0 text-sm shadow-none focus-visible:ring-0 data-[size=default]:h-auto", className)}
       >
         <CountryFlag iso2={value} />
         <span className="whitespace-nowrap">+{current?.dialCode}</span>

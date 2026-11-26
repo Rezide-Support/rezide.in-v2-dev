@@ -1,18 +1,20 @@
 "use client";
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, Phone } from "lucide-react";
+import { LeadDialog } from "@/features/properties/detail/lead-dialog";
 import { EmptyState, ErrorState } from "@/components/common/feedback";
-import { Pagination } from "@/components/common/pagination";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PropertyPhotoCard } from "@/features/properties/property-card";
+import { propertyHref } from "@/features/properties/property-card";
+import Link from "next/link";
+import { CoverImage } from "@/components/common/cover-image";
 import { DirectoryRequestError, directoryQueries } from "@/services/realtor-directory";
 import type { DirectoryPersonDetail } from "./directory-model";
-import { directoryFirmHref } from "./directory-model";
+import { directoryFirmHref, directoryPersonHref } from "./directory-model";
 import { DirectoryPhoto } from "./directory-cards";
 import { DirectoryLeadForm } from "./directory-forms";
 import { AddressDialog, Breadcrumbs } from "./profile-parts";
@@ -71,22 +73,57 @@ export function LivePersonProfile({ lookupId }: { lookupId: string }) {
 }
 
 function PersonListingCarousel({ personId, firstName, purpose }: { personId: string; firstName: string; purpose: "sale" | "rent" }) {
-  const [page, setPage] = useState(1);
   const list = useRef<HTMLUListElement>(null), headingId = useId();
-  const query = useQuery(directoryQueries.personListings(personId, purpose, page));
+  const query = useQuery(directoryQueries.personListings(personId, purpose, 1));
   const data = query.data;
+  const [arrows, setArrows] = useState({ previous: false, next: false });
+  useEffect(() => {
+    const node = list.current;
+    if (!node) return;
+    const update = () => setArrows({ previous: node.scrollLeft > 2, next: node.scrollLeft + node.clientWidth < node.scrollWidth - 2 });
+    update();
+    node.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => { node.removeEventListener("scroll", update); observer.disconnect(); };
+  }, [data]);
+  const move = (direction: number) => {
+    const node = list.current;
+    if (!node) return;
+    const step = (node.firstElementChild as HTMLElement | null)?.offsetWidth ?? 264;
+    const gap = parseFloat(getComputedStyle(node).columnGap) || 0;
+    node.scrollBy({ left: direction * (step + gap), behavior: "smooth" });
+  };
   return <section className="mt-8 min-w-0" aria-labelledby={headingId} aria-busy={query.isFetching}>
-    <div className="mb-4 flex items-center justify-between gap-3"><div><h3 id={headingId} className="text-lg font-semibold">{firstName || "Realtor"} Listings</h3><p className="text-xs text-rez-graphite">{purpose === "rent" ? "Available Rental" : "Available Sale"}{data ? ` (${data.total})` : ""}</p></div>{!!data?.items.length && <div className="flex gap-2"><Button variant="outline" size="icon-sm" aria-label="Previous listings" onClick={() => list.current?.scrollBy({ left: -280, behavior: "smooth" })}><ArrowLeft size={16} /></Button><Button variant="outline" size="icon-sm" aria-label="Next listings" onClick={() => list.current?.scrollBy({ left: 280, behavior: "smooth" })}><ArrowRight size={16} /></Button></div>}</div>
+    <div className="mb-[clamp(12px,3.8dvh,24px)] flex items-center justify-between gap-3"><h3 id={headingId} className="text-[clamp(16px,3.5dvh,20px)] font-semibold">{firstName || "Realtor"} Listings</h3><div className="flex h-8 shrink-0 gap-2"><span className="block size-8">{arrows.previous && <Button variant="outline" aria-label="Previous listings" className="size-8 rounded-full border-rez-smoke bg-white p-0 shadow-sm" onClick={() => move(-1)}><ArrowLeft size={20} /></Button>}</span><span className="block size-8">{arrows.next && <Button variant="outline" aria-label="Next listings" className="size-8 rounded-full border-rez-smoke bg-white p-0 shadow-sm" onClick={() => move(1)}><ArrowRight size={20} /></Button>}</span></div></div>
     {query.isError ? <ErrorState message={query.error.message} onRetry={() => query.refetch()} /> : !data ? <div className="h-64 animate-pulse rounded-xl bg-rez-cloud" /> : !data.items.length ? <EmptyState title={`No ${purpose === "rent" ? "rental" : "sale"} listings available.`} /> : <>
-      <ul ref={list} className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3">{data.items.map(property => <li key={property.id} className="w-[min(78vw,280px)] shrink-0 snap-start"><PropertyPhotoCard property={property} /></li>)}</ul>
-      <Pagination page={data.page} pageCount={data.pageCount} onChange={next => { setPage(next); list.current?.scrollTo({ left: 0 }); }} />
+      <ul ref={list} className="flex gap-4 overflow-hidden">{data.items.slice(0, 5).map(property => <li key={property.id} className="w-[calc((100%-16px)/2)] shrink-0"><Link href={propertyHref(property)} className="block min-w-0"><div className="relative h-[clamp(64px,26dvh,150px)] overflow-hidden rounded-t-xl"><CoverImage src={property.images[0]} alt={property.title} sizes="264px" /></div><h4 className="mt-1 truncate text-[clamp(10px,2.2dvh,12px)] font-semibold">{property.title}</h4><p className="line-clamp-2 text-[clamp(10px,2.2dvh,12px)] leading-tight text-rez-graphite">{[property.locality, property.city].filter(Boolean).join(", ")}</p></Link></li>)}</ul>
     </>}
   </section>;
 }
 
 function PopupProfile({ lookupId, purpose }: { lookupId: string; purpose: "sale" | "rent" }) {
   const query = useQuery(directoryQueries.person(lookupId));
-  return <><PersonFeedback lookupId={lookupId} popup />{query.data && <PersonListingCarousel key={`${query.data.id}:${purpose}`} personId={query.data.id} firstName={query.data.firstName} purpose={purpose} />}</>;
+  const person = query.data;
+  if (!person) return <PersonFeedback lookupId={lookupId} popup />;
+  return <div className="flex min-h-0 min-w-0 flex-col gap-[clamp(12px,3.6dvh,24px)]">
+    <div className="flex items-center gap-4 rounded-[12px] border border-rez-smoke bg-white p-3 shadow-md">
+      <DirectoryPhoto src={person.photo} name={person.name} portrait className="size-[clamp(64px,16.5dvh,96px)] min-h-0 shrink-0 overflow-hidden rounded-full bg-white p-0 sm:w-[clamp(64px,16.5dvh,96px)] [&_img]:object-cover" />
+      <div className="min-w-0 flex-1">
+        <h2 className="text-[clamp(14px,2.8dvh,16px)] font-semibold text-[#609fff]"><Link href={directoryPersonHref({ name: person.firmName }, person)} className="no-underline hover:no-underline">{person.name}</Link></h2>
+        <p className="mt-1 text-[clamp(12px,2.5dvh,14px)]">{person.firmName ? <Link href={directoryFirmHref({ name: person.firmName })} className="no-underline hover:no-underline">{person.firmName}</Link> : "Firm not provided"}</p>
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-rez-smoke pt-2">
+          <span className="text-[clamp(12px,2.5dvh,14px)] text-rez-graphite">{person.maskedPhone || "Phone not provided"}</span>
+          <LeadDialog mode="contact" title="Contact the realtor" description={`Contact ${person.name}`} target={{ realtorId: person.id }} recipient={person.name}>
+            <Button size="icon" aria-label={`Contact ${person.name}`} className="size-[clamp(28px,6.2dvh,36px)] rounded-[10px] shadow-sm"><Phone className="size-4" /></Button>
+          </LeadDialog>
+        </div>
+      </div>
+    </div>
+    <section><h3 className="mb-[clamp(6px,2dvh,12px)] text-[clamp(14px,2.8dvh,16px)] font-semibold">Working since</h3><p className="text-[clamp(12px,2.5dvh,14px)] text-rez-graphite">{person.since || "Not provided"}</p></section>
+    <section><h3 className="mb-[clamp(6px,2dvh,12px)] text-[clamp(14px,2.8dvh,16px)] font-semibold">Spoken Languages</h3><p className="text-[clamp(12px,2.5dvh,14px)] text-rez-graphite">{person.languages.join(", ") || "Not provided"}</p></section>
+    <div className="min-h-0 border-t border-rez-smoke [&>section]:mt-[clamp(10px,3dvh,18px)]"><PersonListingCarousel key={`${person.id}:${purpose}`} personId={person.id} firstName={person.firstName} purpose={purpose} /></div>
+  </div>;
 }
 
 /** Queries mount only after opening; listing mode is passed from the card, not inferred from a URL. */
@@ -95,8 +132,8 @@ export function RealtorProfilePopup({ lookupId, purpose, label }: { lookupId: st
   if (!BACKEND_ID_PATTERN.test(lookupId)) return <span>{label || "Not provided"}</span>;
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><button type="button" className="text-left font-semibold underline-offset-2 hover:underline" aria-label={`View realtor profile: ${label}`}>{label}</button></DialogTrigger>
-    <DialogContent className="sm:max-w-[min(960px,calc(100vw-32px))] max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:max-h-[90dvh] max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none">
-      <DialogHeader className="pr-10"><DialogTitle>Realtor profile</DialogTitle><DialogDescription>Realtor information and {purpose === "rent" ? "rental" : "sale"} listings.</DialogDescription></DialogHeader>
+    <DialogContent showCloseButton={false} className="top-0 flex h-dvh max-h-dvh w-full max-w-[400px] flex-col gap-0 overflow-hidden translate-y-0 rounded-none bg-[#f3f0f0] px-6 py-3 sm:max-w-[400px]">
+      <DialogHeader className="sr-only"><DialogTitle>Realtor profile</DialogTitle><DialogDescription>Realtor information and {purpose === "rent" ? "rental" : "sale"} listings.</DialogDescription></DialogHeader>
       {open && <PopupProfile lookupId={lookupId} purpose={purpose} />}
     </DialogContent>
   </Dialog>;

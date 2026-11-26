@@ -33,7 +33,7 @@ import { fetchTransactions, type TransactionKind } from "@/services/transactions
 import { fetchFloorPlans, fetchUnitPlans } from "@/services/project-plans";
 import { MAP_PAGE_SIZE } from "@/lib/constants";
 import { fetchProjectHome, fetchPropertyHome } from "@/services/home";
-import { fetchLandmarks, fetchLocalityPhoto } from "@/services/localities";
+import { fetchLandmarks, fetchLocalityList, fetchLocalityPhoto, type LocalityListFilters } from "@/services/localities";
 import {
   fetchAssociableProjects,
   fetchAssociableUnits,
@@ -121,10 +121,10 @@ export const propertyQueries = {
    * The map view's list: the listings in that part of the map, MAP_PAGE_SIZE at a time,
    * the next batch loading as the list scrolls (no page numbers). Paging isn't in the key.
    */
-  mapList: (c: PropertySearchCriteria, area: MapArea) =>
+  mapList: (c: PropertySearchCriteria, area: MapArea, focus?: string, mapZoom?: number) =>
     infiniteQueryOptions({
-      queryKey: ["properties", "map-list", { ...c, view: undefined, page: undefined, perPage: undefined }, area] as const,
-      queryFn: ({ pageParam }) => fetchProperties({ ...c, page: pageParam, perPage: MAP_PAGE_SIZE }, area),
+      queryKey: ["properties", "map-list", { ...c, view: undefined, page: undefined, perPage: undefined }, area, focus ?? null, focus ? "all-cluster-members" : "visible-pins", mapZoom ?? null] as const,
+      queryFn: ({ pageParam }) => fetchProperties({ ...c, page: pageParam, perPage: MAP_PAGE_SIZE }, area, focus, mapZoom),
       initialPageParam: 1,
       getNextPageParam: (last) => (last.page < last.pageCount ? last.page + 1 : undefined),
       staleTime: CATALOG_STALE,
@@ -166,6 +166,9 @@ export const localityQueries = {
     queryOptions({ queryKey: ["localities", "landmarks", projectId] as const, queryFn: () => fetchLandmarks(projectId), staleTime: 10 * 60_000 }),
   photo: (name: string) =>
     queryOptions({ queryKey: ["localities", "photo", name] as const, queryFn: () => fetchLocalityPhoto(name), staleTime: 10 * 60_000 }),
+  /** The properties page's Localities tab (rezide.in's /find-property/locality). */
+  list: (f: LocalityListFilters) =>
+    queryOptions({ queryKey: ["localities", "list", f] as const, queryFn: () => fetchLocalityList(f), staleTime: 5 * 60_000, placeholderData: keepPreviousData }),
 };
 
 /** Home page rails from the Rezide backend (never mocked). */

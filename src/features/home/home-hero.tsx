@@ -402,6 +402,7 @@ export function PropertiesHeroView({
     <HeroShell
       heroKey={category}
       title="Genuine Listings Only!"
+      fluid
       footer={<TrustBadges set={category === "homes" ? "homes" : "commercial"} />}
     >
       <LinkTabs
@@ -410,7 +411,7 @@ export function PropertiesHeroView({
         tone="ink"
         wrap
         className={MOBILE_TABS}
-        itemClassName={MOBILE_TAB}
+        itemClassName={cn(MOBILE_TAB, "sm:h-[clamp(38px,2.3vw,40px)] sm:text-[clamp(14px,0.9vw,15px)]")}
         items={CATEGORIES.map((c) => ({
           href: propertiesHomeHref(c.id, intent),
           label: c.id === "homes" ? "Home" : c.label,
@@ -419,6 +420,7 @@ export function PropertiesHeroView({
       />
       <SearchRow
         label="Search properties"
+        fluid
         placeholder={
           category === "homes"
             ? "Search locality, project or landmark"
@@ -434,7 +436,7 @@ export function PropertiesHeroView({
             label="Buy or rent"
             size="lg"
             className="w-full sm:w-auto max-sm:[&>ul]:flex max-sm:[&>ul]:w-full max-sm:[&_li]:flex-1"
-            itemClassName="min-w-[76px] justify-center max-sm:h-9 max-sm:w-full max-sm:text-[13px]"
+            itemClassName="min-w-[76px] justify-center max-sm:h-9 max-sm:w-full max-sm:text-[13px] sm:h-[clamp(42px,2.8vw,48px)] sm:text-[clamp(14px,0.9vw,15px)]"
             items={[
               {
                 href: propertiesHomeHref(category, "buy"),
@@ -480,7 +482,7 @@ export function ProjectsHeroView({ status }: { status: ProjectStatus }) {
         appearance="bare"
         tone="ink"
         wrap
-        className={MOBILE_TABS}
+        className={MOBILE_TABS}
         itemClassName={cn(MOBILE_TAB, "sm:h-[clamp(38px,2.3vw,40px)] sm:text-[clamp(14px,0.9vw,15px)]")}
         items={PROJECT_STATUS.map((s) => ({
           href: projectsHomeHref(s.id),

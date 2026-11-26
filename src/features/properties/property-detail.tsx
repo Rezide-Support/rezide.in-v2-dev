@@ -4,16 +4,12 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Images, LayoutGrid, Video, View } from "lucide-react";
 import { ErrorState } from "@/components/common/feedback";
-import { Button } from "@/components/ui/button";
-import { useCompareOnVisit } from "@/features/compare/use-compare-on-visit";
 import { formatDate, formatPrice } from "@/lib/format";
 import { propertyQueries } from "@/lib/queries";
 import { useSession } from "@/stores/session";
 import { AgentCard } from "./detail/agent-card";
-import { BrochureButton } from "./detail/brochure-button";
 import { CardTitle, Chip, DashList, DetailCard, SectionHeading, UnderlinedField } from "./detail/detail-ui";
 import { formatRupees } from "./detail/format";
-import { LeadDialog } from "./detail/lead-dialog";
 import { MediaGallery } from "./detail/media-gallery";
 import { ProjectMiniCard } from "./detail/project-mini-card";
 import { PropertyInfoTabs } from "./detail/property-info-tabs";
@@ -27,30 +23,29 @@ import { PropertyCard, priceLabel } from "./property-card";
 import { ResumeListingAction } from "./detail/resume-listing-action";
 import { ListingComparison } from "./detail/listing-comparison";
 import { ShareButton } from "./share-button";
+import { Button } from "@/components/ui/button";
+import { BrochureButton } from "./detail/brochure-button";
+import { LeadDialog } from "./detail/lead-dialog";
 
 /** Property detail page body, laid out like the v1 listing page. */
 export function PropertyDetailView({ id }: { id: string }) {
   const { status } = useSession();
   const { data, isError, refetch } = useQuery(propertyQueries.detail(id));
-  // As rezide.in: opening a listing adds it to Compare, under Sale or Rental (signed-in visitors).
-  useCompareOnVisit(data ? { kind: "property", id: data.property.id, title: data.property.title, intent: data.property.intent } : undefined, "listings");
   if (isError && !data) return <ErrorState className="m-8" message="This listing couldn't be loaded." onRetry={() => refetch()} />;
   if (!data) return null;
 
-  const { property: p, realtor, similar, project, projectStock } = data;
+  const { property: p, realtor, similar, project, projectStock, configurations } = data;
   const rent = p.intent === "rent";
   const headerLocation = [...new Set([p.localityName, p.locality].filter(Boolean))].join(", ") || p.city;
   const headerPrice = !rent && !p.priceHidden && p.price >= 10_000_000 ? `\u20B9 ${(p.price / 10_000_000).toFixed(2)} Cr.` : priceLabel(p);
   const path = `/properties/${p.id}`;
-  const recipient = realtor?.name ?? "the realtor";
-  const enquiryTarget = { propertyId: p.id, realtorId: realtor?.id };
   const leadListing = { id: p.id, firmId: p.realtorFirmId ?? "", brokerId: p.realtorId, name: p.title, path };
 
   return (
-    <div data-listing-detail className="property-page min-w-0 px-2 pt-3 pb-[calc(140px+env(safe-area-inset-bottom))] sm:px-4 lg:px-8 lg:pt-5 lg:pb-20">
+    <div data-listing-detail className="property-page min-w-0 px-2 pt-3 pb-[calc(140px+env(safe-area-inset-bottom))] sm:px-4 md:px-8 lg:pt-5 lg:pb-20">
       <ResumeListingAction property={p} />
 
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6">
         {/* ---------- Title row ---------- */}
         <header className="hidden gap-x-6 gap-y-2 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(170px,0.5fr)] lg:items-center">
           <div className="contents">
@@ -105,10 +100,11 @@ export function PropertyDetailView({ id }: { id: string }) {
         </header>
 
         {/* Both desktop rows share the same wide gallery/content and narrow sidebar columns. */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(240px,22vw,264px)] lg:items-start">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(264px,1fr)] lg:items-start">
           <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <div className="max-lg:order-0">
           <MediaGallery
+            keepEmptyPhotos
             title={p.title}
             overlay={<SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-8 rounded-full bg-white/90 p-0 text-rez-graphite" />}
             tabs={[
@@ -133,7 +129,7 @@ export function PropertyDetailView({ id }: { id: string }) {
               { value: "plans", label: "Plans", icon: LayoutGrid, images: p.planImages ?? [], slides: p.planPhotos, empty: "Floor plans haven't been uploaded for this listing." },
             ]}
           />
-          <MobileListingOverview property={p} />
+          <MobileListingOverview property={p} withoutPhotoDivider={!p.galleryPhotos?.length && (p.photoSource === "placeholder" || !p.images.length)} />
           </div>
           </div>
 
@@ -142,21 +138,15 @@ export function PropertyDetailView({ id }: { id: string }) {
             <section id="key" className="scroll-mt-32 max-lg:order-1">
             <h2 className="mb-4 px-2 text-sm font-semibold uppercase lg:hidden">Key features</h2>
             <DetailCard className="flex flex-col gap-4 lg:rounded-[12px] lg:border-[#c4c4c4] lg:bg-[#fafafa] lg:p-4 lg:shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-rez-smoke pb-4">
+              <div className="flex items-center justify-between gap-3 lg:border-b lg:border-rez-smoke lg:pb-3">
                 <CardTitle className="max-lg:hidden">Key features</CardTitle>
-                <BrochureButton url={p.brochureUrl} listingId={p.id} path={path} variant="outline" size="sm" className="rounded-[6px] border-gray-200 bg-white font-normal shadow-sm" />
+                <div className="max-lg:hidden"><BrochureButton url={p.brochureUrl} listingId={p.id} path={path} className="h-8 rounded-md border border-rez-smoke bg-white px-3 text-[11px] text-black shadow-sm hover:bg-rez-cloud" /></div>
               </div>
-              <DashList items={p.keyFeatures?.length ? p.keyFeatures : p.amenities} className="lg:gap-2.5 lg:[&_li]:text-[13px] lg:[&_li]:leading-5 lg:[&_li]:text-[#444]" />
-              <dl className="mt-auto flex justify-between gap-4 border-t border-rez-smoke pt-4 text-sm">
-                <div>
-                  <dt className="text-rez-graphite">Listing date</dt>
-                  <dd className="font-semibold">{p.listedAt ? formatDate(p.listedAt) : "N/A"}</dd>
-                </div>
-                <div className="text-right">
-                  <dt className="text-rez-graphite">Last updated</dt>
-                  <dd className="font-semibold">{formatDate(p.updatedAt)}</dd>
-                </div>
-              </dl>
+              <DashList items={p.keyFeatures?.length ? p.keyFeatures : p.amenities} className="lg:min-h-[190px] lg:gap-2.5 lg:[&_li]:text-[13px] lg:[&_li]:leading-5 lg:[&_li]:text-[#444]" />
+              <div className="hidden justify-between gap-3 border-t border-rez-smoke pt-3 text-[12px] lg:flex">
+                <div><p className="text-rez-graphite">Listing Date</p><p className="mt-1 font-semibold">{p.listedAt ? formatDate(p.listedAt) : "On request"}</p></div>
+                <div className="text-right"><p className="text-rez-graphite">Last Updated</p><p className="mt-1 font-semibold">{p.updatedAt ? formatDate(p.updatedAt) : "On request"}</p></div>
+              </div>
             </DetailCard>
             </section>
 
@@ -170,34 +160,12 @@ export function PropertyDetailView({ id }: { id: string }) {
                 <UnderlinedField label="Visit timings" value={p.visit?.timings ?? "On request"} />
                 <UnderlinedField label="Showing status" value={p.visit?.showingStatus ?? "N/A"} />
               </dl>
-              <div className="grid grid-cols-2 gap-3">
-                <LeadDialog
-                  mode="offer"
-                  title="Make an offer"
-                  description={`Send ${recipient} your offer for ${p.title}. Asking price: ${priceLabel(p)}.`}
-                  target={enquiryTarget}
-                  recipient={recipient}
-                  submitLabel="Send offer"
-                  listing={leadListing}
-                  mobileSheet
-                >
-                  <Button variant="outline" className="rounded-[6px] border-gray-200 px-2 text-xs font-normal shadow-sm lg:h-9">
-                    Make an offer
-                  </Button>
+              <div className="hidden grid-cols-2 gap-3 lg:grid">
+                <LeadDialog mode="offer" title="Make an offer" description={`Send ${p.realtorFirm || "the realtor"} your offer for ${p.title}.`} target={{ propertyId: p.id, realtorId: p.realtorId }} recipient={p.realtorFirm || "the realtor"} submitLabel="Send offer" listing={leadListing}>
+                  <Button variant="outline" className="h-8 w-full rounded-md border-rez-smoke bg-white px-2 text-[11px] shadow-sm">Make an offer</Button>
                 </LeadDialog>
-                <LeadDialog
-                  mode="visit"
-                  title="Request a visit"
-                  description={`Visits: ${p.visit?.days ?? "on request"}${p.visit ? `, ${p.visit.timings}` : ""}. ${recipient} confirms the slot.`}
-                  target={enquiryTarget}
-                  recipient={recipient}
-                  submitLabel="Request visit"
-                  listing={leadListing}
-                  mobileSheet
-                >
-                  <Button variant="outline" className="rounded-[6px] border-gray-200 px-2 text-xs font-normal shadow-sm lg:h-9">
-                    Request visit
-                  </Button>
+                <LeadDialog mode="visit" title="Request a visit" description={`Request a visit for ${p.title}.`} target={{ propertyId: p.id, realtorId: p.realtorId }} recipient={p.realtorFirm || "the realtor"} submitLabel="Request visit" listing={leadListing}>
+                  <Button variant="outline" className="h-8 w-full rounded-md border-rez-smoke bg-white px-2 text-[11px] shadow-sm">Request Visit</Button>
                 </LeadDialog>
               </div>
             </DetailCard>
@@ -207,7 +175,7 @@ export function PropertyDetailView({ id }: { id: string }) {
 
           {/* Second row: selected information tab beside the project and broker. */}
           <div className="min-w-0 max-lg:order-5 lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:self-stretch">
-            <PropertyInfoTabs property={p} project={project} />
+            <PropertyInfoTabs property={p} project={project} configurations={configurations} />
           </div>
           <aside className="max-lg:contents lg:col-start-2 lg:row-start-2 lg:flex lg:min-w-0 lg:flex-col lg:gap-4" aria-label="Project and listing broker">
             {!p.projectHidden && project && <div className="max-lg:hidden"><ProjectMiniCard project={project} stock={projectStock} /></div>}

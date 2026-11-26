@@ -14,15 +14,17 @@ export function CoverImage({
   priority,
   className,
 }: {
-  src: string;
+  src?: string | null;
   alt: string;
   sizes: string;
   priority?: boolean;
   className?: string;
 }) {
+  const imageSrc = src?.trim() || "/images/empty.gif";
   return (
     <Image
-      src={src}
+      src={imageSrc}
+      unoptimized={imageSrc === "/images/empty.gif"}
       alt={alt}
       fill
       sizes={sizes}

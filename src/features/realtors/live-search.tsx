@@ -46,7 +46,7 @@ export function LiveRealtorSearch() {
         const next = active < 0 ? (e.key === "ArrowDown" ? 0 : suggestions.length - 1) : (active + (e.key === "ArrowDown" ? 1 : -1) + suggestions.length) % suggestions.length;
         setActive(next); document.getElementById(`${id}-option-${next}`)?.scrollIntoView({ block: "nearest" });
       }
-    }} role="combobox" aria-autocomplete="list" aria-expanded={showList} aria-controls={showList ? `${id}-suggestions` : undefined} aria-activedescendant={showList && active >= 0 && suggestions?.[active] ? `${id}-option-${active}` : undefined} autoComplete="off" placeholder={criteria.by === "firm" ? "Search Firm" : "Search Realtor"} className="h-8 w-full min-w-0 bg-transparent px-3 text-base placeholder:text-xs outline-none placeholder:text-rez-space focus-visible:rounded focus-visible:ring-2 focus-visible:ring-rez-mocaccino font-secondary sm:h-12 sm:text-base lg:h-14 lg:text-xl" /></div>
+    }} role="combobox" aria-autocomplete="list" aria-expanded={showList} aria-controls={showList ? `${id}-suggestions` : undefined} aria-activedescendant={showList && active >= 0 && suggestions?.[active] ? `${id}-option-${active}` : undefined} autoComplete="off" placeholder={criteria.by === "firm" ? "Search Firm" : "Search Realtor"} className="h-8 w-full min-w-0 bg-transparent px-3 text-base placeholder:text-xs outline-none placeholder:text-rez-space focus-visible:rounded  font-secondary sm:h-12 sm:text-base lg:h-14 lg:text-xl" /></div>
     <Button type="submit" size="lg" className="h-8 rounded-2xl px-3 text-xs sm:h-12 sm:px-5 sm:text-base lg:h-14 lg:w-[141px]">Search</Button>
     </div>
     <div className="absolute top-[calc(100%+8px)] right-0 left-0 z-30 rounded-2xl bg-white text-black shadow-rez-lg">

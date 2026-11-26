@@ -21,7 +21,7 @@ export const cityLabel = (name: string) => DISPLAY_NAMES[name] ?? name;
 /** The city master's name for a shown city, for requests that filter by city: Bengaluru → Bangalore. */
 export const toBackendCity = (name: string) => BACKEND_NAMES[name] ?? name;
 
-type CityMasterRow = { _id?: string; value?: string; label?: string };
+type CityMasterRow = { _id?: string; value?: string; label?: string; name?: string };
 /** Names and ID lookups share one raw city-master query and in-flight request. */
 export function fetchCityMaster(): Promise<CityMasterRow[]> {
   return getQueryClient().ensureQueryData({queryKey:["locations","city-master"],staleTime:5*60_000,queryFn:async()=>{
@@ -53,15 +53,15 @@ const toPlaces = (rows: { id?: string; name?: string }[]): GeoPlace[] => {
 /** The city master's id for a shown city, or null when it isn't in the master. */
 export async function fetchCityId(city: string): Promise<string | null> {
   const name=toBackendCity(city);
-  const row=(await fetchCityMaster()).find(row=>row.label?.trim()===name);
-  return row?._id ?? row?.value ?? null;
+  const row=(await fetchCityMaster()).find(row=>[row.label, row.name, row.value].some(value => value?.trim() === name));
+  return row?._id ?? (row?.value?.trim() !== name ? row?.value : null) ?? null;
 }
 type BackendPlace = { _id?: string; name?: string };
 
 /** A city's regions. Many cities have none yet. */
-export async function fetchRegions(cityId: string): Promise<GeoPlace[]> {
-  const { data } = await api.get<{ data?: BackendPlace[] }>("/master/region", { params: { city: cityId } });
-  return toPlaces(responseArray<BackendPlace>(data).map((r) => ({ id: r._id, name: r.name })));
+export async function fetchRegions(cityId?: string): Promise<GeoPlace[]> {
+  const { data } = await api.get<{ data?: BackendPlace[] }>("/master/region", { params: cityId ? { city: cityId } : undefined });
+  return [...new Map(responseArray<BackendPlace>(data).flatMap(r => r._id && r.name?.trim() ? [[r._id, { id: r._id, name: r.name.trim() }]] as const : [])).values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** One page of a region's localities (sub-regions), searched by name, as rezide.in's project Location filter loads them. */

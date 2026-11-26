@@ -1,5 +1,5 @@
 import { guardSearch } from "./search-guard";
-import { publicFirm, image, membershipNames, publicSocials, publicAddresses } from "@/features/realtors/public-mapper";
+import { publicFirm, image, membershipNames, publicSocials, publicAddresses, publicAddressCards } from "@/features/realtors/public-mapper";
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import "server-only";
 import { guardLead, checkLeadBot } from "./lead-guard";
@@ -7,7 +7,6 @@ import { ProxyError, upstream } from "./rezide-upstream";
 import { z } from "zod";
 import { count, record, text } from "@/features/realtors/directory-model";
 import { toProperty, type BackendListing } from "@/services/property-mapper";
-import { toBackendCity } from "@/services/locations";
 import { realtorContactInput } from "@/features/realtors/contact-input";
 
 
@@ -32,9 +31,9 @@ export async function directoryRoute(request: Request) {
     const parsed = filtersSchema.parse(await json(request));
     const filters = Object.fromEntries(Object.entries(parsed).filter(([, values]) => values?.length));
     const page = positive(params.get("page"), 1, 10000), pageSize = positive(params.get("pageSize"), 6, 100);
-    const city = z.string().trim().max(200).parse(params.get("city") || "");
+    // No city filter, as rezide.in's find-broker search: most firms have no address city on the
+    // backend, so filtering by city hid them (Mumbai showed 7 of the 34 active firms, others 0).
     const upstreamParams = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-    if (city) upstreamParams.set("city", toBackendCity(city));
     const raw = record(await upstream(`/brokers/filter/web?${upstreamParams}`, { status: "complete", active_status: "active", sortBy: [1], ...filters }, 60));
     const total = count(raw.broker_count);
     if (!Array.isArray(raw.data) || total === null || !Number.isInteger(total)) throw new ProxyError("The directory response is missing firms or its total.", 502);
@@ -72,7 +71,7 @@ export async function firmProfileRoute(request: Request) {
     const source = record(raw.data[0]), info = record(source.general_information);
     const socials = publicSocials(info);
     return { ...publicFirm(source), about: text(info.about_us), entityType: text(record(info.firm_type).name),
-      addresses: publicAddresses(source.addresses), socials };
+      addresses: publicAddresses(source.addresses), addressCards: publicAddressCards(source.addresses), socials };
   });
 }
 
@@ -109,7 +108,7 @@ export async function personProfileRoute(request: Request) {
       about: text(person.bio), languages: membershipNames(person.language), specializations: membershipNames(person.specialization).length ? membershipNames(person.specialization) : membershipNames(person.Specialization), memberOf: membershipNames(person.member_of),
       subRegions: membershipNames(person.Sub_regions ?? person.subRegions), localities: membershipNames(person.localities), projects: membershipNames(person.projects),
       addresses: publicAddresses(raw.addresses), socials,
-      maskedPhone: phone.length >= 10 ? `+${phone.slice(0, -10) || "91"} ***** ${phone.slice(-5)}` : "Not provided" };
+      maskedPhone: phone.length >= 10 ? `+${phone.slice(0, -10) || "91"}${phone.slice(-10, -5)}XXXXX` : "Not provided" };
   });
 }
 export async function contactRoute(request: Request) {

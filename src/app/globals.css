@@ -273,7 +273,7 @@
   color: #3f6446;
 }
 
-/* Map pins (GeoEstate style): listing = green house pin, cluster = blue count circle,
+/* Map pins (GeoEstate style): listing = green house pin, cluster = black count circle,
    project = green building pin with an orange count badge. */
 .rez-pin-marker {
   background: none;
@@ -302,7 +302,7 @@
 }
 .rez-pin--cluster {
   border-radius: 50%;
-  background: #2f7fb2;
+  background: #111111;
   transform: none;
 }
 .rez-pin--cluster > span {
@@ -313,6 +313,16 @@
 .rez-pin-marker:focus .rez-pin {
   background: #c18735;
   box-shadow: 0 0 0 4px #c1873533;
+}
+.rez-map .leaflet-tile {
+  filter: saturate(0.35) contrast(0.92) brightness(1.08);
+}
+.rez-pin-marker.is-active .rez-pin--cluster,
+.rez-pin-marker:hover .rez-pin--cluster,
+.rez-pin-marker:focus .rez-pin--cluster {
+  background: #111111;
+  color: #fff;
+  box-shadow: 0 0 0 4px #1113;
 }
 .rez-project-pin {
   position: relative;

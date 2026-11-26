@@ -2,11 +2,11 @@
 import { isBackendId } from "@/lib/ids";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { propertyHref } from "@/features/properties/property-card";
 import { CITY_CENTRES } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
-import { itemPrice, openableListingId, searchMap, type MapItem, type MapView } from "@/services/map-search";
+import { itemPrice, openableListingId, searchMap, type MapItem, type MapView, type MapFilters } from "@/services/map-search";
 import type { LatLng } from "@/types/models";
 import type { MapPoint } from "./leaflet-map";
 
@@ -25,13 +25,13 @@ export function toMapPoint(item: MapItem, index: number): MapPoint {
   // `label` is the hover tooltip, as GeoEstate shows it: the price, or "N listings · tap to zoom".
   if (item.type === "cluster") {
     const label = `${listings(item.count)} · tap to zoom`;
-    return { id: `cluster-${item.clusterId}-${index}`, kind: "cluster", count: item.count, clusterId: item.clusterId, position, label, title: label };
+    return { id: `cluster-${item.clusterId}-${index}`, kind: "cluster", count: item.count, clusterId: item.clusterId, bounds: item.bounds, expansionZoom: item.expansionZoom, position, label, title: label };
   }
   if (item.type === "project") {
     // projectId is a raw id or, in some data, the project's name.
     const name = item.projectName?.trim() || (isBackendId(item.projectId) ? "" : item.projectId);
     const label = `${name ? `${short(name, 28)} · ` : ""}${listings(item.count)} · tap to zoom`;
-    return { id: `project-${item.projectId}-${index}`, kind: "project", count: item.count, position, label, title: label };
+    return { id: `project-${item.projectId}-${index}`, kind: "project", count: item.count, expansionZoom: item.expansionZoom, position, label, title: label };
   }
   const price = itemPrice(item.price);
   const id = openableListingId(item.listingId);
@@ -50,17 +50,17 @@ export function toMapPoint(item: MapItem, index: number): MapPoint {
  * map in view (pass `onViewChange` to the map), as GeoEstate's useProperties does:
  * the previous markers stay while the next view loads, and "Try again" skips the cache.
  */
-export function useMapMarkers(enabled: boolean) {
+export function useMapMarkers(enabled: boolean, filters: MapFilters = {}) {
   const [view, setView] = useState<MapView | null>(null);
   const [attempt, setAttempt] = useState(0);
   const fresh = useRef(false);
   const markers = useQuery({
     // Bounds rounded to ~10 m so tiny jitters don't make a new request.
-    queryKey: ["map", view?.bbox.map((v) => v.toFixed(4)).join(",") ?? "", view?.zoom ?? 0, attempt] as const,
+    queryKey: ["map", view?.bbox.map((v) => v.toFixed(4)).join(",") ?? "", view?.zoom ?? 0, view?.focus ?? "", filters.type ?? "", filters.intend ?? "", filters.minPrice ?? null, filters.maxPrice ?? null, attempt] as const,
     queryFn: ({ signal }) => {
       const skipCache = fresh.current;
       fresh.current = false;
-      return searchMap(view!, signal, { fresh: skipCache });
+      return searchMap({ ...view!, ...filters }, signal, { fresh: skipCache });
     },
     enabled: enabled && view !== null,
     placeholderData: keepPreviousData,
@@ -84,10 +84,10 @@ export function useMapMarkers(enabled: boolean) {
             ? "No properties in this area. Try zooming out or moving the map."
             : null;
 
-  const retry = () => {
+  const retry = useCallback(() => {
     fresh.current = true;
     setAttempt((n) => n + 1);
-  };
+  }, []);
 
-  return { items, points, onViewChange: setView, status, isFetching: markers.isFetching, isError: markers.isError && !markers.isFetching, retry };
+  return { capped: markers.data?.capped ?? false, items, points, onViewChange: setView, status, isFetching: markers.isFetching, isError: markers.isError && !markers.isFetching, retry };
 }

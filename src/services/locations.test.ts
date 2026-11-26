@@ -75,6 +75,13 @@ describe("backend reads", () => {
     await expect(fetchCityId("Nowhere")).resolves.toBeNull();
   });
 
+  it("resolves alternate city labels but never returns a city label as its ID", async () => {
+    backend.onGet("/master/city/search").reply(200, { data: [{ _id: "c1", name: "Mumbai" }, { _id: "c2", value: "Pune" }, { value: "Unknown city" }] });
+    await expect(fetchCityId("Mumbai")).resolves.toBe("c1");
+    await expect(fetchCityId("Pune")).resolves.toBe("c2");
+    await expect(fetchCityId("Unknown city")).resolves.toBeNull();
+  });
+
   it("walks the tree with the same requests as rezide.in, A–Z and one row per name", async () => {
     backend.onGet("/master/region", { params: { city: "c1" } }).reply(200, { data: [{ _id: "r2", name: "South Mumbai" }, { _id: "r1", name: "Eastern Suburbs" }] });
     backend.onPost("/repository/sub_region/regions", { regions: ["r1"] }).reply(200, [{ _id: "s1", name: "Powai" }, { _id: "s2", name: "Powai " }, { name: "No id" }]);
@@ -83,6 +90,14 @@ describe("backend reads", () => {
     await expect(fetchRegions("c1")).resolves.toEqual([{ id: "r1", name: "Eastern Suburbs" }, { id: "r2", name: "South Mumbai" }]);
     await expect(fetchSubRegions("r1")).resolves.toEqual([{ id: "s2", name: "Powai" }]);
     await expect(fetchSubRegionLocalities("s1")).resolves.toEqual([{ id: "l1", name: "Tunga Village" }]);
+  });
+
+  it("omits an unresolved city and preserves distinct region identities with the same name", async () => {
+    backend.onGet("/master/region").reply(config => {
+      expect(config.params).toBeUndefined();
+      return [200, { data: [{ _id: "r2", name: "West" }, { _id: "r1", name: "East" }, { _id: "r3", name: "East" }] }];
+    });
+    await expect(fetchRegions()).resolves.toEqual([{ id: "r1", name: "East" }, { id: "r3", name: "East" }, { id: "r2", name: "West" }]);
   });
 
   it("loads a region's localities a page at a time, searched by name, as rezide.in's Location filter", async () => {

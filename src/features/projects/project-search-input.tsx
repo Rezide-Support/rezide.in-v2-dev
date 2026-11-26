@@ -4,7 +4,7 @@ import { Building2, MapPin, Navigation, Search } from "lucide-react";
 import { useId, useState, type KeyboardEvent } from "react";
 import { useSearchSuggestions } from "@/features/search/use-search-suggestions";
 import { cn } from "@/lib/utils";
-import type { SearchSuggestion, SuggestionKind } from "@/services/locations";
+import type { SearchSuggestion, SuggestionKind, SuggestionScope } from "@/services/locations";
 
 /** What the project search can look for: projects, builders and places. */
 const PROJECT_KINDS: readonly SuggestionKind[] = ["project", "developer", "subRegion", "locality", "other"];
@@ -39,6 +39,9 @@ export function ProjectSearchInput({
   onPick,
   city,
   className,
+  scope = "developer",
+  minimumLength = 3,
+  proxySuggestions = false,
 }: {
   id: string;
   value: string;
@@ -47,12 +50,15 @@ export function ProjectSearchInput({
   onPick: (name: string) => void;
   city: string;
   className?: string;
+  scope?: SuggestionScope;
+  minimumLength?: number;
+  proxySuggestions?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const listId = useId();
-  const typed = value.trim().length >= 3;
-  const { suggestions } = useSearchSuggestions(typed ? value : "", { city, kinds: PROJECT_KINDS, scope: "developer", limit: Infinity });
+  const typed = value.trim().length >= minimumLength;
+  const { suggestions } = useSearchSuggestions(typed ? value : "", { city, kinds: PROJECT_KINDS, scope, limit: Infinity, proxy: proxySuggestions });
   const showList = open && typed && suggestions.length > 0;
   const showHints = open && !showList;
 

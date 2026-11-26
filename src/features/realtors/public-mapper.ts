@@ -1,6 +1,6 @@
 import { apiOrigin as origin } from "@/lib/api/origins";
 import { ProxyError } from "@/lib/api/proxy-error";
-import { array, count, labels, record, text, type DirectoryFirm } from "./directory-model";
+import { array, count, labels, record, text, type DirectoryFirm, type FirmAddress } from "./directory-model";
 export function image(value: unknown) {
   const file = text(value);
   return file ? `${origin()}/v1/admin/file/upload/${encodeURIComponent(file)}` : "";
@@ -38,8 +38,13 @@ export function sanitizePublicFirmRecord(value: unknown) {
   return {_id:text(source._id),general_information:{firm_name:text(info.firm_name),firm_type:{name:text(record(info.firm_type).name)},about_us:text(info.about_us),logo:text(info.logo),operating_since:since(info.operating_since),specialization:list(info.specialization),allCities:list(info.allCities),allSubRegions:list(info.allSubRegions),allLocalities:list(info.allLocalities),allProjects:list(info.allProjects),linkedln:social(info.linkedln),facebook:social(info.facebook),instagram:social(info.instagram),youtube:social(info.youtube)},documents:{rera_no:text(docs.rera_no),gst_no:text(docs.gst_no)},total_listing_sale_count:count(source.total_listing_sale_count),total_listing_rental_count:count(source.total_listing_rental_count),managers:array(source.managers).map(person),agents:array(source.agents).map(person),addresses:array(source.addresses).map(value=>{const a=record(value);return {line1:text(a.line1),line2:text(a.line2),city:text(a.city),pincode:text(a.pincode),address_type:text(a.address_type)}})};
 }
 
+/** A bare handle ("_maxrealtors_", "@firm") becomes its profile link; full links stay as they are. */
+const SOCIAL_HOSTS:Record<string,string>={Instagram:"https://www.instagram.com/",Facebook:"https://www.facebook.com/"};
+function socialUrl(label:string,value:string):string{const handle=value.trim().replace(/^@/,"");return SOCIAL_HOSTS[label]&&/^[\w.]{2,60}$/.test(handle)?SOCIAL_HOSTS[label]+handle:value}
 export function publicSocials(value: unknown): {label:string;url:string}[] {
   const info=record(value);
-  return [["LinkedIn",info.linkedln],["Facebook",info.facebook],["Instagram",info.instagram],["YouTube",info.youtube]].flatMap(([label,value])=>{try{const url=new URL(text(value));return ["http:","https:"].includes(url.protocol)?[{label:String(label),url:url.href}]:[]}catch{return []}});
+  return [["LinkedIn",info.linkedln],["Facebook",info.facebook],["Instagram",info.instagram],["YouTube",info.youtube]].flatMap(([label,value])=>{try{const url=new URL(socialUrl(String(label),text(value)));return ["http:","https:"].includes(url.protocol)?[{label:String(label),url:url.href}]:[]}catch{return []}});
 }
+/** Each office as rezide.in's address popup shows it (one card per address). */
+export function publicAddressCards(value:unknown):FirmAddress[]{return array(value).flatMap(value=>{const a=record(value);const card={type:text(a.address_type),line1:text(a.line1),line2:text(a.line2),city:text(a.city),pincode:text(a.pincode)};return card.line1||card.line2||card.city?[card]:[]})}
 export function publicAddresses(value:unknown):string[]{return array(value).map(value=>{const a=record(value);return [a.line1,a.line2,a.city,a.pincode].map(text).filter(Boolean).join(", ")}).filter(Boolean)}

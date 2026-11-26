@@ -35,7 +35,7 @@ describe("detail formatting", () => {
 });
 
 describe("listing enquiries, worded as on rezide.in", () => {
-  const base: LeadValues = { mode: "contact", firstName: "Asha", lastName: "Rao", phone: "9820012345", intent: "", offer: "", date: "", slot: "", message: "" };
+  const base: LeadValues = { mode: "contact", name: "Asha Rao", phone: "9820012345", intent: "", offer: "", date: "", slot: "", message: "" };
   const listing = { id: "l1", firmId: "f1", brokerId: "b1", name: "A-702, Satra", path: "/properties/l1" };
   const who = { name: "Asha Rao", phone: "9820012345", firmId: "f1", brokerId: "b1", listingId: "l1" };
 
@@ -60,7 +60,7 @@ describe("listing enquiries, worded as on rezide.in", () => {
 });
 
 describe("lead form mapping", () => {
-  const base: LeadValues = { mode: "contact", firstName: "Asha", lastName: "Rao", phone: "9820012345", intent: "", offer: "", date: "", slot: "", message: "" };
+  const base: LeadValues = { mode: "contact", name: "Asha Rao", phone: "9820012345", intent: "", offer: "", date: "", slot: "", message: "" };
 
   it("requires an intent on the contact form", () => {
     expect(leadSchema.safeParse(base).success).toBe(false);

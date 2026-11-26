@@ -3,12 +3,21 @@ import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { api } from "@/lib/api/client";
 import { fetchLandmarks, fetchLocality, fetchLocalityPhoto, findLocality, toLandmark } from "@/services/localities";
+import { searchLocalityDirectory } from "@/services/directory-localities";
+import { localityFilters } from "@/features/search/locality-criteria";
 
 /* The Rezide backend's locality endpoints, answered by a test double. Shapes follow live responses. */
 
 const school = { placeName: "Podar School", latitude: 19.12, longitude: 72.91, distance: 0.16 };
 
 describe("toLandmark", () => {
+  it("keeps locality region IDs and sub-region IDs separate, with null absent filters", () => {
+    expect(localityFilters(new URLSearchParams())).toEqual({ page: 1, pageSize: 12, body: { regions: null, sub_regions: null, searchQuery: null } });
+    const query = new URLSearchParams("region=region-one,region-two&sub_region=sub-one&searchQuery=Parel,Worli&page=3&pageSize=24");
+    expect(localityFilters(query, "city-id")).toEqual({ page: 3, pageSize: 24, body: { regions: ["region-one", "region-two"], sub_regions: ["sub-one"], searchQuery: ["Parel", "Worli"], city: "city-id" } });
+    query.set("page", "4");
+    expect(localityFilters(query, "city-id").body).toEqual(localityFilters(new URLSearchParams("region=region-one,region-two&sub_region=sub-one&searchQuery=Parel,Worli"), "city-id").body);
+  });
   it("maps a backend row", () => {
     expect(toLandmark(school)).toEqual({ name: "Podar School", distanceKm: 0.16, coords: [19.12, 72.91] });
   });
@@ -37,6 +46,22 @@ describe("locality endpoints", () => {
     backend = new MockAdapter(api);
   });
   afterEach(() => backend.restore());
+
+  it("loads one locality directory page, maps counts and five photos, and uses the response count", async () => {
+    const body = { regions: ["r1"], sub_regions: ["s1"], searchQuery: null, city: "c1" };
+    backend.onPost("/Repository/Locality/filter", body).reply(config => {
+      expect(config.params).toEqual({ page: 2, pageSize: 12 });
+      return [200, { result_count: 29, data: [{ _id: "l1", general_information: { locality_name: "Lalbaug", private_notes: "PRIVATE" }, media: { images: Array.from({ length: 7 }, (_, index) => ({ url: `image${index}` })) }, total_listing_rental_count: "8" }] }];
+    });
+    const result = await searchLocalityDirectory(body, 2, 12);
+    expect(result.result_count).toBe(29);
+    expect(result.data[0]).toMatchObject({ id: "l1", name: "Lalbaug", rentalCount: 8, saleCount: 0 });
+    expect(result.data[0].images).toHaveLength(5);
+    expect(result.data[0].images[0]).toBe("https://cdn.rezide.in/images/image0.jpeg");
+    expect(JSON.stringify(result)).not.toContain("PRIVATE");
+    expect(backend.history.post).toHaveLength(1);
+    expect(backend.history.get).toHaveLength(0);
+  });
 
   it("asks for each landmark tab by the backend's category, as rezide.in does", async () => {
     backend.onGet("/repository/locality/landmark/p1").reply((config) => [

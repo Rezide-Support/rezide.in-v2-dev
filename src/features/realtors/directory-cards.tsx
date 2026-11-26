@@ -22,16 +22,30 @@ import { DirectoryLeadForm } from "./directory-forms";
 import { CredentialPills, type CredentialKey } from "./credentials";
 import { cn } from "@/lib/utils";
 
+/** Up to two initials from a person's or firm's name: "Deepak Lahori" → "DL", "BDL Estate & Property" → "BE". */
+function initialsOf(name: string) {
+  const letters = name
+    .split(/\s+/)
+    .map((w) => w.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]);
+  return letters.join("").toUpperCase() || "?";
+}
+
 export function DirectoryPhoto({
   src,
   name,
   portrait = false,
   className,
+  eager = false,
 }: {
   src: string;
   name: string;
   portrait?: boolean;
   className?: string;
+  /** Load at once: the photo is the largest thing on screen (Next.js warns when it loads lazily). */
+  eager?: boolean;
 }) {
   const [failedSrc, setFailedSrc] = useState("");
   return (
@@ -48,15 +62,22 @@ export function DirectoryPhoto({
           alt={name}
           fill
           unoptimized
-          loading="eager"
           sizes="180px"
+          loading={eager ? "eager" : undefined}
           className={
             portrait ? "object-cover object-top" : "object-contain p-5"
           }
           onError={() => setFailedSrc(src)}
         />
       ) : (
-        <Image src="/images/empty.gif" alt="" width={160} height={160} unoptimized />
+        // No photo: the name's initials on a soft panel that fills the whole slot (small slots shrink the text via [&>span]).
+        <span
+          role="img"
+          aria-label={`${name}: no photo`}
+          className="absolute inset-0 grid place-items-center bg-linear-to-br from-[#f4f5f8] to-[#e3e6ed] text-4xl font-semibold tracking-wide text-[#8b909c] select-none"
+        >
+          {initialsOf(name)}
+        </span>
       )}
     </div>
   );
@@ -64,9 +85,12 @@ export function DirectoryPhoto({
 export function DirectoryCard({
   firm,
   person,
+  eagerFirmLogo = false,
 }: {
   firm: DirectoryFirm;
   person?: DirectoryPerson;
+  /** On the firm's own page: the badge shares the big logo's file, which loads at once anyway. */
+  eagerFirmLogo?: boolean;
 }) {
   const [contactOpen, setContactOpen] = useState(false);
   const { rent, sale } = firm;
@@ -81,7 +105,9 @@ export function DirectoryCard({
   return (
     <article
       className={cn(
-        "grid h-full grid-cols-1 overflow-hidden rounded-[18px] border border-rez-smoke bg-white shadow-[0_2px_6px_0_#2c2c2c1f] sm:grid-cols-[135px_minmax(0,1fr)]",
+        "grid h-full grid-cols-1 overflow-hidden rounded-[18px] border border-rez-smoke bg-white shadow-[0_2px_6px_0_#2c2c2c1f]",
+        // Realtor cards: a portrait column wide enough for the photo to read well.
+        person && "sm:max-[1599.98px]:grid-cols-[180px_minmax(0,1fr)] min-[1600px]:grid-cols-[190px_minmax(0,1fr)]",
         !person && "min-h-[305px] sm:grid-cols-[180px_minmax(0,1fr)]",
         // Firm cards on laptops: a narrower logo column and a shorter card.
         !person && "lg:max-[1599.98px]:min-h-[250px] lg:max-[1599.98px]:grid-cols-[150px_minmax(0,1fr)]",
@@ -146,6 +172,7 @@ export function DirectoryCard({
             <DirectoryPhoto
               src={firm.logo}
               name={firm.name}
+              eager={eagerFirmLogo}
               className="size-10 min-h-10 p-0 text-xs sm:w-10 [&>span]:text-xs [&_img]:p-0"
             />
           </Link>

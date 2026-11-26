@@ -1,9 +1,10 @@
+import { itemPrice, mapFiltersFor, searchMap, type ListingItem } from "./map-search";
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { uniqueGalleryPhotos } from "@/lib/listing-media";
 import { cache } from "react";
 import { ApiError, api } from "@/lib/api/client";
 import { serializePropertyCriteria, type PropertyArrayFilter } from "@/features/search/criteria";
-import { groupProperties, propertyFacets, searchProperties, type MapArea } from "@/features/search/match";
+import { groupProperties, paginate, sortProperties, propertyFacets, searchProperties, type MapArea } from "@/features/search/match";
 import {
   BATHROOM_OPTIONS,
   BHK_OPTIONS,
@@ -31,7 +32,7 @@ import {
   RENT_BHK_OPTIONS,
   RENT_TIME_OPTIONS,
 } from "@/features/search/sale-filter-options";
-import type { Paginated, Property, PropertySearchCriteria } from "@/types/models";
+import type { Paginated, Property, PropertySearchCriteria, PropertyCategory } from "@/types/models";
 import type { PropertyDetail, PropertyFacets, PropertyGroupBy, PropertyGroups } from "./catalog";
 import { listingIndex } from "./listing-index";
 import { findListingProject, getProjectsByIds } from "./projects";
@@ -254,9 +255,37 @@ export const getListingDetail = cache(async (id: string): Promise<PropertyDetail
     try {
       const response = await api.post<{ data?: { config_id?: string } }>("/Inventory/unit/specific", { project_id: unit.project_id, tower_name: unit.tower_name, unit_number: String(number) });
       const configId = response.data?.data?.config_id;
-      return configId ? toProperty({ ...data, listing_details: { ...data.listing_details, unit_no: { ...unit, config_id: configId } } }) : null;
+      if (!configId) return null;
+      return {
+        configId,
+        property: toProperty({ ...data, listing_details: { ...data.listing_details, unit_no: { ...unit, config_id: configId } } }),
+      };
     } catch { return null; }
   }));
+  const configurations = (() => {
+    const projectConfigurations = Array.isArray(data.listing_details?.project?.configuration)
+      ? data.listing_details.project.configuration
+      : [];
+    const currentConfigId = unit && typeof unit === "object" ? unit.config_id : undefined;
+    const options: { id: string; name: string; property: Property }[] = [];
+    if (currentConfigId) {
+      const config = projectConfigurations.find(item => item._id === currentConfigId);
+      const name = config?.config_name?.trim();
+      if (name) options.push({ id: currentConfigId, name, property });
+    }
+    combined.forEach((number, index) => {
+      const combinedProperty = combinedProperties[index]?.property;
+      if (!combinedProperty) return;
+      const configId = combinedProperties[index]?.configId;
+      if (!configId) return;
+      const config = projectConfigurations.find(item => item._id === configId);
+      const name = config?.config_name?.trim();
+      if (name && !options.some(option => option.id === configId)) {
+        options.push({ id: configId, name, property: combinedProperty });
+      }
+    });
+    return options;
+  })();
   const seen = new Set<string>([property.id]);
   const similar = (Array.isArray(nearby?.data) ? nearby.data : [])
     .filter(item => item && bhkIdOf(item) === bhkId)
@@ -267,14 +296,14 @@ export const getListingDetail = cache(async (id: string): Promise<PropertyDetail
       return true;
     })
     .slice(0, SIMILAR_COUNT);
-  const planPhotos = uniqueGalleryPhotos([...(property.planPhotos ?? []), ...combinedProperties.flatMap(p => p?.planPhotos ?? [])]);
+  const planPhotos = uniqueGalleryPhotos([...(property.planPhotos ?? []), ...combinedProperties.flatMap(p => p?.property.planPhotos ?? [])]);
   return { property: { ...property, brochureUrl,
     realtorFirmId: realtor?.firmId || property.realtorFirmId,
     contactPersonId: realtor?.id,
-    rooms: [...(property.rooms ?? []), ...combinedProperties.flatMap((p, index) => (p?.rooms ?? []).map(room => ({ ...room, name: `Unit ${combined[index]} · ${room.name}` })))],
+    rooms: [...(property.rooms ?? []), ...combinedProperties.flatMap((p, index) => (p?.property.rooms ?? []).map(room => ({ ...room, name: `Unit ${combined[index]} · ${room.name}` })))],
     planImages: planPhotos.map(photo => photo.url),
     planPhotos,
-  }, realtor, similar, project, projectStock };
+  }, realtor, similar, project, projectStock, configurations };
 });
 
 /** The listing's broker response is consumed directly; only public person fields leave the server. */
@@ -311,8 +340,24 @@ export async function fetchProperty(id: string): Promise<PropertyDetail> {
 const indexFor = (c: PropertySearchCriteria) => listingIndex(c.city, c.intent, c.category);
 
 /** Server only: one page of the listings in part of the map. The backend can't search by area. */
-export async function searchListingsInArea(criteria: PropertySearchCriteria, area: MapArea): Promise<Paginated<Property>> {
-  return searchProperties(await indexFor(criteria), criteria, area);
+export async function searchListingsInArea(criteria: PropertySearchCriteria, area: MapArea, focus?: string, mapZoom?: number): Promise<Paginated<Property>> {
+  if (!focus && mapZoom === undefined) return searchProperties(await indexFor(criteria), criteria, area);
+  // Use the same backend filters for visible pins and selected cluster members.
+  const members = await searchMap({ bbox: area, zoom: focus ? 18 : mapZoom!, focus, ...mapFiltersFor(criteria) });
+  const rows: ListingItem[] = members.items.flatMap(item => item.type === "listing" ? [item] : item.type === "cluster" && !focus ? [] : (item.listings ?? []).map(listing => ({ ...listing, type: "listing" as const, lat: listing.lat ?? item.lat, lng: listing.lng ?? item.lng })));
+  const categoryFor = (type?: string): PropertyCategory => ({ home: "homes", office: "offices", retail: "retail", industrial: "industrial", land: "land" } as Record<string, PropertyCategory>)[type ?? ""] ?? criteria.category;
+  const categories = [...new Set(rows.map(row => categoryFor(row.listingType)))];
+  const inventories = await Promise.all(categories.flatMap(category => (["buy", "rent"] as const).map(intent => indexFor({ ...criteria, category, intent }).catch(() => []))));
+  const records = new Map(inventories.flat().flatMap(property => [[property.id, property] as const, ...(property.listingCode ? [[property.listingCode, property] as const] : [])]));
+  const unique = new Map<string, Property>();
+  for (const row of rows) {
+    const key = row.listingId ?? row.title + ":" + row.lat + ":" + row.lng;
+    if (unique.has(key)) continue;
+    const full = row.listingId ? records.get(row.listingId) : undefined;
+    const price = itemPrice(row.price);
+    unique.set(key, full ?? { ...toProperty({}), id: key, listingCode: row.listingId, mapSummary: true, title: row.title, category: categoryFor(row.listingType), intent: criteria.intent, city: row.city || criteria.city, locality: row.locality || "", locationLabel: row.address || "", coords: [row.lat, row.lng], price: price ?? 0, priceHidden: !price, images: [], unitType: "", bhk: row.bedrooms, areaSqft: row.area ?? 0 });
+  }
+  return paginate(sortProperties([...unique.values()], criteria.sort), criteria.page, criteria.perPage);
 }
 
 /**
@@ -388,12 +433,12 @@ export async function fetchPropertyGroups(criteria: PropertySearchCriteria, grou
 }
 
 /** Listing search, optionally within part of the map: on the server it calls the backend; in the browser it goes through /api/properties. */
-export async function fetchProperties(criteria: PropertySearchCriteria, area?: MapArea): Promise<Paginated<Property>> {
-  if (isServer) return area ? searchListingsInArea(criteria, area) : searchListings(criteria);
+export async function fetchProperties(criteria: PropertySearchCriteria, area?: MapArea, focus?: string, mapZoom?: number): Promise<Paginated<Property>> {
+  if (isServer) return area ? searchListingsInArea(criteria, area, focus, mapZoom) : searchListings(criteria);
   const { data } = await api.get<Paginated<Property>>("/api/properties", {
     // This app's own route, not the backend: no base URL.
     baseURL: "",
-    params: { ...toParams(serializePropertyCriteria({ ...criteria, view: "list" })), bbox: area?.join(",") },
+    params: { ...toParams(serializePropertyCriteria({ ...criteria, view: "list" })), bbox: area?.join(","), focus, mapZoom },
   });
   return data;
 }

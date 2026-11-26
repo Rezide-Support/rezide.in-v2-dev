@@ -97,6 +97,8 @@ export function ProjectCard({ project: p, priority, fluid = false }: { project: 
   const tableId = useId();
   const ranges = p.configurationPlans ?? [];
   const hasRanges = ranges.length > 0;
+  // No video and no 360 tour: no buttons under the photo.
+  const noMedia = !p.videoUrl && !p.vrTourUrl;
   const toggle = () => setConfigOpen((o) => !o);
   // "17 Acres • 13 Towers • 2,632 Units", as on rezide.in (singular for 1).
   const sizeParts = [
@@ -118,7 +120,8 @@ export function ProjectCard({ project: p, priority, fluid = false }: { project: 
         <div
           className={cn(
             "relative z-10 aspect-[4/3] overflow-hidden rounded-lg bg-rez-cloud max-sm:aspect-auto max-sm:h-[15.5rem] max-sm:rounded-t-xl max-sm:rounded-b-2xl max-sm:[&_button]:hidden",
-            fluid && FLUID.photo,
+            // As the old site: with no video or 360 tour under it, the photo fills its column's height.
+            noMedia ? "sm:aspect-auto sm:min-h-[180px] sm:flex-1" : fluid && FLUID.photo,
           )}
         >
           {/* As the old site: the arrows show while the photo is hovered, only → on the first photo,

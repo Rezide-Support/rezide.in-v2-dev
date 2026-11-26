@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mapStartFor, toMapPoint } from "@/features/search/use-map-markers";
 import { containsBbox, expandBbox, readCache, resetRequestPolicy, writeCache, type BBox } from "@/services/map-request-policy";
-import { SPATIAL_API_URL, itemPrice, openableListingId, searchMap } from "@/services/map-search";
+import { SPATIAL_API_URL, itemPrice, mapFiltersFor, openableListingId, searchMap } from "@/services/map-search";
 
 /* The Spatial Search API, answered by a stubbed fetch. Behaviour follows GeoEstate's map search. */
 
@@ -21,11 +21,11 @@ describe("searchMap", () => {
   });
   afterEach(() => fetchMock.mockRestore());
 
-  it("calls /search straight from the browser with a padded, grid-snapped bbox, and keeps only the view", async () => {
+  it("calls /search-hybrid straight from the browser with a padded, grid-snapped bbox, and keeps only the view", async () => {
     const result = await searchMap(view);
     expect(fetchMock).toHaveBeenCalledOnce();
     const url = new URL(String(fetchMock.mock.calls[0][0]));
-    expect(`${url.origin}${url.pathname}`).toBe(`${SPATIAL_API_URL}/v1/locations/search`);
+    expect(`${url.origin}${url.pathname}`).toBe(`${SPATIAL_API_URL}/v1/locations/search-hybrid`);
     expect(Object.fromEntries(url.searchParams)).toMatchObject({ zoom: "14", radius: "64", limit: "5000" });
     const sent = url.searchParams.get("bbox")!.split(",").map(Number) as BBox;
     expect(containsBbox(sent, view.bbox)).toBe(true);
@@ -39,6 +39,38 @@ describe("searchMap", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     await searchMap(view, undefined, { fresh: true });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps focused-cluster responses separate from the viewport cache", async () => {
+    await searchMap(view);
+    await searchMap({ ...view, focus: "cluster-one" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const request = new URL(String(fetchMock.mock.calls[1][0]));
+    expect(request.searchParams.get("focus")).toBe("cluster-one");
+    expect(request.searchParams.get("mapMaxZoom")).toBe("18");
+    await searchMap({ ...view, focus: "cluster-one" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("maps UI filters to the backend names and preserves a zero budget", async () => {
+    const filters = mapFiltersFor({ category: "offices", intent: "rent", budgetMin: 0, budgetMax: 500000 });
+    expect(filters).toEqual({ type: "office", intend: "rent", minPrice: 0, maxPrice: 500000 });
+    await searchMap({ ...view, ...filters, focus: "parent>child" });
+    const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(Object.fromEntries(params)).toMatchObject({ type: "office", intend: "rent", minPrice: "0", maxPrice: "500000", focus: "parent>child" });
+  });
+
+  it("isolates cached results by property type, intent and budget", async () => {
+    await searchMap({ ...view, type: "home", intend: "buy" });
+    await searchMap({ ...view, type: "office", intend: "buy" });
+    await searchMap({ ...view, type: "home", intend: "rent" });
+    await searchMap({ ...view, type: "home", intend: "buy", maxPrice: 100000 });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    await searchMap({ ...view, type: "home", intend: "buy" });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(params.has("minPrice")).toBe(false);
+    expect(params.has("maxPrice")).toBe(false);
   });
 
   it("asks for the deepest split at the deepest map zoom", async () => {

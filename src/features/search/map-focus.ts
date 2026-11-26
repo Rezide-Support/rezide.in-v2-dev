@@ -9,6 +9,7 @@ export type ClusterArea = {
   /** Metres. */
   radius: number;
   /** An H3 cluster's cell: membership is exact. Supercluster ids carry no geometry, so those have none. */
+  exact?: boolean;
   cell?: string;
   resolution?: number;
 };
@@ -40,7 +41,12 @@ export function mapItemId(item: MapItem): string {
  * The area a cluster covers. An H3 cluster is a whole cell, so it's the circle enclosing that
  * hexagon; otherwise about 1.5× the 64 px grouping radius at the tapped zoom.
  */
-export function clusterArea(clusterId: string | undefined, [lat, lng]: LatLng, zoom: number): ClusterArea {
+export function clusterArea(clusterId: string | undefined, [lat, lng]: LatLng, zoom: number, bounds?: [number, number, number, number]): ClusterArea {
+  if (bounds && bounds.every(Number.isFinite)) {
+    const [west, south, east, north] = bounds;
+    const center: LatLng = [(south + north) / 2, (west + east) / 2];
+    return { center, radius: Math.max(150, distanceMetres(center, [south, west]), distanceMetres(center, [north, east])) * 1.15, exact: true };
+  }
   const cell = /^H3_([0-9a-f]{15})$/i.exec(clusterId ?? "")?.[1];
   if (cell && isValidCell(cell)) {
     const center = cellToLatLng(cell) as LatLng;

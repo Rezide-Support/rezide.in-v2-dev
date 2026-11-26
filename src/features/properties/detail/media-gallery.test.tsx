@@ -87,6 +87,7 @@ describe("MediaGallery photo labels", () => {
     const main = carousels.main[0];
     const thumb = carousels.thumbs[0];
     const strip = screen.getByRole("region", { name: "Apartment: photos thumbnails" });
+    expect(strip).toHaveClass("max-lg:hidden");
     expect(main.options).toEqual({ loop: false });
     expect(thumb.options).toEqual({ loop: false, align: "start", containScroll: "keepSnaps" });
     await user.click(within(strip).getByRole("button", { name: "Next slide" }));
@@ -266,6 +267,77 @@ it("defaults to the Property panel on desktop and displays only the selected tab
   expect(screen.getByRole("tab",{name:"Amenities"})).toHaveAttribute("aria-selected","true");
   expect(screen.getAllByRole("tabpanel")).toHaveLength(1);
   expect(screen.getByText("Fans")).toBeInTheDocument();
+ } finally {window.matchMedia=original;}
+});
+
+it("shows and switches unit configurations in Property and Dimensions panels", async () => {
+ const original = window.matchMedia;
+ window.matchMedia = vi.fn().mockImplementation(() => ({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
+ try {
+  const base = toProperty({_id:"67f0e8445817e6ef8d80f822",listing_details:{listing_name:"Premier"}});
+  const other = {...base, rooms:[{name:"Bedroom",length:11,width:12,area:132}], bhk:3};
+  render(<PropertyInfoTabs
+    property={{...base,rooms:[{name:"Living",length:10,width:12,area:120}]}}
+    configurations={[
+      {id:"one",name:"T1-2BHK Premier",property:{...base,rooms:[{name:"Living",length:10,width:12,area:120}],bhk:2}},
+      {id:"two",name:"T1-3BHK Premier",property:other},
+    ]}
+  />);
+  await userEvent.click(screen.getByRole("button",{name:"Property unit configuration"}));
+  await userEvent.click(screen.getByRole("menuitem",{name:"T1-3BHK Premier"}));
+  await userEvent.click(screen.getByRole("button",{name:"Dimensions unit configuration"}));
+  expect(screen.getByRole("menuitem",{name:"T1-3BHK Premier"})).toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
+  expect(screen.getByRole("tab",{name:"Dimensions"})).toHaveAttribute("aria-selected","true");
+  expect(screen.getByText("Bedroom")).toBeInTheDocument();
+  expect(screen.queryByText("Living")).not.toBeInTheDocument();
+ } finally {window.matchMedia=original;}
+});
+
+it("shows a resolved unit configuration on both panels when it is the only option", async () => {
+ const original = window.matchMedia;
+ window.matchMedia = vi.fn().mockImplementation(() => ({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
+ try {
+  const base = toProperty({_id:"67f0e8445817e6ef8d80f822",listing_details:{listing_name:"Premier"}});
+  const property = {...base,rooms:[{name:"Living",length:10,width:12,area:120}]};
+  render(<PropertyInfoTabs
+    property={property}
+    configurations={[{id:"one",name:"T1-2BHK Premier",property}]}
+  />);
+  await userEvent.click(screen.getByRole("button",{name:"Property unit configuration"}));
+  expect(screen.getByRole("menuitem",{name:"T1-2BHK Premier"})).toBeInTheDocument();
+
+  await userEvent.keyboard("{Escape}");
+  await userEvent.click(screen.getByRole("tab",{name:"Dimensions"}));
+  await userEvent.click(screen.getByRole("button",{name:"Dimensions unit configuration"}));
+  expect(screen.getByRole("menuitem",{name:"T1-2BHK Premier"})).toBeInTheDocument();
+ } finally {window.matchMedia=original;}
+});
+
+it("shows the centered underlined configuration selector in mobile panels", async () => {
+ const original = window.matchMedia;
+ window.matchMedia = vi.fn().mockImplementation(() => ({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
+ try {
+  const base = toProperty({_id:"67f0e8445817e6ef8d80f822",listing_details:{listing_name:"Premier"}});
+  const property = {...base,rooms:[{name:"Living",length:10,width:12,area:120}]};
+  const other = {...base,rooms:[{name:"Bedroom",length:11,width:12,area:132}]};
+  render(<PropertyInfoTabs
+    property={property}
+    configurations={[
+      {id:"one",name:"T1-2BHK Premier",property},
+      {id:"two",name:"T1-3BHK Premier",property:other},
+    ]}
+  />);
+
+  const selectors = screen.getAllByRole("button",{name:"T1-2BHK Premier"});
+  expect(selectors).toHaveLength(2);
+  selectors.forEach(selector => expect(selector).toHaveClass("border-b"));
+
+  await userEvent.click(selectors[0]);
+  await userEvent.click(screen.getByRole("menuitem",{name:"T1-3BHK Premier"}));
+  expect(screen.getAllByRole("button",{name:"T1-3BHK Premier"})).toHaveLength(2);
+  expect(screen.getByText("Bedroom")).toBeInTheDocument();
+  expect(screen.queryByText("Living")).not.toBeInTheDocument();
  } finally {window.matchMedia=original;}
 });
 

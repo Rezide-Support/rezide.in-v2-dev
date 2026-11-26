@@ -31,7 +31,7 @@ type MediaItem = { url?: string; label?: string };
 /** A picker's choices in address_details: [{ label: "Mumbai" }]. */
 type AddressPick = { label?: string }[];
 export type ListingConfiguration = {
-  _id?: string; config_type?: string; flooring?: string; carpet_area?: number | string;
+  _id?: string; config_name?: string; config_type?: string; flooring?: string; carpet_area?: number | string;
   no_of_balconies?: number | string; no_of_bathrooms?: number | string;
   no_of_parkings?: number | string; no_of_lifts?: number | string; unit_plan?: string | MediaItem;
   /** "Habitable" configurations list their rooms (rezide.in's Dimensions tab). */
@@ -347,6 +347,7 @@ export function toProperty(raw: BackendListing): Property {
 
   return {
     id: String(raw._id ?? ""),
+    listingCode: raw.listing_id || undefined,
     title: (d.listing_name ?? "").replace(/\s+/g, " ").trim(),
     category,
     intent: rent ? "rent" : "buy",

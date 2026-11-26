@@ -1,5 +1,9 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+import { BuildingDirectory } from "./building-directory";
+import { LocalityDirectory } from "./locality-directory";
+
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "@/components/brand/icon";
@@ -23,6 +27,7 @@ import { usePreferencesStore } from "@/stores/preferences";
 import type { Intent, PropertyCategory, PropertySearchCriteria, ResultsView } from "@/types/models";
 import {
   PER_PAGE_OPTIONS,
+  defaultPropertyCriteria,
   sortOptionsFor,
   areaRangeLabel,
   countActiveFilters,
@@ -31,8 +36,10 @@ import {
 } from "./criteria";
 import { FilterDrawer, filterGroups } from "./filter-drawer";
 import { LocalityGrid, ProjectGrid, groupByLocality, groupByProject } from "./grouped-views";
+import { LocalitiesView } from "./localities-view";
 import { matchesText, type MapArea } from "./match";
 import type { MapView } from "./leaflet-map";
+import type { MapResultsState } from "./map-explorer";
 import { LoadMore } from "./load-more";
 import { MapExplorer } from "./results-map";
 import { useUrlCriteria } from "./use-url-criteria";
@@ -130,8 +137,20 @@ function Summary({ from, to, total, noun }: { from: number; to: number; total: n
 }
 
 export function PropertySearch() {
+  const params = useSearchParams();
+  return params.get("view") === "proj" ? <BuildingDirectory /> : params.get("view") === "loc" ? <LocalityDirectory /> : <PropertyListingSearch />;
+}
+
+function PropertyListingSearch() {
   const { criteria, update } = useUrlCriteria(parsePropertyCriteria, serializePropertyCriteria);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpenState] = useState(false);
+  const [draftCriteria, setDraftCriteria] = useState<PropertySearchCriteria | null>(null);
+  const setDrawerOpen = (open: boolean) => {
+    if (open) setDraftCriteria(criteria);
+    setDrawerOpenState(open);
+  };
+  const drawerCriteria = drawerOpen && draftCriteria ? draftCriteria : criteria;
+  const updateDraft = (patch: Partial<PropertySearchCriteria>) => setDraftCriteria(current => ({ ...(current ?? criteria), ...patch, page: 1 }));
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [q, setQ] = useState(criteria.q);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -162,14 +181,17 @@ export function PropertySearch() {
   const drilledLoc = view === "loc" && criteria.localities.length === 1 ? criteria.localities[0] : null;
   const drilledProj = view === "proj" && criteria.projects.length === 1 ? criteria.projects[0] : null;
   const showGroups = (view === "loc" || view === "proj") && !drilledLoc && !drilledProj;
+  // The "Location" tab shows rezide.in's locality list (photos, rent and sale counts, region filters).
+  const isLocalities = view === "loc" && !drilledLoc;
 
   // The map view lists what's in the part of the map being searched, once the map has reported it.
-  const [mapArea, setMapArea] = useState<{ city: string; area: MapArea } | null>(null);
+  const [mapArea, setMapArea] = useState<{ city: string; area: MapArea; focus?: string; zoom: number } | null>(null);
+  const [mapResults, setMapResults] = useState<MapResultsState | null>(null);
   const mapList = useRef<HTMLDivElement>(null);
   const area = isMap && mapArea?.city === criteria.city ? mapArea.area : undefined;
-  const query = useQuery({ ...propertyQueries.search(criteria, area), enabled: !showGroups && !isMap });
+  const query = useQuery({ ...propertyQueries.search(criteria, area), enabled: !showGroups && !isMap && !isLocalities });
   // The map's list loads 10 at a time as it scrolls, rather than in numbered pages.
-  const mapQuery = useInfiniteQuery({ ...propertyQueries.mapList(criteria, area ?? [0, 0, 0, 0]), enabled: isMap && !!area });
+  const mapQuery = useInfiniteQuery({ ...propertyQueries.mapList(criteria, area ?? [0, 0, 0, 0], mapArea?.focus, mapArea?.zoom), enabled: isMap && !!area });
   const mapPages = mapQuery.data?.pages;
   const mapData = useMemo(() => {
     if (!mapPages?.length) return undefined;
@@ -182,7 +204,7 @@ export function PropertySearch() {
       { ...criteria, q: "", localities: view === "loc" ? [] : criteria.localities, projects: [] },
       view === "proj" ? "project" : "locality",
     ),
-    enabled: showGroups,
+    enabled: showGroups && !isLocalities,
   });
   // The busiest projects among the listings, by id.
   const groupedProjectIds = useMemo(() => {
@@ -193,10 +215,15 @@ export function PropertySearch() {
     ...projectQueries.byIds(groupedProjectIds, criteria.city),
     enabled: view === "proj" && !!grouped.data,
   });
+  // Warm locality names on page load without requesting every facet count.
+  const localityChoices = useQuery({
+    ...propertyQueries.groups(defaultPropertyCriteria({ city: criteria.city, category: criteria.category, intent: criteria.intent }), "locality"),
+    placeholderData: undefined,
+  });
   // Per-option counts for the filter drawer, computed by the API.
-  const facets = useQuery({ ...propertyQueries.facets(criteria), enabled: drawerOpen });
+  const facets = useQuery({ ...propertyQueries.facets(drawerCriteria), enabled: drawerOpen });
   const homeCount = useQuery({
-    ...propertyQueries.count(criteria),
+    ...propertyQueries.count(drawerCriteria),
     enabled: drawerOpen && criteria.category === "homes",
   });
 
@@ -323,13 +350,14 @@ export function PropertySearch() {
     update(patch);
   };
   const clearAll = () => update(CLEARED);
-  const onMapView = ({ bbox }: MapView) => {
+  const onMapView = ({ bbox, focus, zoom }: MapView) => {
     // Rounded to ~10 m, as the map's own requests are, so tiny jitters don't reload the list.
     const next = bbox.map((v) => Number(v.toFixed(4))) as MapArea;
-    if (area && next.join() === area.join()) return;
+    if (area && next.join() === area.join() && focus === mapArea?.focus && zoom === mapArea?.zoom) return;
     // A shared link keeps its page on load; moving the map starts the new list from the top.
     if (area && criteria.page > 1) update({ page: 1 });
-    setMapArea({ city: criteria.city, area: next });
+    setMapArea({ city: criteria.city, area: next, focus, zoom });
+    mapList.current?.scrollTo({ top: 0 });
   };
 
   const placeholder =
@@ -388,7 +416,7 @@ export function PropertySearch() {
     if (isMap) {
       return (
         <EmptyState
-          title="No listings in this part of the map."
+          title={mapArea?.focus ? "No listings in this selected cluster." : "No individual listings at this zoom."}
           action={
             (filterCount > 0 || criteria.q) && (
               <Button variant="secondary" onClick={clearAll}>
@@ -398,7 +426,7 @@ export function PropertySearch() {
           }
         >
           <p>
-            Move the map or zoom out to see {rent ? `${cat.noun.toLowerCase()} for ${cat.lease.toLowerCase()}` : `${cat.noun.toLowerCase()} for sale`} in {criteria.city}.
+            {mapArea?.focus ? "Exit the selected area or move the map to explore more listings." : "Select a count cluster or zoom in to reveal its listings."}
           </p>
         </EmptyState>
       );
@@ -451,10 +479,11 @@ export function PropertySearch() {
     if (data.total === 0) return emptyState();
     return (
       <>
-        <ul className={cn("grid grid-cols-1", variant === "grid" ? "gap-4 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 gap-4")}>
+        <ul className={cn("grid grid-cols-1", variant === "grid" ? "auto-rows-fr gap-4 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 gap-4")}>
           {data.items.map((p, i) => (
             <li key={p.id} className="flex">
               <div className="w-full">
+              {isMap && p.projectId && mapResults?.city === criteria.city && mapResults.items.some(item => item.type === "project" && item.projectId === p.projectId) && data.items.findIndex(item => item.projectId === p.projectId) === i && <p className="mb-2 text-xs font-semibold text-rez-graphite">{p.projectName || "Organisation"}</p>}
                 {variant === "compact" ? (
                   <PropertyRow property={p} highlighted={highlighted === p.id} onHover={setHighlighted} priority={i < 3} />
                 ) : variant === "photo" ? (
@@ -530,13 +559,13 @@ export function PropertySearch() {
       onClick={() => setDrawerOpen(true)}
       aria-label={filterCount ? `Filters, ${filterCount} applied` : "Filters"}
       className={cn(
-        "relative flex size-[62px] shrink-0 items-center justify-center rounded-full border bg-white shadow-rez-sm hover:border-black",
+        "relative flex size-10 shrink-0 items-center justify-center rounded-md border bg-white hover:border-black sm:size-[clamp(52px,3.55vw,62px)] short:size-12 sm:rounded-full sm:shadow-rez-sm",
         filterCount ? "border-black" : "border-rez-smoke",
       )}
     >
-      <Icon name="sliders" size={22} />
+      <Icon name="sliders" size={22} className="max-sm:size-[18px]" />
       {filterCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-rez-mocaccino px-1.5 text-xs font-bold text-black">
+        <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rez-mocaccino px-1 text-[10px] leading-none font-bold text-black sm:-top-0.5 sm:-right-0.5 sm:h-[18px] sm:min-w-[18px] sm:px-1 sm:text-[10px]">
           {filterCount}
         </span>
       )}
@@ -547,16 +576,18 @@ export function PropertySearch() {
     <FilterDrawer
       open={drawerOpen}
       onOpenChange={setDrawerOpen}
-      criteria={criteria}
-      update={update}
+      criteria={drawerCriteria}
+      update={updateDraft}
+      onApply={() => { update(drawerCriteria); setDrawerOpen(false); }}
       total={criteria.category === "homes"
         ? homeCount.data
-        : showGroups ? undefined : data?.total}
+        : facets.data?.total}
       pending={criteria.category === "homes"
         ? homeCount.isFetching || homeCount.data === undefined
-        : pending}
-      countError={criteria.category === "homes" && homeCount.isError}
-      onRetryCount={() => void homeCount.refetch()}
+        : facets.isFetching || facets.data === undefined}
+      countError={criteria.category === "homes" ? homeCount.isError : facets.isError}
+      onRetryCount={() => { if (criteria.category === "homes") void homeCount.refetch(); else void facets.refetch(); }}
+      prefetchedLocalities={localityChoices.data?.groups.map(group => group.key) ?? [...new Set(data?.items.map(property => property.locality).filter(Boolean) ?? [])]}
       facets={facets.data?.facets}
       unavailableCounts={facets.data?.unavailable}
     />
@@ -574,7 +605,7 @@ export function PropertySearch() {
         <div className="grid grid-cols-1 lg:h-[calc(100dvh-65px)] lg:grid-cols-[minmax(0,1fr)_clamp(300px,28vw,340px)] lg:grid-rows-[minmax(0,1fr)] fold-x:h-auto! fold-x:grid-cols-[var(--seg-0-width)_var(--seg-1-width)]! fold-x:grid-rows-none! fold-x:gap-x-(--hinge-width) fold-y:h-auto! fold-y:grid-cols-1! fold-y:grid-rows-none!">
           <div className="relative isolate h-[60svh] min-h-[360px] overflow-hidden bg-rez-cloud lg:h-full lg:min-h-0 fold-x:sticky fold-x:top-0 fold-x:h-dvh! fold-x:self-start fold-y:sticky fold-y:top-0 fold-y:z-10 fold-y:h-(--seg-0-height)! fold-y:min-h-0">
             {/* Keyed by city so choosing another city re-centres the map. */}
-            <MapExplorer key={criteria.city} city={criteria.city} intent={criteria.intent} category={criteria.category} onViewChange={onMapView} highlightedId={highlighted} highlightedProperty={data?.items.find(property => property.id === highlighted)} onHover={setHighlighted} renderToolbar={({ focused, clearFocus }) => (
+            <MapExplorer properties={data?.items} key={criteria.city} city={criteria.city} intent={criteria.intent} category={criteria.category} budgetMin={criteria.budgetMin} budgetMax={criteria.budgetMax} onViewChange={onMapView} onResultsChange={setMapResults} highlightedId={data?.items.find(property => property.id === highlighted)?.listingCode ?? highlighted} highlightedProperty={data?.items.find(property => property.id === highlighted)} onHover={id => setHighlighted(data?.items.find(property => property.id === id || property.listingCode === id)?.id ?? id)} renderToolbar={({ focused, clearFocus }) => (
             <div className="pointer-events-none absolute inset-x-4 top-4 z-[500] flex flex-col gap-2 sm:gap-2.5">
             <div className="flex items-center gap-2 sm:gap-2.5">
               <form
@@ -698,9 +729,10 @@ export function PropertySearch() {
               </SearchSelect>
             </div>
             <div className="px-0.5 pt-1 pb-4 text-sm [&_p]:text-sm">{summary}</div>
+            {mapArea?.focus && <p className="mb-3 text-xs text-rez-graphite">Showing listings in the selected cluster matching the selected property type, intent and budget.</p>}
             {listResults(MAP_CARD)}
             <p className="mt-4 text-xs text-rez-graphite">
-              This list shows {criteria.city} listings in the part of the map in view that match your search and filters. Map pins show every listing there, including sale, rental and nearby cities.
+              This list shows visible listing pins and organisation listings. Listings inside count clusters appear when you select that cluster.
             </p>
           </div>
         </div>
@@ -711,17 +743,17 @@ export function PropertySearch() {
 
   /* ---------- List and grouped views ---------- */
   return (
-    <div className="property-page property-directory min-w-0 flex-1 bg-white px-4 pt-5 pb-24 md:px-8">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-[18px]">
-        <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <h1 className="text-[max(12px,calc(26px*var(--property-type-scale,1)))] leading-tight font-semibold tracking-[-0.02em] break-words sm:text-[max(12px,calc(30px*var(--property-type-scale,1)))] xl:text-[max(12px,calc(32px*var(--property-type-scale,1)))]">
+    <div className="property-page property-directory min-w-0 flex-1 bg-white px-4 pt-5 pb-24 md:px-8 short:pt-3">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-[18px] sm:gap-[clamp(12px,0.8vw,18px)] short:gap-2.5">
+        <div className="flex min-w-0 flex-col gap-4 max-sm:gap-3 xl:flex-row xl:items-center xl:justify-between [--spacing:0.25rem] [--text-xs:0.75rem] [--text-sm:0.875rem]">
+          <h1 className="text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] break-words max-sm:text-xl md:text-[clamp(26px,1.83vw,32px)]">
             <span className="font-extrabold">{criteria.city}</span> Properties.
             <span className="sr-only">
               {" "}
               {cat.noun} {rent ? `for ${cat.lease.toLowerCase()}` : "for sale"}
             </span>
           </h1>
-          <div className="grid min-w-0 grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center xl:flex-nowrap">
+          <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center xl:flex-nowrap">
             <label className="sr-only" htmlFor={`${inputId}-type`}>
               Property type
             </label>
@@ -729,7 +761,7 @@ export function PropertySearch() {
               id={`${inputId}-type`}
               value={criteria.category}
               onValueChange={(value) => changeCategory(value as PropertyCategory)}
-              className="w-full min-w-0 justify-between gap-2 border-black px-4 text-sm font-semibold data-[size=default]:h-11 sm:w-auto sm:min-w-[140px]"
+              className="w-full min-w-0 justify-between gap-2.5 border-rez-smoke bg-white pr-[clamp(12px,0.92vw,16px)] pl-[clamp(16px,1.26vw,22px)] text-[clamp(14px,0.86vw,15px)] font-medium data-[size=default]:h-[clamp(40px,2.75vw,48px)] short:data-[size=default]:h-9 max-sm:data-[size=default]:h-10 max-sm:text-sm sm:w-auto"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -744,7 +776,7 @@ export function PropertySearch() {
               id={`${inputId}-intent`}
               value={criteria.intent}
               onValueChange={(value) => changeIntent(value as Intent)}
-              className="w-full min-w-0 justify-between gap-2 border-black px-4 text-sm font-semibold data-[size=default]:h-11 sm:w-auto sm:min-w-[140px]"
+              className="w-full min-w-0 justify-between gap-2.5 border-rez-smoke bg-white pr-[clamp(12px,0.92vw,16px)] pl-[clamp(16px,1.26vw,22px)] text-[clamp(14px,0.86vw,15px)] font-medium data-[size=default]:h-[clamp(40px,2.75vw,48px)] short:data-[size=default]:h-9 max-sm:data-[size=default]:h-10 max-sm:text-sm sm:w-auto"
             >
               <option value="buy">To Buy</option>
               <option value="rent">To {cat.lease}</option>
@@ -777,15 +809,17 @@ export function PropertySearch() {
           </div>
         </div>
 
-        <div className="flex min-w-0 items-center gap-2.5 [&>button]:size-11 [&>button]:rounded-md [&>button]:text-rez-graphite [&>button]:shadow-sm">
+        {isLocalities ? (
+          <LocalitiesView city={criteria.city} />
+        ) : (
+        <>
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4 [--spacing:0.25rem] [--text-xs:0.75rem] [--text-sm:0.875rem]">
           <form
             role="search"
             onSubmit={submit}
-            className="flex h-11 min-w-0 flex-1 items-center rounded-md border border-rez-smoke bg-white shadow-sm focus-within:border-rez-mocaccino"
+            className="flex min-w-0 flex-1 items-center rounded-md border border-rez-smoke bg-white focus-within:border-rez-mocaccino sm:rounded-full sm:py-1.5 sm:pr-1.5 sm:pl-3.5 sm:shadow-rez-sm"
           >
-            <button type="submit" aria-label="Search" className="flex h-full w-12 shrink-0 items-center justify-center border-r border-rez-smoke text-rez-graphite hover:bg-rez-cloud focus-visible:outline-2 focus-visible:outline-rez-mocaccino">
-              <Icon name="search" size={18} />
-            </button>
+            <Icon name="search" size={18} className="ml-3 shrink-0 text-rez-graphite sm:ml-1" />
             <label htmlFor={inputId} className="sr-only">
               {placeholder}
             </label>
@@ -808,7 +842,7 @@ export function PropertySearch() {
                 aria-expanded={searchOpen && q.trim() !== ""}
                 aria-controls={searchOpen && q.trim() !== "" ? suggestionListId : undefined}
                 aria-activedescendant={searchOpen && searchActive >= 0 ? `${suggestionListId}-${searchActive}` : undefined}
-                className="h-10 w-full min-w-0 bg-transparent px-3 text-[13px] outline-none placeholder:text-[#767a88] sm:text-sm"
+                className="h-10 w-full min-w-0 bg-transparent px-2.5 text-sm outline-none placeholder:text-[#767a88] sm:h-[clamp(40px,2.75vw,48px)] short:h-9 sm:px-3 sm:text-[clamp(14px,0.86vw,15px)]"
               />
               {suggestionPopup}
             </div>
@@ -825,23 +859,27 @@ export function PropertySearch() {
                 <Icon name="x" size={14} />
               </button>
             )}
+            <Button type="submit" size="lg" className="h-[clamp(40px,2.75vw,48px)] short:h-9 px-[clamp(18px,1.37vw,24px)] text-[clamp(15px,0.92vw,16px)] max-sm:hidden">
+              <Icon name="search" size={20} />
+              Search
+            </Button>
           </form>
           {filtersButton}
         </div>
 
         {(chips.length > 0 || criteria.q) && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 [--spacing:0.25rem] [--text-sm:0.875rem]">
             {criteria.q && (
-              <RemovableChip label={`“${criteria.q}”`} onRemove={() => update({ q: "" })}>
+              <RemovableChip size="sm" label={`“${criteria.q}”`} onRemove={() => update({ q: "" })}>
                 “{criteria.q}”
               </RemovableChip>
             )}
             {chips.map((c) => (
-              <RemovableChip key={c.key} label={c.label} onRemove={c.remove}>
+              <RemovableChip size="sm" key={c.key} label={c.label} onRemove={c.remove}>
                 {c.label}
               </RemovableChip>
             ))}
-            <Button variant="link" className="text-[13px]" onClick={clearAll}>
+            <Button variant="link" className="text-[11px]" onClick={clearAll}>
               Clear all
             </Button>
           </div>
@@ -898,6 +936,8 @@ export function PropertySearch() {
         <div aria-busy={pending} className={cn("relative transition-opacity", pending && (data || grouped.data) && "opacity-60")}>
           {showGroups ? groupResults() : listResults("grid")}
         </div>
+        </>
+        )}
       </div>
       {drawer}
     </div>

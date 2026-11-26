@@ -1,3 +1,4 @@
+import { CoverImage } from "@/components/common/cover-image";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -159,5 +160,12 @@ describe("property share preview", () => {
     expect(propertySharePhoto("room 1")).toContain("/v1/admin/file/upload/room%201");
     expect(propertySharePhoto("https://cdn.rezide.in/room.jpeg")).toBe("https://cdn.rezide.in/room.jpeg");
     expect(propertySharePhoto()).toBe("/images/empty.gif");
+  });
+});
+
+describe("card cover image", () => {
+  it.each([undefined, null, "", "   "])("uses a real fallback URL for missing photo %s", (src) => {
+    render(<CoverImage src={src} alt="Property cover" sizes="64px" />);
+    expect(screen.getByRole("img", { name: "Property cover" })).toHaveAttribute("src", "/images/empty.gif");
   });
 });

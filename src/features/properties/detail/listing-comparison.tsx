@@ -385,10 +385,11 @@ export function ListingComparison({ property }: { property: Property }) {
           <caption className="sr-only">Compare up to three {property.intent === "rent" ? "rental" : "sale"} properties.</caption>
           <thead>
             <tr>
-              <th className={`${headerCell} w-[25%] align-middle text-center`}>
+              <th className={`${headerCell.replace("align-top", "align-middle")} w-[25%] text-center`}>
+                <div className="flex w-full items-center justify-center">
                 <Button
                   size="sm"
-                  className="h-10 rounded-md bg-[#1a1a1a] px-6 text-sm font-semibold text-white print:hidden"
+                  className="mx-auto h-10 rounded-md bg-[#1a1a1a] px-6 text-sm font-semibold text-white print:hidden"
                   onClick={() => {
                     document.documentElement.classList.add("print-listing-comparison");
                     const cleanup = () => document.documentElement.classList.remove("print-listing-comparison");
@@ -398,6 +399,7 @@ export function ListingComparison({ property }: { property: Property }) {
                 >
                   Compare in PDF
                 </Button>
+                </div>
               </th>
 
               {columns.map((p, index) => (

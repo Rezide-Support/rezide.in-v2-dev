@@ -15,6 +15,7 @@ export function PropertyCardImageCarousel({
   href,
   priority,
   maxImages = MAX_CARD_IMAGES,
+  fallbackImage = EMPTY_IMAGE,
 }: {
   images: string[];
   label: string;
@@ -22,10 +23,11 @@ export function PropertyCardImageCarousel({
   priority?: boolean;
   /** Project previews can show the full gallery; listing cards default to five. */
   maxImages?: number;
+  fallbackImage?: string;
   reserveBadgeSpace?: boolean;
 }) {
-  const slides = images.slice(0, maxImages).map((src) => src.trim() || EMPTY_IMAGE);
-  const visibleSlides = slides.length ? slides : [EMPTY_IMAGE];
+  const slides = images.slice(0, maxImages).map((src) => src.trim() || fallbackImage);
+  const visibleSlides = slides.length ? slides : [fallbackImage];
   const [viewportRef, emblaApi] = useEmblaCarousel({ loop: false });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -54,12 +56,12 @@ export function PropertyCardImageCarousel({
       role="region"
       aria-roledescription="carousel"
       aria-label={`${label} photos`}
-      className="relative h-full w-full overflow-hidden bg-rez-cloud"
+      className="group/card-photos relative h-full w-full overflow-hidden bg-rez-cloud"
     >
       <div ref={viewportRef} className="h-full overflow-hidden">
         <div className="flex h-full touch-pan-y">
           {visibleSlides.map((src, index) => {
-            const imageSrc = failedImages.has(src) ? EMPTY_IMAGE : src;
+            const imageSrc = failedImages.has(src) ? fallbackImage : src;
             return (
               <div
                 key={`${src}:${index}`}
@@ -78,13 +80,13 @@ export function PropertyCardImageCarousel({
                   <Image
                     src={imageSrc}
                     onError={() => {
-                      if (imageSrc !== EMPTY_IMAGE) {
+                      if (imageSrc !== fallbackImage) {
                         setFailedImages((current) => new Set(current).add(src));
                       }
                     }}
                     alt={`${label}, photo ${index + 1} of ${visibleSlides.length}`}
                     fill
-                    unoptimized={imageSrc === EMPTY_IMAGE}
+                    unoptimized={imageSrc === fallbackImage}
                     sizes="(min-width: 1280px) 420px, (min-width: 768px) 50vw, 100vw"
                     quality={70}
                     loading={priority && index === 0 ? "eager" : "lazy"}
@@ -105,7 +107,7 @@ export function PropertyCardImageCarousel({
               type="button"
               onClick={() => emblaApi?.scrollPrev()}
               aria-label={`Previous photo of ${label}`}
-              className="pointer-events-none absolute top-1/2 left-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+              className="pointer-events-none absolute top-1/2 left-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm opacity-0 transition-opacity group-hover/card-photos:pointer-events-auto group-hover/card-photos:opacity-100 group-focus-within/card-photos:pointer-events-auto group-focus-within/card-photos:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
             >
               <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden />
             </button>
@@ -115,7 +117,7 @@ export function PropertyCardImageCarousel({
               type="button"
               onClick={() => emblaApi?.scrollNext()}
               aria-label={`Next photo of ${label}`}
-              className="pointer-events-none absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
+              className="pointer-events-none absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-black shadow-sm opacity-0 transition-opacity group-hover/card-photos:pointer-events-auto group-hover/card-photos:opacity-100 group-focus-within/card-photos:pointer-events-auto group-focus-within/card-photos:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
             >
               <ArrowRight className="size-4" strokeWidth={1.5} aria-hidden />
             </button>

@@ -11,7 +11,6 @@ export type NavItem = {
   separatorBefore?: boolean;
 };
 
-
 export const NAV_ITEMS: NavItem[] = [
   {
     id: "properties",
@@ -37,11 +36,21 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
  */
 export const FOOTER_COLUMNS: { label: string; href?: string }[][] = [
   [
-    { label: "Explore", href: "/properties" },
-    { label: "Features" },
-    { label: "Newsletter" },
+    // { label: "Explore", href: "/" },
+    // { label: "Features" },
+    // { label: "Pricing", },
+    // { label: "Newsletter" },
   ],
-  [{ label: "Company" }, { label: "Careers" }, { label: "Blog" }, { label: "Learning center" }],
+  // As rezide.in's footer: "About Us" opens the About page.
+  [{ label: "About Us", href: "/about" },
+  //  { label: "Careers" },
+  //  { label: "Blog" },
+   { label: "Learning center", href:"https://brokers.rezide.in/learning-center" }],
   // Phones lay this group out in two columns, row by row: Support | Privacy Policy, Terms of use | Cookies Policy.
-  [{ label: "Support" }, { label: "Privacy Policy" }, { label: "Terms of use" }, { label: "Cookies Policy" }],
+  [
+    // { label: "Support" },
+     { label: "Privacy Policy", href: "/privacy-policy" }, 
+    { label: "Terms of use", href: "/terms-conditions"}, 
+    // { label: "Cookies Policy" }
+  ],
 ];

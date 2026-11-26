@@ -25,12 +25,14 @@ export type MapPoint = {
   count?: number;
   /** The service's id for a cluster pin. */
   clusterId?: string;
+  bounds?: [number, number, number, number];
+  expansionZoom?: number | null;
   /** A popup on click, as HTML. Whoever builds it must escape what it shows. */
   popupHtml?: string;
 };
 
 /** The part of the map in view: [west, south, east, north], and the whole zoom level. */
-export type MapView = { bbox: [number, number, number, number]; zoom: number };
+export type MapView = { bbox: [number, number, number, number]; zoom: number; focus?: string };
 
 
 /** Wait for the map to settle (a zoom fires zoomend and moveend; wheel zooms fire several) before reporting the view. */
@@ -124,7 +126,7 @@ export default function LeafletMap({
 
   useEffect(() => {
     if (!el.current || map.current) return;
-    const m = L.map(el.current, { scrollWheelZoom: true, zoomControl: false, maxZoom: MAX_ZOOM });
+    const m = L.map(el.current, { scrollWheelZoom: true, zoomControl: false, attributionControl: !el.current.classList.contains("rez-map"), maxZoom: MAX_ZOOM });
     L.control.zoom({ position: "bottomright" }).addTo(m);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,

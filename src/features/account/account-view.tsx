@@ -291,7 +291,7 @@ function Profile({ user, owner }: { user: Session["user"]; owner: boolean }) {
       </div>
 
       {editing ? (
-        <form noValidate onSubmit={form.handleSubmit((v) => save.mutate(v))} className="flex flex-col gap-5">
+        <form id="profile-form" noValidate onSubmit={form.handleSubmit((v) => save.mutate(v))} className="flex flex-col gap-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="First name" required error={e.firstName?.message}>
               <Input autoComplete="given-name" autoFocus {...form.register("firstName")} />
@@ -299,14 +299,6 @@ function Profile({ user, owner }: { user: Session["user"]; owner: boolean }) {
             <Field label="Last name" required error={e.lastName?.message}>
               <Input autoComplete="family-name" {...form.register("lastName")} />
             </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
-            <Button type="button" variant="secondary" onClick={cancel} disabled={save.isPending}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={save.isPending}>
-              {save.isPending ? "Saving…" : "Save"}
-            </Button>
           </div>
         </form>
       ) : null}
@@ -323,6 +315,17 @@ function Profile({ user, owner }: { user: Session["user"]; owner: boolean }) {
           </div>
         ))}
       </dl>
+
+      {editing && (
+        <div className="flex justify-center gap-3">
+          <Button type="button" variant="secondary" onClick={cancel} disabled={save.isPending} className="min-w-[160px]">
+            Cancel
+          </Button>
+          <Button type="submit" form="profile-form" disabled={save.isPending} className="min-w-[160px]">
+            {save.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -336,7 +339,7 @@ export function AccountView() {
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("buy");
 
   if (status === "loading") {
-    return <div className="mx-auto h-[60vh] w-full max-w-[1156px] animate-pulse px-4 py-2 md:px-0 xl:w-[calc(100%_-_64px)] xl:max-w-[1600px]" aria-busy="true" />;
+    return <div className="mx-auto h-[60vh] w-full max-w-[1156px] animate-pulse px-4 py-2 md:w-[calc(100%_-_64px)] md:max-w-[1280px] md:px-0" aria-busy="true" />;
   }
   if (!session) return <div className="min-h-[60vh]" aria-busy="true" />;
   if (session.user.role === "realtor") {
@@ -384,7 +387,7 @@ export function AccountView() {
   })();
 
   return (
-    <div className="mx-auto grid w-full max-w-[1156px] flex-1 grid-cols-1 items-start gap-4 px-4 py-2 md:grid-cols-[calc(280px*var(--property-space-scale,1))_minmax(0,1fr)] md:gap-6 md:px-0 xl:w-[calc(100%_-_64px)] xl:max-w-[1600px] xl:grid-cols-[calc(364px*var(--property-space-scale,1))_minmax(0,1fr)] xl:gap-9">
+    <div className="mx-auto grid w-full max-w-[1156px] flex-1 grid-cols-1 items-start gap-4 px-4 py-2 md:w-[calc(100%_-_64px)] md:max-w-[1280px] md:grid-cols-[calc(280px*var(--property-space-scale,1))_minmax(0,1fr)] md:gap-6 md:px-0 xl:grid-cols-[calc(364px*var(--property-space-scale,1))_minmax(0,1fr)] xl:gap-9">
       <div className="flex min-w-0 flex-col md:sticky md:top-5">
         <AccountSidebar key={pathname} session={session} active={tab} compact />
       </div>

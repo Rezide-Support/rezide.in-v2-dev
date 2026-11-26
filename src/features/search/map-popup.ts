@@ -1,20 +1,19 @@
 import { isBackendId } from "@/lib/ids";
 import { escapeHtml } from "@/lib/html";
 export { escapeHtml } from "@/lib/html";
-import { PHOTO_IDS, unsplash } from "@/content/media";
 import { propertyHref } from "@/features/properties/property-card";
 import { formatPrice } from "@/lib/format";
 import { itemPrice, openableListingId, type ListingItem, type MapItem, type ProjectItem } from "@/services/map-search";
 import { propertySearchHref } from "./criteria";
 import type { MapPoint } from "./leaflet-map";
-import type { Intent, PropertyCategory } from "@/types/models";
+import type { Intent, Property, PropertyCategory } from "@/types/models";
 import { toMapPoint } from "./use-map-markers";
 
 /* Pin popups, as in GeoEstate's map. Built as HTML for Leaflet, so everything from the service is escaped. */
 
 
 /** What links in a popup need. */
-export type PopupContext = { city: string; intent: Intent; category: PropertyCategory };
+export type PopupContext = { city: string; intent: Intent; category: PropertyCategory; properties?: Property[] };
 
 
 /** A project's name. Its id is the name in some data and a raw id in the rest. */
@@ -30,11 +29,9 @@ function listingSpecs(i: ListingItem) {
   return `${beds ?? "—"} beds · ${i.area ?? "—"} ${unit}`.trim();
 }
 
-const photo = (n: number) => unsplash(PHOTO_IDS.homes[n % PHOTO_IDS.homes.length], 480);
-
-function article(n: number, kind: string, title: string, address: string, value: string, extra: string, action: string) {
+function article(image: string | undefined, kind: string, title: string, address: string, value: string, extra: string, action: string) {
   return `<article class="rez-map-popup-item">
-    <img src="${escapeHtml(photo(n))}" alt="Illustrative property photo" />
+    <img src="${escapeHtml(image?.trim() || "/images/empty.gif")}" alt="${escapeHtml(title)}" />
     <small>${kind} · MAP RESULT</small>
     <h3>${escapeHtml(title)}</h3>
     ${address ? `<p>${escapeHtml(address)}</p>` : ""}
@@ -44,13 +41,14 @@ function article(n: number, kind: string, title: string, address: string, value:
   </article>`;
 }
 
-function listingArticle(i: ListingItem, n: number) {
+function listingArticle(i: ListingItem, context: PopupContext) {
+  const property = context.properties?.find(property => property.id === i.listingId || property.listingCode === i.listingId);
   const price = itemPrice(i.price);
   const id = openableListingId(i.listingId);
   const action = id
     ? `<a href="${escapeHtml(propertyHref({ id }))}">View property</a>`
     : `<span class="rez-map-popup-note">Listing page isn't available for this pin yet.</span>`;
-  return article(n, "LISTING", i.title, addressOf(i), price ? formatPrice(price) : "Price on request", `<span class="rez-map-popup-specs">${escapeHtml(listingSpecs(i))}</span>`, action);
+  return article(property?.images[0], "LISTING", i.title, addressOf(i), price ? formatPrice(price) : "Price on request", `<span class="rez-map-popup-specs">${escapeHtml(listingSpecs(i))}</span>`, action);
 }
 
 /** The listings a project pin carries, as listing items. */
@@ -58,16 +56,16 @@ export const projectListings = (p: ProjectItem): ListingItem[] => (p.listings ??
 
 /** Everything at one spot in one popup; a project with its listings shows those. */
 export function popupHtml(items: MapItem[], context: PopupContext): string {
-  const rows = items.flatMap((item, n) => {
-    if (item.type === "listing") return [listingArticle(item, n)];
+  const rows = items.flatMap((item) => {
+    if (item.type === "listing") return [listingArticle(item, context)];
     if (item.type === "project") {
       const listings = projectListings(item);
-      if (listings.length) return listings.map((l, m) => listingArticle(l, n + m));
+      if (listings.length) return listings.map(l => listingArticle(l, context));
       const name = projectNameOf(item);
       const href = propertySearchHref({ ...context, q: name });
-      return [article(n, "PROJECT", name || "Project", "", `${item.count} listings`, "", `<a href="${escapeHtml(href)}">Explore listings</a>`)];
+      return [article(undefined, "PROJECT", name || "Project", "", `${item.count} listings`, "", `<a href="${escapeHtml(href)}">Explore listings</a>`)];
     }
-    return [article(n, "CLUSTER", `${item.count} listings nearby`, "Explore this area", `${item.count} listings`, "", "")];
+    return [article(undefined, "CLUSTER", `${item.count} listings nearby`, "Explore this area", `${item.count} listings`, "", "")];
   });
   return `<div class="rez-map-popup-list">${rows.join("")}</div>`;
 }

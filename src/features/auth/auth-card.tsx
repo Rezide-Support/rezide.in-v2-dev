@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { CountryIso2 } from "react-international-phone";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Icon } from "@/components/brand/icon";
@@ -11,6 +12,7 @@ import { Field, FormError } from "@/components/common/form-field";
 import { NativeSelect } from "@/components/common/native-select";
 import { OtpInput } from "@/components/common/otp-input";
 import { PhoneInput } from "@/components/common/phone-input";
+import { dialCodeOf } from "@/components/common/country-code-select";
 import { Segmented } from "@/components/common/segmented";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,20 +30,24 @@ export type Audience = "customer" | "realtor";
 export const REALTOR_CITIES = ["Mumbai", "Pune", "Bengaluru", "Delhi NCR", "Hyderabad", "Chennai", "Ahmedabad", "Kolkata"];
 const ASSOCIATIONS = ["NAR-India Independent", "NAR-India, AREA", "NAR-India, SMART", "NAR-India, TREK", "Other association"];
 
-const signinSchema = z.object({ phone: indianMobile });
+/** Another country's mobile number (the country picker): digits only, 6 to 14 of them. */
+const otherMobile = z.string().trim().min(1, "Enter your mobile number.").regex(/^\d{6,14}$/, "Enter a valid mobile number.");
+type PhoneRule = typeof indianMobile | typeof otherMobile;
+
+const signinSchema = (phone: PhoneRule) => z.object({ phone });
 // The backend hashes a password for every new customer (rezide.in's sign-up asks for one); without it
 // `add/customer` fails with 500 "Illegal arguments: undefined, string". Sign-in itself stays OTP-only.
-const customerSignupSchema = z
+const customerSignupSchema = (phone: PhoneRule) => z
   .object({
     firstName: personName("first name"),
     lastName: personName("last name"),
     email: optionalEmail,
-    phone: indianMobile,
+    phone,
     password: z.string().min(6, "Password must be at least 6 characters.").max(128, "Password is too long."),
     confirmPassword: z.string().min(1, "Confirm your password."),
   })
   .refine((v) => v.password === v.confirmPassword, { message: "Passwords don’t match.", path: ["confirmPassword"] });
-const realtorSignupSchema = z.object({
+const realtorSignupSchema = (phone: PhoneRule) => z.object({
   firstName: personName("first name"),
   lastName: personName("last name"),
   firm: z.string().trim().min(2, "Enter your firm name."),
@@ -49,7 +55,7 @@ const realtorSignupSchema = z.object({
   city: z.string().min(1, "Choose your city."),
   association: z.string(),
   email: requiredEmail,
-  phone: indianMobile,
+  phone,
 });
 
 type DetailsValues = {
@@ -88,9 +94,16 @@ function DetailsStep({
   pending: boolean;
   error: unknown;
 }) {
-  const schema = mode === "signin" ? signinSchema : audience === "realtor" ? realtorSignupSchema : customerSignupSchema;
-  const { register, handleSubmit, control, formState, setError } = useForm<DetailsValues>({
-    resolver: zodResolver(schema as z.ZodType<DetailsValues, DetailsValues>),
+  // As the old site: India by default; the flag opens every country. The rule follows the country.
+  const [country, setCountry] = useState<CountryIso2>("in");
+  const countryRef = useRef(country);
+  countryRef.current = country;
+  const schemaFor = (iso2: CountryIso2) => {
+    const phone = iso2 === "in" ? indianMobile : otherMobile;
+    return mode === "signin" ? signinSchema(phone) : audience === "realtor" ? realtorSignupSchema(phone) : customerSignupSchema(phone);
+  };
+  const { register, handleSubmit, control, formState, setError, clearErrors } = useForm<DetailsValues>({
+    resolver: (values, context, options) => zodResolver(schemaFor(countryRef.current) as z.ZodType<DetailsValues, DetailsValues>)(values, context, options),
     defaultValues: { phone: "", firstName: "", lastName: "", email: "", firm: "", reraId: "", city: "", association: "", password: "", confirmPassword: "" },
     mode: "onTouched",
   });
@@ -102,7 +115,12 @@ function DetailsStep({
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3.5">
+    <form
+      noValidate
+      // Another country's number goes with its own code ("+1 4155550123"); Indian numbers as before.
+      onSubmit={handleSubmit((v) => onSubmit(country === "in" ? v : { ...v, phone: `+${dialCodeOf(country)} ${v.phone}` }))}
+      className="flex flex-col gap-3.5"
+    >
       {mode === "signup" && (
         <div className="grid grid-cols-2 gap-2.5">
           <Field label="First name" required error={e.firstName?.message}>
@@ -152,7 +170,20 @@ function DetailsStep({
         <Controller
           control={control}
           name="phone"
-          render={({ field }) => <PhoneInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} name={field.name} />}
+          render={({ field }) => (
+            <PhoneInput
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              name={field.name}
+              country={country}
+              onCountryChange={(iso2) => {
+                setCountry(iso2);
+                clearErrors("phone");
+              }}
+            />
+          )}
         />
       </Field>
       {mode === "signup" && audience === "customer" && (

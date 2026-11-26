@@ -20,7 +20,7 @@ import type { ProjectSearchCriteria, ProjectSortKey, ProjectStatus } from "@/typ
 import { LocationDialog } from "./location-dialog";
 import { ProjectCard } from "./project-card";
 import { ProjectSearchInput } from "./project-search-input";
-import { ProjectFilterDrawer, RESET_DRAWER, countDrawerFilters, drawerChips } from "./project-filter-drawer";
+import { ProjectFilterDrawer, RESET_DRAWER, countDrawerFilters, drawerChips, drawerValues } from "./project-filter-drawer";
 
 type FilterKey = "status" | "budget" | "localities" | "views" | "years";
 
@@ -71,6 +71,8 @@ export function ProjectSearch() {
   // The filter the dialog shows. It outlives openKey, so the dialog keeps its options and count while it closes.
   const [dialogKey, setDialogKey] = useState<FilterKey>("status");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // The Filters drawer's unapplied choices; they reach the search only on "Show N projects".
+  const [drawerDraft, setDrawerDraft] = useState<Partial<ProjectSearchCriteria>>({});
   const [draft, setDraft] = useState<string[]>([]);
   const [q, setQ] = useState(criteria.q);
   const [lastQ, setLastQ] = useState(criteria.q);
@@ -85,6 +87,18 @@ export function ProjectSearch() {
     ...projectQueries.search({ ...criteria, ...withValues(dialogKey, draft), page: 1 }),
     enabled: openKey !== null,
   });
+
+  // Live count for the Filters drawer's draft.
+  const drawerCriteria: ProjectSearchCriteria = { ...criteria, ...drawerDraft, page: 1 };
+  const drawerPreview = useQuery({ ...projectQueries.search(drawerCriteria), enabled: drawerOpen });
+  const openDrawer = () => {
+    setDrawerDraft(drawerValues(criteria));
+    setDrawerOpen(true);
+  };
+  const applyDrawer = () => {
+    update(drawerDraft);
+    setDrawerOpen(false);
+  };
 
   const applyLabel = () => (preview.isFetching || !preview.data ? "Apply" : `Apply (${pluralize(preview.data.total, "project")})`);
   // The Apply button spins while the count for the ticked options loads.
@@ -132,8 +146,10 @@ export function ProjectSearch() {
                     setOpenKey(k);
                   }}
                   className={cn(
-                    "flex h-[clamp(40px,2.75vw,48px)] short:h-9 shrink-0 items-center gap-2.5 rounded-full border pr-[clamp(12px,0.92vw,16px)] pl-[clamp(16px,1.26vw,22px)] text-[clamp(14px,0.86vw,15px)] whitespace-nowrap hover:border-black max-sm:h-10 max-sm:gap-1.5 max-sm:pr-3 max-sm:pl-4 max-sm:text-sm",
-                    vals.length ? "border-black bg-rez-cloud font-bold" : "border-rez-smoke bg-white font-medium",
+                    "flex shrink-0 items-center rounded-full border whitespace-nowrap hover:border-black",
+                    vals.length
+                      ? "h-8 gap-1.5 border-black bg-rez-cloud pr-2.5 pl-3 text-[11px] font-semibold"
+                      : "h-[clamp(40px,2.75vw,48px)] short:h-9 gap-2.5 border-rez-smoke bg-white pr-[clamp(12px,0.92vw,16px)] pl-[clamp(16px,1.26vw,22px)] text-[clamp(14px,0.86vw,15px)] font-medium max-sm:h-10 max-sm:gap-1.5 max-sm:pr-3 max-sm:pl-4 max-sm:text-sm",
                   )}
                 >
                   {vals.length === 0 ? LABELS[k] : vals.length === 1 ? labelOf(k, vals[0]) : `${LABELS[k]} · ${vals.length}`}
@@ -173,7 +189,7 @@ export function ProjectSearch() {
         <button
           type="button"
           aria-haspopup="dialog"
-          onClick={() => setDrawerOpen(true)}
+          onClick={openDrawer}
           aria-label={drawerCount ? `Filters, ${drawerCount} applied` : "Filters"}
           className={cn(
             "relative flex size-10 shrink-0 items-center justify-center rounded-md border bg-white hover:border-black sm:size-[clamp(52px,3.55vw,62px)] short:size-12 sm:rounded-full sm:shadow-rez-sm",
@@ -182,7 +198,7 @@ export function ProjectSearch() {
         >
           <Icon name="sliders" size={22} className="max-sm:size-[18px]" />
           {drawerCount > 0 && (
-            <span className="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rez-mocaccino px-1 text-[11px] font-bold text-black sm:-top-0.5 sm:-right-0.5 sm:h-[22px] sm:min-w-[22px] sm:px-1.5 sm:text-xs">
+            <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-rez-mocaccino px-1 text-[10px] leading-none font-bold text-black sm:-top-0.5 sm:-right-0.5 sm:h-[18px] sm:min-w-[18px] sm:px-1 sm:text-[10px]">
               {drawerCount}
             </span>
           )}
@@ -213,12 +229,13 @@ export function ProjectSearch() {
         {(chips.length > 0 || moreChips.length > 0 || criteria.q) && (
           <div className="flex items-center gap-2 max-sm:-mt-2 max-sm:overflow-x-auto max-sm:pb-1 max-sm:scrollbar-none sm:flex-wrap [&>*]:shrink-0">
             {criteria.q && (
-              <RemovableChip label={`“${criteria.q}”`} onRemove={() => update({ q: "" })}>
+              <RemovableChip size="sm" label={`“${criteria.q}”`} onRemove={() => update({ q: "" })}>
                 “{criteria.q}”
               </RemovableChip>
             )}
             {chips.map(({ k, v }) => (
               <RemovableChip
+                size="sm"
                 key={`${k}:${v}`}
                 label={labelOf(k, v)}
                 onRemove={() => update(withValues(k, valuesOf(criteria, k).filter((x) => x !== v)))}
@@ -227,11 +244,11 @@ export function ProjectSearch() {
               </RemovableChip>
             ))}
             {moreChips.map((chip) => (
-              <RemovableChip key={chip.id} label={chip.label} onRemove={() => update(chip.remove)}>
+              <RemovableChip size="sm" key={chip.id} label={chip.label} onRemove={() => update(chip.remove)}>
                 {chip.label}
               </RemovableChip>
             ))}
-            <Button variant="link" className="text-[13px]" onClick={clearAll}>
+            <Button variant="link" className="text-[11px]" onClick={clearAll}>
               Clear all
             </Button>
           </div>
@@ -333,10 +350,11 @@ export function ProjectSearch() {
       <ProjectFilterDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        criteria={criteria}
-        update={update}
-        total={data?.total}
-        pending={query.isFetching}
+        criteria={drawerCriteria}
+        update={(patch) => setDrawerDraft((d) => ({ ...d, ...patch }))}
+        total={drawerPreview.data?.total}
+        pending={drawerPreview.isFetching}
+        onApply={applyDrawer}
       />
       {/* Location works as on rezide.in: region tabs, localities loaded from the backend as the list scrolls. */}
       <LocationDialog

@@ -80,7 +80,7 @@ function FilterDropdown({
     >
       <SelectTrigger
         aria-label={ariaLabel}
-        className="h-[50px] w-full min-w-0 rounded-lg border border-[#d9d9d9] bg-[#f5f5f5] px-[18px] text-left text-[15px] font-medium text-[#1e1e1e] focus-visible:border-[#d9774f] focus-visible:ring-0 data-[size=default]:h-[50px]"
+        className="h-10 w-full min-w-0 rounded-full border border-rez-smoke bg-white px-[18px] text-left text-sm font-semibold text-black hover:border-black focus-visible:border-rez-mocaccino focus-visible:ring-0 data-[size=default]:h-10"
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
@@ -247,9 +247,9 @@ function AreaFieldset({
     const minChoices = SALE_AREA_MIN.filter((value) => criteria.areaMax === undefined || value < criteria.areaMax);
     const maxChoices = SALE_AREA_MAX.filter((value) => criteria.areaMin === undefined || value > criteria.areaMin);
     return (
-      <fieldset className="border-b border-rez-smoke py-[22px]">
-        <legend className="eyebrow float-left mb-3.5 w-full text-black">{label}</legend>
-        <div className="clear-both grid grid-cols-2 gap-2.5">
+      <fieldset className="border-b border-rez-smoke py-4">
+        <legend className="eyebrow float-left mb-2.5 w-full text-black">{label}</legend>
+        <div className="clear-both grid grid-cols-2 gap-2">
           <label>
             <span className="sr-only">Minimum area</span>
             <FilterDropdown
@@ -289,13 +289,14 @@ function AreaFieldset({
     );
   }
   return (
-    <fieldset className="border-b border-rez-smoke py-[22px]">
-      <legend className="eyebrow float-left mb-3.5 w-full text-black">{label}</legend>
-      <div className="clear-both flex flex-wrap gap-2">
+    <fieldset className="border-b border-rez-smoke py-4">
+      <legend className="eyebrow float-left mb-2.5 w-full text-black">{label}</legend>
+      <div className="clear-both flex flex-wrap gap-1.5">
         {areaBandsFor(criteria.category).map((b) => {
           const on = criteria.areaMin === b.min && criteria.areaMax === b.max;
           return (
             <ToggleChip
+            size="xs"
               key={b.label}
               pressed={on}
               onClick={() => update(on ? { areaMin: undefined, areaMax: undefined } : { areaMin: b.min, areaMax: b.max })}
@@ -318,8 +319,10 @@ export function FilterDrawer({
   pending,
   countError = false,
   onRetryCount,
+  onApply,
   facets,
   unavailableCounts,
+  prefetchedLocalities = [],
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -329,8 +332,11 @@ export function FilterDrawer({
   pending: boolean;
   countError?: boolean;
   onRetryCount?: () => void;
+  /** Commit draft selections; closing the sheet alone leaves applied filters unchanged. */
+  onApply?: () => void;
   /** Per-option counts from GET /properties/facets; counts are hidden until they arrive. */
   facets?: PropertyFacets["facets"];
+  prefetchedLocalities?: string[];
   unavailableCounts?: PropertyFacets["unavailable"];
 }) {
   const cat = categoryById(criteria.category);
@@ -374,19 +380,20 @@ export function FilterDrawer({
   // the counts (and so the ranking), but the chips shouldn't move under the user's finger.
   const scope = open ? `${criteria.city}|${criteria.intent}|${criteria.category}` : "";
   const [shown, setShown] = useState({ scope, names: [] as string[] });
-  const localities = keepOrder(shown.scope === scope ? shown.names : [], localityOptions(criteria, facets));
+  const localities = keepOrder(shown.scope === scope ? shown.names : [], facets ? localityOptions(criteria, facets) : [...new Set([...prefetchedLocalities, ...criteria.localities])]);
   if (shown.scope !== scope || localities.length !== shown.names.length) setShown({ scope, names: localities });
   const groups = filterGroups(criteria, localities);
   const areaLabel = areaGroupLabel(criteria);
   const renderGroup = (g: Group) => (
-    <fieldset key={g.key} className="border-b border-rez-smoke py-[22px]">
-      <legend className="eyebrow float-left mb-3.5 w-full text-black">{g.label}</legend>
+    <fieldset key={g.key} className="border-b border-rez-smoke py-4">
+      <legend className="eyebrow float-left mb-2.5 w-full text-black">{g.label}</legend>
       {g.description && (
-        <p className="clear-both mb-3.5 text-sm text-rez-graphite">{g.description}</p>
+        <p className="clear-both mb-2.5 text-sm text-rez-graphite">{g.description}</p>
       )}
-      <div className="clear-both flex flex-wrap gap-2">
+      <div className="clear-both flex flex-wrap gap-1.5">
         {g.options.map((o) => (
           <ToggleChip
+            size="xs"
             key={o}
             pressed={criteria[g.key].includes(o)}
             onClick={() => toggle(g.key, o)}
@@ -413,12 +420,12 @@ export function FilterDrawer({
         ? RENT_BUDGET_OPTIONS.find((option) => option.value === value)?.label ?? String(value)
         : points.find((point) => point.value === value)?.label ?? String(value);
     return (
-      <fieldset className="border-b border-rez-smoke py-[22px]">
-        <legend className="eyebrow float-left mb-3.5 w-full text-black">
+      <fieldset className="border-b border-rez-smoke py-4">
+        <legend className="eyebrow float-left mb-2.5 w-full text-black">
           Budget{criteria.intent === "rent" ? " (per month)" : ""}
         </legend>
-        <div className="clear-both grid grid-cols-2 gap-2.5">
-          <label className="flex flex-col gap-1.5">
+        <div className="clear-both grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1">
             <span className="sr-only">Minimum budget</span>
             <FilterDropdown
               ariaLabel="Minimum budget"
@@ -430,7 +437,7 @@ export function FilterDrawer({
               }}
             />
           </label>
-          <label className="flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1">
             <span className="sr-only">Maximum budget</span>
             <FilterDropdown
               ariaLabel="Maximum budget"
@@ -449,25 +456,25 @@ export function FilterDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" showCloseButton={false} className="flex w-full flex-col gap-0 p-0 sm:max-w-[480px]">
-        <SheetHeader className="flex-row items-center justify-between gap-4 border-b border-rez-smoke px-7 py-6">
-          <div className="flex flex-col gap-1.5">
+      <SheetContent side="right" showCloseButton={false} className="flex w-full flex-col gap-0 p-0 sm:max-w-[400px]!">
+        <SheetHeader className="flex-row items-center justify-between gap-3 border-b border-rez-smoke px-5 py-4">
+          <div className="flex flex-col gap-1">
             <span className="eyebrow text-rez-graphite">{criteria.intent === "rent" ? "Rent filters" : "Sale filters"}</span>
-            <SheetTitle>
+            <SheetTitle className="text-lg!">
               {criteria.intent === "rent" ? cat.lease : "Buy"} {cat.noun}
               <span className="sr-only"> in {criteria.city}</span>
             </SheetTitle>
           </div>
           <SheetClose asChild>
-            <Button variant="ghost" size="icon" aria-label="Close filters">
-              <Icon name="x" size={20} />
+            <Button variant="ghost" size="icon-sm" aria-label="Close filters">
+              <Icon name="x" size={18} />
             </Button>
           </SheetClose>
           <SheetDescription className="sr-only">
-            Choose filters. Results update as you select options.
+            Choose filters, then select Show results to apply them.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto px-7 pb-6">
+        <div className="flex-1 overflow-y-auto px-5 pb-4">
           {isHomeDirectory ? (
             <>
               {groups.slice(0, 4).map(renderGroup)}
@@ -485,8 +492,8 @@ export function FilterDrawer({
             </>
           )}
         </div>
-        <SheetFooter className="flex-row items-center justify-between gap-3 border-t border-rez-smoke px-7 py-[18px]">
-          <Button variant="secondary" size="lg" onClick={reset}>
+        <SheetFooter className="flex-row items-center justify-between gap-3 border-t border-rez-smoke px-5 py-3">
+          <Button variant="secondary" onClick={reset}>
             Reset
           </Button>
           <div className="flex flex-col items-end gap-1">
@@ -496,8 +503,7 @@ export function FilterDrawer({
               </span>
             )}
             <Button
-              size="lg"
-              onClick={() => countError ? onRetryCount?.() : onOpenChange(false)}
+              onClick={() => countError ? onRetryCount?.() : onApply ? onApply() : onOpenChange(false)}
               aria-live="polite"
             >
               {countError

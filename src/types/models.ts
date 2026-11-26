@@ -28,6 +28,10 @@ export type VerificationStatus = "verified" | "pending";
 
 export interface Property {
   id: string;
+  /** Public listing identifier used by the spatial search service. */
+  listingCode?: string;
+  /** Spatial-only result: details and sale/rental intent have not been resolved. */
+  mapSummary?: boolean;
   title: string;
   category: PropertyCategory;
   intent: Intent;
@@ -553,7 +557,7 @@ export interface OwnerListing {
 /* ---------- Search criteria ---------- */
 
 export type SortKey = "latest" | "price-asc" | "price-desc" | "rate-asc" | "rate-desc" | "area-asc" | "area-desc";
-/** list / map show listings; "loc" and "proj" group them by locality or project (prototype view tabs). */
+/** list / map show listings; "loc" and "proj" group them by locality or project (prototype view tabs) ("loc" shows the city's localities, as rezide.in's Localities tab). */
 export type ResultsView = "list" | "map" | "loc" | "proj";
 
 export interface PropertySearchCriteria {

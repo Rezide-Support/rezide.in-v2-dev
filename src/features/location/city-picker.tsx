@@ -80,6 +80,39 @@ export function CityPicker({ city, onSelect, variant = "compact", triggerClassNa
     </ul>
   );
 
+  /** `small`: search results, where long names ("Puducherry") need a smaller size to fit a cell. */
+  const grid = (names: readonly string[], className?: string, small = false) => (
+    <ul className={cn("grid grid-cols-3 overflow-hidden rounded-lg border-t border-l border-rez-smoke", className)}>
+      {names.map((c) => {
+        const on = c === city;
+        return (
+          <li key={c}>
+            <button
+              type="button"
+              onClick={() => pick(c)}
+              aria-current={on ? "true" : undefined}
+              className={cn(
+                "flex h-[52px] w-full flex-col items-center justify-center gap-1 border-r border-b border-rez-smoke px-1 text-center text-[11px] leading-tight font-semibold",
+                small && "px-0.5 text-[9.5px]",
+                on ? "bg-rez-mocaccino/15" : "hover:bg-rez-cloud",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full",
+                  on ? "bg-rez-mocaccino/25 text-rez-mocaccino-ink" : "bg-rez-cloud",
+                )}
+              >
+                <Icon name="map-pin" size={12} />
+              </span>
+              {c}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   const results =
     matches.length === 0 ? (
       <p className="px-2 py-4 text-xs text-rez-graphite">No city matches “{query}”.</p>
@@ -152,38 +185,13 @@ export function CityPicker({ city, onSelect, variant = "compact", triggerClassNa
         >
           {search}
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {!q ? (
-              <ul className="grid grid-cols-3 overflow-hidden rounded-lg border-t border-l border-rez-smoke">
-                {PICKER_CITIES.map((c) => {
-                  const on = c === city;
-                  return (
-                    <li key={c}>
-                      <button
-                        type="button"
-                        onClick={() => pick(c)}
-                        aria-current={on ? "true" : undefined}
-                        className={cn(
-                          "flex h-[52px] w-full flex-col items-center justify-center gap-1 border-r border-b border-rez-smoke px-1 text-center text-[11px] leading-tight font-semibold",
-                          on ? "bg-rez-mocaccino/15" : "hover:bg-rez-cloud",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "flex size-6 items-center justify-center rounded-full",
-                            on ? "bg-rez-mocaccino/25 text-rez-mocaccino-ink" : "bg-rez-cloud",
-                          )}
-                        >
-                          <Icon name="map-pin" size={12} />
-                        </span>
-                        {c}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              results
-            )}
+            {/* The icon grid, for the popular cities and for search results alike. */}
+            {!q ? grid(PICKER_CITIES) : matches.length ? (
+              // 3 rows show (9 cities); the rest scroll inside the same framed box, with a thin scrollbar.
+              <div className="max-h-[158px] overflow-y-auto overscroll-contain rounded-lg border border-rez-smoke [scrollbar-width:thin]">
+                {grid(matches, "rounded-none border-0 [&>li:nth-child(3n)>button]:border-r-0", true)}
+              </div>
+            ) : results}
           </div>
         </PopoverContent>
       )}

@@ -5,10 +5,12 @@ import { defaultProjectCriteria } from "@/features/search/criteria";
 import { ProjectFilterDrawer, countDrawerFilters, drawerChips } from "./project-filter-drawer";
 
 describe("project Filters drawer (rezide.in's Project Filters)", () => {
-  it("offers rezide.in's sections and updates the search as options are chosen", async () => {
+  it("offers rezide.in's sections, drafts the choices and applies them on Show", async () => {
     const user = userEvent.setup();
     const update = vi.fn();
-    render(<ProjectFilterDrawer open onOpenChange={() => {}} criteria={defaultProjectCriteria({ bhk: ["2 BHK"] })} update={update} total={12} pending={false} />);
+    const onApply = vi.fn();
+    const onOpenChange = vi.fn();
+    render(<ProjectFilterDrawer open onOpenChange={onOpenChange} criteria={defaultProjectCriteria({ bhk: ["2 BHK"] })} update={update} total={12} pending={false} onApply={onApply} />);
     for (const legend of ["Project type", "Unit type", "BHK", "Area range (250 - 10,000 sq. ft)", "Project with Video / VR"]) {
       expect(screen.getByText(legend)).toBeInTheDocument();
     }
@@ -18,7 +20,10 @@ describe("project Filters drawer (rezide.in's Project Filters)", () => {
     expect(update).toHaveBeenLastCalledWith({ projectTypes: ["650c6732a3021fab1835c045"] });
     await user.selectOptions(screen.getByLabelText("Minimum area"), "1000");
     expect(update).toHaveBeenLastCalledWith({ areaMin: 1000 });
-    expect(screen.getByRole("button", { name: "Show 12 projects" })).toBeInTheDocument();
+    expect(onApply).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Show 12 projects" }));
+    expect(onApply).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 
   it("names and counts the chosen filters", () => {

@@ -10,13 +10,14 @@ export function ToggleChip({
   count,
   size = "md",
   ...props
-}: ComponentProps<"button"> & { pressed: boolean; count?: number | null; size?: "sm" | "md" | "lg" }) {
+}: ComponentProps<"button"> & { pressed: boolean; count?: number | null; size?: "xs" | "sm" | "md" | "lg" }) {
   return (
     <button
       type="button"
       aria-pressed={pressed}
       className={cn(
         "inline-flex items-center gap-2 rounded-full border font-medium transition-[background-color,color,border-color] duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
+        size === "xs" && "h-8 gap-1.5 px-3 text-xs",
         size === "sm" && "h-9 px-3.5 text-[13px]",
         size === "md" && "h-10 px-4 text-sm",
         size === "lg" && "h-[52px] px-5 text-[15px] font-semibold",
@@ -36,16 +37,32 @@ export function ToggleChip({
 }
 
 /** Removable filter chip. */
-export function RemovableChip({ children, onRemove, label, className }: { children: ReactNode; onRemove: () => void; label: string; className?: string }) {
+export function RemovableChip({
+  children,
+  onRemove,
+  label,
+  className,
+  size = "md",
+}: {
+  children: ReactNode;
+  onRemove: () => void;
+  label: string;
+  className?: string;
+  size?: "sm" | "md";
+}) {
   return (
     <button
       type="button"
       onClick={onRemove}
       aria-label={`Remove filter: ${label}`}
-      className={cn("inline-flex h-8 items-center gap-2 rounded-full border border-black bg-white pr-2.5 pl-3.5 text-[13px] font-medium hover:bg-black/[0.06]", className)}
+      className={cn(
+        "inline-flex items-center rounded-full border border-black bg-white font-medium hover:bg-black/[0.06]",
+        size === "sm" ? "h-6 gap-1.5 pr-2 pl-2.5 text-[11px]" : "h-8 gap-2 pr-2.5 pl-3.5 text-[13px]",
+        className,
+      )}
     >
       <span>{children}</span>
-      <Icon name="x" size={12} />
+      <Icon name="x" size={size === "sm" ? 10 : 12} />
     </button>
   );
 }

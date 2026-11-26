@@ -41,6 +41,16 @@ const MEDIA_GROUP = { key: "media" as const, label: "Project with Video / VR", o
 
 export const RESET_DRAWER: Partial<ProjectSearchCriteria> = { projectTypes: [], unitTypes: [], bhk: [], media: [], areaMin: undefined, areaMax: undefined };
 
+/** The drawer's own filters from the applied search: the starting point of its draft. */
+export const drawerValues = (c: ProjectSearchCriteria): Partial<ProjectSearchCriteria> => ({
+  projectTypes: c.projectTypes,
+  unitTypes: c.unitTypes,
+  bhk: c.bhk,
+  media: c.media,
+  areaMin: c.areaMin,
+  areaMax: c.areaMax,
+});
+
 /** How many drawer filters are on (an area range counts once), for the button's badge. */
 export const countDrawerFilters = (c: ProjectSearchCriteria) =>
   c.projectTypes.length + c.unitTypes.length + c.bhk.length + c.media.length + (c.areaMin !== undefined || c.areaMax !== undefined ? 1 : 0);
@@ -67,6 +77,10 @@ export function drawerChips(c: ProjectSearchCriteria): { id: string; label: stri
   return chips;
 }
 
+/**
+ * Choices made here are a draft: `criteria` and `update` are the draft, `total` its count.
+ * Nothing reaches the results until "Show N projects" calls `onApply`; closing discards it.
+ */
 export function ProjectFilterDrawer({
   open,
   onOpenChange,
@@ -74,6 +88,7 @@ export function ProjectFilterDrawer({
   update,
   total,
   pending,
+  onApply,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -81,17 +96,18 @@ export function ProjectFilterDrawer({
   update: (patch: Partial<ProjectSearchCriteria>) => void;
   total: number | undefined;
   pending: boolean;
+  onApply: () => void;
 }) {
   const toggle = (key: ArrayKey, value: string) => {
     const cur = criteria[key];
     update({ [key]: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value] });
   };
   const renderGroup = (g: (typeof GROUPS)[number] | typeof MEDIA_GROUP) => (
-    <fieldset key={g.key} className="border-b border-rez-smoke py-[22px]">
-      <legend className="eyebrow float-left mb-3.5 w-full text-black">{g.label}</legend>
-      <div className="clear-both flex flex-wrap gap-2">
+    <fieldset key={g.key} className="border-b border-rez-smoke py-4">
+      <legend className="eyebrow float-left mb-2.5 w-full text-black">{g.label}</legend>
+      <div className="clear-both flex flex-wrap gap-1.5">
         {g.options.map((o) => (
-          <ToggleChip key={o.value} pressed={criteria[g.key].includes(o.value)} onClick={() => toggle(g.key, o.value)}>
+          <ToggleChip key={o.value} size="xs" pressed={criteria[g.key].includes(o.value)} onClick={() => toggle(g.key, o.value)}>
             {o.label}
           </ToggleChip>
         ))}
@@ -101,30 +117,30 @@ export function ProjectFilterDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" showCloseButton={false} className="flex w-full flex-col gap-0 p-0 sm:max-w-[480px]">
-        <SheetHeader className="flex-row items-center justify-between gap-4 border-b border-rez-smoke px-7 py-6">
-          <div className="flex flex-col gap-1.5">
+      <SheetContent side="right" showCloseButton={false} className="flex w-full flex-col gap-0 p-0 sm:max-w-[400px]!">
+        <SheetHeader className="flex-row items-center justify-between gap-3 border-b border-rez-smoke px-5 py-4">
+          <div className="flex flex-col gap-1">
             <span className="eyebrow text-rez-graphite">Project filters</span>
-            <SheetTitle>
+            <SheetTitle className="text-lg!">
               Projects<span className="sr-only"> in {criteria.city}</span>
             </SheetTitle>
           </div>
           <SheetClose asChild>
-            <Button variant="ghost" size="icon" aria-label="Close filters">
-              <Icon name="x" size={20} />
+            <Button variant="ghost" size="icon-sm" aria-label="Close filters">
+              <Icon name="x" size={18} />
             </Button>
           </SheetClose>
           <SheetDescription className="sr-only">Choose filters. Results update as you select options.</SheetDescription>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto px-7 pb-6">
+        <div className="flex-1 overflow-y-auto px-5 pb-4">
           {GROUPS.map(renderGroup)}
-          <fieldset className="border-b border-rez-smoke py-[22px]">
-            <legend className="eyebrow float-left mb-3.5 w-full text-black">Area range (250 - 10,000 sq. ft)</legend>
-            <div className="clear-both grid grid-cols-2 gap-2.5">
+          <fieldset className="border-b border-rez-smoke py-4">
+            <legend className="eyebrow float-left mb-2.5 w-full text-black">Area range (250 - 10,000 sq. ft)</legend>
+            <div className="clear-both grid grid-cols-2 gap-2">
               <label className="flex flex-col gap-1.5">
                 <span className="sr-only">Minimum area</span>
                 <NativeSelect
-                  size="lg"
+                  size="sm"
                   value={criteria.areaMin ?? ""}
                   onChange={(e) => {
                     const min = e.target.value ? Number(e.target.value) : undefined;
@@ -142,7 +158,7 @@ export function ProjectFilterDrawer({
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className="sr-only">Maximum area</span>
-                <NativeSelect size="lg" value={criteria.areaMax ?? ""} onChange={(e) => update({ areaMax: e.target.value ? Number(e.target.value) : undefined })}>
+                <NativeSelect size="sm" value={criteria.areaMax ?? ""} onChange={(e) => update({ areaMax: e.target.value ? Number(e.target.value) : undefined })}>
                   <option value="">Max.</option>
                   {PROJECT_AREA_MAX.filter((n) => criteria.areaMin === undefined || n > criteria.areaMin).map((n) => (
                     <option key={n} value={n}>
@@ -155,11 +171,11 @@ export function ProjectFilterDrawer({
           </fieldset>
           {renderGroup(MEDIA_GROUP)}
         </div>
-        <SheetFooter className="flex-row items-center justify-between gap-3 border-t border-rez-smoke px-7 py-[18px]">
-          <Button variant="secondary" size="lg" onClick={() => update(RESET_DRAWER)}>
+        <SheetFooter className="flex-row items-center justify-between gap-3 border-t border-rez-smoke px-5 py-3">
+          <Button variant="secondary" onClick={() => update(RESET_DRAWER)}>
             Reset
           </Button>
-          <Button size="lg" onClick={() => onOpenChange(false)} aria-live="polite">
+          <Button onClick={onApply} aria-live="polite">
             <ApplyContent
               label={pending || total === undefined ? "Updating" : total === 0 ? "No matches" : `Show ${pluralize(total, "project")}`}
               loading={pending || total === undefined}

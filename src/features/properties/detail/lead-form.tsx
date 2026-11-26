@@ -42,8 +42,7 @@ const todayIso = () => localIsoDate();
 export const leadSchema = z
   .object({
     mode: z.enum(["contact", "offer", "visit"]),
-    firstName: personName("first name"),
-    lastName: z.string().trim().max(60, "Keep your last name under 60 characters."),
+    name: personName("name"),
     phone: indianMobile,
     intent: z.string(),
     offer: z.string().trim(),
@@ -65,7 +64,7 @@ export type LeadValues = z.infer<typeof leadSchema>;
 
 /** Maps form values to the enquiry API shape (channel + human-readable message). */
 export function toEnquiry(v: LeadValues): { channel: EnquiryChannel; message?: string; preferredDate?: string; name: string; phone: string } {
-  const name = `${v.firstName} ${v.lastName}`.trim();
+  const name = v.name.trim();
   const extra = v.message ? ` ${v.message}` : "";
   if (v.mode === "offer") {
     const amount = Number(v.offer.replace(/,/g, "")).toLocaleString("en-IN");
@@ -98,7 +97,7 @@ const dayMonthYear = (isoDate: string) =>
  * sends no amount, but this form asks for one, so the amount goes in `notes`.
  */
 export function toListingEnquiry(v: LeadValues, listing: LeadListing): ListingEnquiry {
-  const name = `${v.firstName} ${v.lastName}`.trim();
+  const name = v.name.trim();
   const base = { name, phone: v.phone, firmId: listing.firmId, brokerId: listing.brokerId, listingId: listing.id };
   const extra = v.message ? ` ${v.message}` : "";
   if (v.mode === "offer") {
@@ -124,6 +123,7 @@ type Props = {
   className?: string;
   /** Visible labels (dialogs) or placeholder-style with screen-reader labels (v1 agent card). */
   compact?: boolean;
+  agentCard?: boolean;
   /** Set on a real listing: the request goes to its broker. Without it or `project`, it goes to the enquiry service (mocked). */
   listing?: LeadListing;
   /** Set on a real project: the request goes to the Rezide team. */
@@ -132,38 +132,40 @@ type Props = {
   defaultIntent?: string;
 };
 
-export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, submitLabel, className, compact, listing, project, defaultIntent = "" }: Props) {
+export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, submitLabel, className, compact, agentCard, listing, project, defaultIntent = "" }: Props) {
   const { session, status } = useSession();
   const form = useForm<LeadValues>({
     resolver: zodResolver(leadSchema),
-    defaultValues: { mode, firstName: "", lastName: "", phone: "", intent: defaultIntent, offer: "", date: "", slot: VISIT_SLOTS[0], message: "" },
+    defaultValues: { mode, name: "", phone: "", intent: defaultIntent, offer: "", date: "", slot: VISIT_SLOTS[0], message: "" },
     mode: "onTouched",
   });
-  const { register, handleSubmit, control, formState, setError, getValues, setValue } = form;
+  const { register, handleSubmit, control, formState, setError, getValues, setValue, reset } = form;
   const errors = formState.errors;
 
   useEffect(() => {
     if (!session) return;
     const v = getValues();
-    if (!v.firstName) setValue("firstName", session.user.firstName);
-    if (!v.lastName) setValue("lastName", session.user.lastName);
+    if (!v.name) setValue("name", `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim());
     if (!v.phone) setValue("phone", session.user.phone);
   }, [session, getValues, setValue]);
 
   const mutation = useMutation({
     mutationFn: async (v: LeadValues): Promise<{ id?: string; message?: string }> => {
       if (project) {
-        await sendProjectEnquiry({ ...project, name: `${v.firstName} ${v.lastName}`.trim(), phone: v.phone, email: session?.user.email, intent: v.intent, pageUrl: window.location.href });
+        await sendProjectEnquiry({ ...project, name: v.name.trim(), phone: v.phone, email: session?.user.email, intent: v.intent, pageUrl: window.location.href });
         return {};
       }
       if (!listing) return createEnquiry({ ...target, ...toEnquiry(v) });
       if (!listing.firmId || !listing.brokerId) throw new Error("Broker details are unavailable right now. Please try again.");
       return sendListingEnquiry(toListingEnquiry(v, listing));
     },
+    onSuccess: () => {
+      reset({ mode, name: "", phone: "", intent: "", offer: "", date: "", slot: "", message: "" });
+    },
     onError: (err) => {
       if (err instanceof ApiError && err.fieldErrors) {
         for (const [k, msg] of Object.entries(err.fieldErrors)) {
-          setError(k === "name" ? "firstName" : (k as keyof LeadValues), { message: msg });
+          setError(k as keyof LeadValues, { message: msg });
         }
       }
     },
@@ -210,21 +212,24 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
   const ph = (s: string) => (compact ? s : undefined);
 
   return (
-    <form noValidate onSubmit={handleSubmit((v) => mutation.mutate(v))} className={cn("flex flex-col gap-3.5", className)}>
-      <div className={cn("grid gap-3.5", !compact && "sm:grid-cols-2")}>
-        <Field label="First name" required error={errors.firstName?.message} labelClassName={labelClass}>
-          <Input autoComplete="given-name" placeholder={ph("First Name")} className={fieldInput} {...register("firstName")} />
-        </Field>
-        <Field label="Last name" optional={!compact} error={errors.lastName?.message} labelClassName={labelClass}>
-          <Input autoComplete="family-name" placeholder={ph("Last Name")} className={fieldInput} {...register("lastName")} />
-        </Field>
-      </div>
+    <form noValidate onSubmit={handleSubmit((v) => mutation.mutate(v))} className={cn("flex flex-col gap-3.5", agentCard && "gap-4 [--spacing:0.25rem] [--text-sm:0.875rem]", className)}>
+      {agentCard ? <Controller control={control} name="name" render={({ field }) => {
+        const [first = "", ...rest] = field.value.split(" ");
+        const last = rest.join(" ");
+        const inputClass = "h-10 rounded-[6px] border-rez-smoke bg-white px-3 text-sm placeholder:text-rez-graphite";
+        return <>
+          <Field label="First Name" required error={errors.name?.message} labelClassName="sr-only"><Input ref={field.ref} name={field.name} autoComplete="given-name" placeholder="First Name" className={inputClass} value={first} onBlur={field.onBlur} onChange={event => field.onChange(`${event.target.value} ${last}`)} /></Field>
+          <Field label="Last Name" labelClassName="sr-only"><Input autoComplete="family-name" placeholder="Last Name" className={inputClass} value={last} onBlur={field.onBlur} onChange={event => field.onChange(`${first} ${event.target.value}`)} /></Field>
+        </>;
+      }} /> : <Field label="Name" required error={errors.name?.message} labelClassName={labelClass}>
+        <Input autoComplete="name" placeholder={ph("Name")} className={fieldInput} {...register("name")} />
+      </Field>}
       <Field label="Mobile number" required error={errors.phone?.message} labelClassName={labelClass}>
         <Controller
           control={control}
           name="phone"
           render={({ field }) => (
-            <PhoneInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} className="h-12 rounded-lg" />
+            <PhoneInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} className={cn("h-12 rounded-lg", agentCard && "h-10 rounded-[6px] border-rez-smoke bg-transparent [&_input]:text-sm")} />
           )}
         />
       </Field>
@@ -239,7 +244,7 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
                 <SelectTrigger
                   ref={field.ref}
                   onBlur={field.onBlur}
-                  className="h-12 w-full rounded-lg border-[#e4e4e4] bg-white px-4 text-left text-sm text-rez-graphite focus-visible:border-rez-mocaccino focus-visible:ring-rez-mocaccino/30"
+                  className={cn("h-12 w-full rounded-lg border-[#e4e4e4] bg-white px-4 text-left text-sm text-rez-graphite focus-visible:border-rez-mocaccino focus-visible:ring-rez-mocaccino/30", agentCard && "h-10 rounded-[6px] bg-transparent px-3 font-normal text-black data-[size=default]:h-10")}
                 >
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -249,15 +254,15 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
                 align="start"
                 sideOffset={4}
                 collisionPadding={12}
-                className="z-[70] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-rez-smoke bg-white p-1.5 text-rez-graphite shadow-rez-lg ring-0"
+                className={cn("z-[70] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-rez-smoke bg-white p-1.5 text-rez-graphite shadow-rez-lg ring-0", agentCard && "max-h-none overflow-visible rounded-[6px] p-1 text-black [&_[data-slot=select-scroll-up-button]]:hidden [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-position=popper]]:h-auto! [&_[data-position=popper]]:overflow-visible! [--spacing:0.25rem] [--text-sm:0.875rem] [&_[data-position=popper]]:min-w-0! [&_[data-position=popper]]:w-full")}
               >
-                <SelectGroup>
+                <SelectGroup className={cn(agentCard && "space-y-1")}>
                   <SelectLabel className="px-2.5 py-2 text-sm font-semibold text-black">Select option</SelectLabel>
                   {intents.map((intent) => (
                     <SelectItem
                       key={intent}
                       value={intent}
-                      className="min-h-10 cursor-pointer rounded-lg px-2.5 py-2 text-[max(12px,calc(15px*var(--property-type-scale,1)))] whitespace-normal data-highlighted:bg-rez-cloud data-highlighted:text-black data-[state=checked]:bg-rez-cloud data-[state=checked]:font-medium data-[state=checked]:text-black"
+                      className={cn("min-h-10 cursor-pointer rounded-lg px-2.5 py-2 text-[max(12px,calc(15px*var(--property-type-scale,1)))] whitespace-normal data-highlighted:bg-rez-cloud data-highlighted:text-black data-[state=checked]:bg-rez-cloud data-[state=checked]:font-medium data-[state=checked]:text-black", agentCard && "min-h-8 rounded-[4px] py-1.5 pr-8 pl-2 text-sm leading-normal")}
                     >
                       {intent}
                     </SelectItem>
@@ -312,7 +317,7 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
         variant={compact ? "outline" : "default"}
         size={compact ? "default" : "lg"}
         disabled={mutation.isPending}
-        className={cn(compact && "mx-auto rounded-lg px-6 text-xs tracking-[0.06em] uppercase")}
+        className={cn(compact && "mx-auto rounded-lg px-6 text-xs tracking-[0.06em] uppercase", agentCard && "mt-3 h-9 rounded-[6px] border-rez-smoke bg-white px-4 text-xs font-medium tracking-normal shadow-sm")}
       >
         {mutation.isPending ? (
           <>

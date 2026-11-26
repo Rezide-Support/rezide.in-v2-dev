@@ -22,7 +22,9 @@ const PREVIEW = 200;
 const AUTOPLAY_MS = 2000;
 
 /** rezide.in's banner: the locality's photos sliding by (a plain grey band when it has none). */
-function Banner({ images, name, className }: { images: string[]; name: string; className?: string }) {
+function Banner({ images: photos, name, className }: { images: string[]; name: string; className?: string }) {
+  // No photos: rezide.in's animated "empty" picture (its /assets/image/empty.gif), filling the banner.
+  const images = photos.length ? photos : ["/images/locality-empty.gif"];
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const n = images.length;

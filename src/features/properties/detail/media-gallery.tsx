@@ -66,6 +66,7 @@ export function MediaGallery({
   caption,
   overlay,
   showEmptyTabs = false,
+  keepEmptyPhotos = false,
 }: {
   tabs: GalleryTab[];
   title: string;
@@ -74,8 +75,11 @@ export function MediaGallery({
   overlay?: ReactNode;
   /** Keep tabs with no media, each showing its `empty` text (the project page shows all its tabs, as rezide.in). */
   showEmptyTabs?: boolean;
+  /** Listing pages retain a Photos tab and a blank desktop area when photos are absent. */
+  keepEmptyPhotos?: boolean;
 }) {
-  const availableTabs = showEmptyTabs ? tabs : tabs.filter(hasMedia);
+  const availableTabs = showEmptyTabs ? tabs : tabs.filter(tab => hasMedia(tab) || (keepEmptyPhotos && tab.value === "photos"));
+  const onlyEmptyPhotos = availableTabs.length === 1 && availableTabs[0].value === "photos" && !hasMedia(availableTabs[0]) && keepEmptyPhotos;
   if (!availableTabs.length) return null;
 
   const first = availableTabs[0].value;
@@ -83,18 +87,18 @@ export function MediaGallery({
   return (
     <Tabs
       defaultValue={first}
-      className={cn("gap-2 max-lg:gap-0 max-lg:overflow-hidden max-lg:rounded-lg max-lg:border max-lg:border-rez-smoke", className)}
+      className={cn("gap-2 max-lg:gap-0 max-lg:overflow-hidden max-lg:rounded-none max-lg:border max-lg:border-rez-smoke", onlyEmptyPhotos && "max-lg:border-b-0", className)}
     >
       <ScrollIndicator>
       <TabsList
         aria-label="Media"
-        className="flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-rez-smoke bg-white p-0 scrollbar-none group-data-horizontal/tabs:h-auto lg:gap-0 lg:rounded-[6px] lg:border lg:p-0"
+        className={cn("flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-rez-smoke bg-white p-0 scrollbar-none group-data-horizontal/tabs:h-auto lg:gap-0 lg:rounded-[6px] lg:border lg:p-0", onlyEmptyPhotos && "justify-center border-0 lg:border-0")}
       >
         {availableTabs.map((t) => (
           <TabsTrigger
             key={t.value}
             value={t.value}
-            className="h-14 flex-1 flex-col gap-1 rounded-none border-0 px-3 text-xs font-medium text-rez-graphite after:hidden hover:text-black data-active:font-semibold data-active:text-black data-active:shadow-[inset_0_-2px_0_#000] lg:h-9 lg:min-w-[88px] lg:flex-row lg:gap-1.5 lg:rounded-[6px] lg:text-sm lg:data-active:bg-black lg:data-active:text-rez-full-white lg:data-active:shadow-none lg:data-active:hover:text-rez-full-white"
+            className={cn("h-14 flex-1 flex-col gap-1 rounded-none border-0 px-3 text-xs font-medium text-rez-graphite after:hidden hover:text-black data-active:font-semibold data-active:text-black data-active:shadow-[inset_0_-2px_0_#000] lg:h-9 lg:min-w-[88px] lg:flex-row lg:gap-1.5 lg:rounded-[6px] lg:text-sm lg:data-active:bg-black lg:data-active:text-rez-full-white lg:data-active:shadow-none lg:data-active:hover:text-rez-full-white", onlyEmptyPhotos && "max-w-[200px] rounded-[6px] border border-rez-smoke data-active:shadow-none")}
           >
             <t.icon className="size-4" aria-hidden />
             {t.phoneLabel ? (
@@ -126,6 +130,8 @@ export function MediaGallery({
               caption={caption}
               overlay={overlay}
             />
+          ) : keepEmptyPhotos && t.value === "photos" ? (
+            <div aria-label="No listing photos" className="hidden aspect-[16/9] lg:block" />
           ) : (
             <div className="flex aspect-[16/9] flex-col items-center justify-center gap-3 rounded-lg bg-rez-cloud px-6 text-center sm:aspect-[21/10]">
               <t.icon className="size-8 text-rez-graphite" aria-hidden />
@@ -228,7 +234,7 @@ export function Viewer({ images, slides: photoSlides, label, cardHref, priority,
       {overlay && <div className="absolute top-3 right-[3.75rem] z-10 lg:hidden">{overlay}</div>}
       {n > 1 && <GalleryArrows api={mainApi} previous={main.previous} next={main.next} className={arrowClassName} onEnd={linear && cardHref ? () => router.push(cardHref) : undefined} endLabel={"View " + label} />}
     </div>
-    {!cardHref && n > 0 && <div role="region" aria-roledescription="carousel" aria-label={label + " thumbnails"} tabIndex={0} onKeyDown={event => keyboardScroll(event, thumbApi)} className="group/carousel relative min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-rez-mocaccino">
+    {!cardHref && n > 0 && <div role="region" aria-roledescription="carousel" aria-label={label + " thumbnails"} tabIndex={0} onKeyDown={event => keyboardScroll(event, thumbApi)} className="group/carousel relative min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-rez-mocaccino max-lg:hidden">
       <div ref={thumbRef} className="overflow-hidden">
         <div className="flex touch-pan-y gap-4">
           {slides.map((slide, i) => <div key={slide.url + ":" + i} className="min-w-0 flex-[0_0_33.333%] md:flex-[0_0_50%] lg:flex-[0_0_25%]">

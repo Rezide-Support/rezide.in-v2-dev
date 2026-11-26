@@ -1,5 +1,9 @@
+import { publicApiOrigin } from "@/lib/api/origins";
 import { api } from "@/lib/api/client";
 import type { Enquiry, EnquiryInput, ListingDraft } from "@/types/models";
+
+/** rezide.in's contact-form endpoint; the firm page's "Connect with me" form posts to its /realtor path. */
+const CONTACT_FORM_URL = `${publicApiOrigin()}/v1/contact/form`;
 
 /* Write endpoints. In mock mode these only update an in-memory store. Contract: docs/API.md. Auth: ./auth.ts. */
 
@@ -173,5 +177,20 @@ export type TrialRequestInput = {
 
 export async function requestTrial(input: TrialRequestInput) {
   const { data } = await api.post<{ id: string; status: "pending_review" }>("/trial-requests", input);
+  return data;
+}
+
+/** A firm-page enquiry, as rezide.in's "Connect with me" form sends it (POST /v1/contact/form/realtor). */
+export type FirmEnquiry = { firmId: string; firstName: string; lastName: string; mobile: string; email: string };
+
+export async function sendFirmEnquiry({ firmId, firstName, lastName, mobile, email }: FirmEnquiry) {
+  const { data } = await api.post<{ message?: string }>(`${CONTACT_FORM_URL}/realtor`, {
+    firm_id: firmId,
+    fname: firstName.trim(),
+    lname: lastName.trim(),
+    mobile: mobile.replace(/\s+/g, ""),
+    email: email.trim(),
+    enquiryType: "realtor",
+  });
   return data;
 }
