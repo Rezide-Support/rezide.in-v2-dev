@@ -1,4 +1,6 @@
 "use client";
+import { propertyHref } from "@/lib/property-url";
+
 
 import { Bath, BedDouble, Car, Sofa } from "lucide-react";
 import { formatDate, formatNumber } from "@/lib/format";
@@ -14,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function MobileListingOverview({ property: p, withoutPhotoDivider = false }: { property: Property; withoutPhotoDivider?: boolean }) {
-  const path = `/properties/${p.id}`;
+  const path = propertyHref(p);
   const round = "size-9 shrink-0 rounded-full border border-rez-smoke bg-white p-0 text-rez-graphite shadow-sm";
   const recipient = p.realtorFirm || "the realtor";
   const listing = { id: p.id, firmId: p.realtorFirmId || "", brokerId: p.realtorId, name: p.title, path };
@@ -30,7 +32,7 @@ export function MobileListingOverview({ property: p, withoutPhotoDivider = false
     <dl className="mt-3 grid grid-cols-4 gap-1 rounded-md bg-rez-cloud px-1 py-3 text-center">
       {[{ Icon: BedDouble, name: "Beds", value: p.bhk !== undefined ? `${p.bhk} Beds` : p.unitType }, { Icon: Bath, name: "Bathrooms", value: p.bathrooms !== undefined ? `${p.bathrooms} Baths` : "—" }, { Icon: Car, name: "Parking", value: p.parking !== undefined ? `${p.parking} Parks` : "—" }, { Icon: Sofa, name: "Furnishing", value: p.furnishing || "—" }].map(({ Icon, name, value }) => <div key={name} className="min-w-0"><dt><Icon size={22} className="mx-auto text-rez-graphite" /><span className="sr-only">{name}</span></dt><dd className="mt-1 text-[10px] break-words sm:text-xs">{value}</dd></div>)}
     </dl>
-    <div className="mt-3 flex flex-wrap justify-between gap-2 text-[10px] text-rez-graphite"><p>Listed on: <b className="text-black">{p.listedAt ? formatDate(p.listedAt) : "—"}</b></p><p>Last updated: <b className="text-black">{p.updatedAt ? formatDate(p.updatedAt) : "—"}</b></p></div>
+    <div className="mt-3 flex flex-wrap justify-between gap-2 text-[10px] text-rez-graphite"><p>Listed on: <b className="text-black">{p.listedAt ? formatDate(p.listedAt) : "—"}</b></p><p>Updated: <b className="text-black">{p.updatedAt ? formatDate(p.updatedAt) : "—"}</b></p></div>
     <div className="mt-3 grid grid-cols-2 gap-3">
       <LeadDialog
         mode="offer"

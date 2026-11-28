@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { projectPath } from "@/lib/project-url";
 import type { Project } from "@/types/models";
 import { formatPriceRange } from "./format";
 import { SaveIconButton } from "./save-actions";
@@ -24,7 +25,7 @@ export function ProjectMiniCard({ project: p, stock }: { project: Project; stock
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[max(12px,calc(17px*var(--property-type-scale,1)))] leading-tight font-semibold">
-              <Link href={`/projects/${p.id}`} className="hover:underline">
+              <Link href={projectPath(p)} className="hover:underline">
                 {p.name}
               </Link>
             </h2>

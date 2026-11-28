@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Building2, Images, Info, LayoutGrid, MapPin, Mountain, Share, Share2, Video } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PROJECT_STATUS_LABEL } from "@/lib/constants";
+import { localityPath } from "@/lib/locality-url";
+import { projectPath } from "@/lib/project-url";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/types/models";
 import { ErrorState } from "@/components/common/feedback";
@@ -78,7 +80,7 @@ export function ProjectDetailView({ id }: { id: string }) {
   if (isError && !data) return <ErrorState className="m-8" message="This project couldn't be loaded." onRetry={() => refetch()} />;
   if (!data) return null;
   const { project: p, listings, similar = [], nearby = [], developer } = data;
-  const path = `/projects/${p.id}`;
+  const path = projectPath(p);
 
   return (
     // On tablets and laptops the whole page is drawn a little smaller, so it fits the screen like on a big
@@ -133,7 +135,8 @@ export function ProjectDetailView({ id }: { id: string }) {
           />
 
           <MediaGallery
-            title={p.name}
+            // Used only in the photos' alt text and screen-reader labels: "Suraj Nova, Mahim, Mumbai".
+            title={[p.name, p.subRegion || p.locality, p.city].filter(Boolean).join(", ")}
             // As rezide.in: every tab shows (an empty one says so); each photo's label runs along its bottom.
             showEmptyTabs
             className="max-md:order-first"
@@ -224,7 +227,7 @@ export function ProjectDetailView({ id }: { id: string }) {
               photo={p.localityPhoto ?? HERO_IMAGES[p.status].src}
               live
               // As rezide.in: the photo opens the locality's own page (in a new tab).
-              exploreHref={p.localityId ? `/locality/${p.localityId}` : projectSearchHref({ city: p.city, localities: [p.locality] })}
+              exploreHref={p.localityId ? localityPath({ id: p.localityId, slug: p.localitySlug }) : projectSearchHref({ city: p.city, localities: [p.locality] })}
               exploreNewTab={!!p.localityId}
             />
           </section>

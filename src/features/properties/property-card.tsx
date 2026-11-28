@@ -23,7 +23,8 @@ import { RealtorProfilePopup } from "@/features/realtors/person-profile";
 import { ViewedEye } from "./detail/record-view";
 import { directoryQueries } from "@/services/realtor-directory";
 
-export const propertyHref = (p: Pick<Property, "id">) => `/properties/${p.id}`;
+import { propertyHref } from "@/lib/property-url";
+export { propertyHref } from "@/lib/property-url";
 
 function propertyCardLocation(p: Pick<Property, "localityName" | "locality" | "city">) {
   const parts = [p.localityName, p.locality]
@@ -75,11 +76,12 @@ function PropertyCardRealtorFooter({ property: p, path, realListing, canContact 
     <div className="flex min-w-0 items-center gap-2.5">
       <RealtorAvatar name={realtorName} photo={query.data?.photo} />
       <div className="min-w-0">
-        <p className="truncate text-sm leading-5 font-semibold text-black">{realtorName}</p>
-        <p className="truncate text-xs leading-4 text-rez-graphite">{firmName}</p>
+        <p className="truncate text-sm leading-5 font-semibold text-black [&_button]:block [&_button]:max-w-full [&_button]:truncate"><RealtorProfilePopup lookupId={p.realtorId} purpose={p.intent === "rent" ? "rent" : "sale"} label={realtorName} /></p>
+        <p className="truncate text-xs leading-4 text-rez-graphite [&_button]:block [&_button]:max-w-full [&_button]:truncate [&_button]:font-normal"><RealtorProfilePopup lookupId={p.realtorId} purpose={p.intent === "rent" ? "rent" : "sale"} label={firmName} /></p>
       </div>
     </div>
-    <LeadDialog mode="contact" title="Contact the realtor" description={p.title} target={{ propertyId: p.id, realtorId: p.realtorId }} recipient={p.realtorFirm || "the realtor"} intents={PROPERTY_INTENTS} listing={realListing ? { id: p.id, firmId: p.realtorFirmId || "", brokerId: p.realtorId, name: p.title, path } : undefined} mobileSheet>
+    {/* Signed-out visitors sign in first, then come back here with this card's form open. */}
+    <LeadDialog requireSignIn pendingFor={p.id} defaultIntent="Please contact me" mode="contact" title="Contact the realtor" description={p.title} target={{ propertyId: p.id, realtorId: p.realtorId }} recipient={p.realtorFirm || "the realtor"} intents={PROPERTY_INTENTS} listing={realListing ? { id: p.id, firmId: p.realtorFirmId || "", brokerId: p.realtorId, name: p.title, path } : undefined} mobileSheet>
       <Button variant="outline" className="h-9 min-w-[100px] shrink-0 rounded-full border-[#D1D5DB] bg-white px-5 text-xs font-semibold text-[#18181B] shadow-none hover:bg-[#F3F4F6]" disabled={realListing && !canContact} title={realListing && !canContact ? "Broker details are unavailable" : undefined}>Connect</Button>
     </LeadDialog>
   </div>;
@@ -89,7 +91,6 @@ function PropertyCardRealtorFooter({ property: p, path, realListing, canContact 
 export function PropertyCard({ property: p, priority, layout = "stack" }: { property: Property; priority?: boolean; layout?: "stack" | "row" }) {
   const row = layout === "row";
   const rent = p.intent === "rent", path = propertyHref(p);
-  const displayDate = row ? p.listedAt || p.updatedAt : p.updatedAt;
   const realListing = BACKEND_ID_PATTERN.test(p.id);
   const canContact = !!p.realtorId && !!p.realtorFirmId;
   const office = p.category === "offices" || /office/i.test(p.unitType || p.specs[0]?.value || "");
@@ -103,11 +104,12 @@ export function PropertyCard({ property: p, priority, layout = "stack" }: { prop
   return <article className={cn("group relative flex h-full w-full max-w-[640px] min-w-0 flex-col overflow-hidden rounded-xl border border-rez-smoke bg-white shadow-[0_1px_3px_#0000001f]", row && "md:grid md:max-w-none md:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)] md:rounded-lg")}>
     <div className={cn("relative h-[calc(240px*var(--property-space-scale,1))] shrink-0 bg-rez-cloud", row && "md:h-auto md:min-h-[calc(208px*var(--property-space-scale,1))] xl:min-h-[calc(250px*var(--property-space-scale,1))] 2xl:min-h-[calc(280px*var(--property-space-scale,1))]")}>
       <PropertyCardImageCarousel key={p.id} images={p.images} label={p.title || "Property listing"} href={path} priority={priority} />
-      <div className="pointer-events-none absolute top-5 left-3 flex max-w-[calc(100%-148px)] items-center gap-2">
+      <div className="pointer-events-none absolute top-5 left-3 flex max-w-[calc(100%-184px)] items-center gap-2">
         {availabilityLabel(p) && <span className="rounded-[4px] bg-black px-3 py-1 text-[11px] font-semibold text-white sm:text-xs">{availabilityLabel(p)}</span>}
         <ViewedEye listingId={p.id} className="size-[18px] text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]" />
       </div>
       <div className="absolute top-5 right-5 flex gap-3">
+        <BrochureButton url={p.brochureUrl} listingId={realListing ? p.id : undefined} path={path} iconOnly variant="outline" size="icon" className="size-6 shrink-0 gap-0 rounded-full border-0 bg-white p-1 text-rez-graphite shadow-none hover:bg-white hover:text-black [&_svg]:size-[14px] [&_img]:size-[14px]" />
         <SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-6 gap-0 rounded-full border-0 bg-white p-1 text-rez-graphite hover:bg-white hover:text-black [&_svg]:size-[14px]" />
         <SaveIconButton list="compare" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-6 gap-0 rounded-full border-0 bg-white p-1 text-rez-graphite hover:bg-white hover:text-black [&_svg]:size-[14px]" />
         <ShareButton property={p} title={p.title} path={path} iconOnly className="size-6 gap-0 rounded-full border-0 bg-white p-1 text-rez-graphite hover:bg-white hover:text-black [&_svg:not([class*='size-'])]:size-[14px]" />
@@ -117,7 +119,7 @@ export function PropertyCard({ property: p, priority, layout = "stack" }: { prop
       <div className={cn("flex flex-1 flex-col gap-3 px-4 py-3", row && "md:gap-2 md:px-3 md:py-2")}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1"><h3 title={p.title || "Property listing"} className="truncate text-base leading-6 font-semibold"><Link href={path} className="hover:underline">{p.title || "Property listing"}</Link></h3>{!row && <p className="text-xs leading-4 font-medium break-words text-rez-graphite">{propertyCardLocation(p)}</p>}</div>
-          <BrochureButton url={p.brochureUrl} listingId={realListing ? p.id : undefined} path={path} iconOnly variant="outline" size="icon" className="size-9 shrink-0 rounded-full border-rez-smoke text-rez-graphite shadow-sm" />
+          <div className="shrink-0 text-right text-xs leading-4 text-rez-graphite"><p>Updated</p><p className="mt-0.5 text-[12px] font-semibold text-black">{p.updatedAt && !Number.isNaN(Date.parse(p.updatedAt)) ? formatDate(p.updatedAt) : "Not provided"}</p></div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div><p className="text-lg leading-7 font-semibold">{priceLabel(p)}</p>{!p.priceHidden && p.price > 0 && (rent ? (p.securityDeposit ? <p className="text-xs leading-4 font-medium text-rez-graphite">Deposit: {depositLabel(p.securityDeposit)}</p> : null) : <p className="text-xs leading-4 font-medium text-rez-graphite">{p.ratePerSqft ? `₹ ${formatNumber(p.ratePerSqft)} per sqft` : formatRate(p.price, p.areaSqft, rent)}</p>)}</div>
@@ -126,7 +128,7 @@ export function PropertyCard({ property: p, priority, layout = "stack" }: { prop
         <dl className="grid grid-cols-4 rounded-md bg-[#F3F4F6] py-2">
           {features.map(feature => <div key={feature.label} className="flex min-w-0 flex-col items-center gap-1 px-2 text-center"><dt><feature.Icon className="size-6 text-[#777783]" aria-hidden /><span className="sr-only">{feature.label}</span></dt><dd className="text-xs leading-4 [overflow-wrap:anywhere]">{feature.value}</dd></div>)}
         </dl>
-        <div className="flex justify-between gap-3 text-xs leading-4 text-rez-graphite"><div className="min-w-0"><p>Listing Realtor</p><p className="mt-0.5 truncate text-xs font-semibold text-black [&_button]:block [&_button]:max-w-full [&_button]:truncate"><RealtorProfilePopup lookupId={p.realtorId} purpose={p.intent === "rent" ? "rent" : "sale"} label={p.realtorFirm || "Listing realtor"} /></p></div><div className="shrink-0 text-right"><p>{row ? "Listing Date" : "Last Updated"}</p><p className="mt-0.5 text-[12px] font-semibold text-black">{displayDate && !Number.isNaN(Date.parse(displayDate)) ? formatDate(displayDate) : "Not provided"}</p></div></div>
+        {row && <div className="flex justify-between gap-3 text-xs leading-4 text-rez-graphite"><div className="min-w-0"><p>Listing Realtor</p><p className="mt-0.5 truncate text-xs font-semibold text-black [&_button]:block [&_button]:max-w-full [&_button]:truncate"><RealtorProfilePopup lookupId={p.realtorId} purpose={p.intent === "rent" ? "rent" : "sale"} label={p.realtorFirm || "Listing realtor"} /></p></div></div>}
       </div>
       {!row && <PropertyCardRealtorFooter property={p} path={path} realListing={realListing} canContact={canContact} />}
     </div>

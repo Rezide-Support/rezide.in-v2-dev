@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
+import { projectPath } from "@/lib/project-url";
 import { PROJECTS } from "@/mocks/fixtures/projects";
 import type { Project } from "@/types/models";
 import { experienceLabel } from "./about-developer";
@@ -145,7 +146,8 @@ it("Details expands inline while the project title and photo open separately in 
  const p=project({configurationPlans:[{bhk:"1 BHK",areaMin:373,areaMax:458}]});
  wrap(<ProjectWideCard project={p}/>);
  for(const link of [screen.getByRole("link",{name:p.name}),screen.getByRole("link",{name:`View ${p.name}`})]) {
-  expect(link).toHaveAttribute("href",`/project/${p.id}`);
+  // Both open the project at its SEO URL (src/lib/project-url.ts), in a new tab.
+  expect(link).toHaveAttribute("href",projectPath(p));
   expect(link).toHaveAttribute("target","_blank");
  }
  await user.click(screen.getByRole("button",{name:/^Details/}));

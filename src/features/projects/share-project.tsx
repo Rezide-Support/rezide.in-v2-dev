@@ -16,7 +16,7 @@ import { projectHref } from "./project-card";
  * ("Share Project") on phones.
  */
 
-type ShareProject = Pick<Project, "id" | "name" | "locality" | "city" | "images" | "subRegion">;
+type ShareProject = Pick<Project, "id" | "slug" | "name" | "locality" | "city" | "images" | "subRegion">;
 
 /** rezide.in switches to the drawer below 768px. */
 const MOBILE_QUERY = "(max-width: 767px)";

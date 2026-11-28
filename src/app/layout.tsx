@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { fontVariables } from "./fonts";
+import { SITE_URL } from "@/lib/site";
 import { Providers } from "./providers";
 import "./globals.css";
 import "@/features/properties/property-density.css";
 
 export const metadata: Metadata = {
+  // Makes relative canonical and Open Graph URLs absolute (src/lib/site.ts).
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Rezide · Genuine listings only",
     template: "%s · Rezide",

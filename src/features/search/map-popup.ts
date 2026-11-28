@@ -23,10 +23,15 @@ const addressOf = (i: ListingItem) => [i.locality, i.city].filter(Boolean).join(
 
 const AREA_UNITS: Record<string, string> = { SQFT: "sq.ft" };
 
-function listingSpecs(i: ListingItem) {
-  const beds = i.bedrooms ?? (i.bhk ? parseFloat(i.bhk) : undefined);
-  const unit = i.area_unit ? (AREA_UNITS[i.area_unit] ?? i.area_unit.toLowerCase().replaceAll("_", " ")) : "";
-  return `${beds ?? "—"} beds · ${i.area ?? "—"} ${unit}`.trim();
+function listingSpecs(i: ListingItem, property?: Property) {
+  const beds = property?.bhk ?? i.bedrooms ?? (i.bhk ? parseFloat(i.bhk) : undefined);
+  const fromProperty = property?.areaKnown !== false && !!property?.areaSqft;
+  const area = fromProperty ? property!.areaSqft : i.area;
+  const unit = fromProperty ? "sq.ft" : i.area_unit ? (AREA_UNITS[i.area_unit] ?? i.area_unit.toLowerCase().replaceAll("_", " ")) : "";
+  return [
+    beds !== undefined && Number.isFinite(beds) && beds > 0 ? `${beds} ${property?.bhk ? "BHK" : "beds"}` : "",
+    area !== undefined && Number.isFinite(area) && area > 0 ? `${area.toLocaleString("en-IN")} ${unit}`.trim() : "",
+  ].filter(Boolean).join(" · ");
 }
 
 function article(image: string | undefined, kind: string, title: string, address: string, value: string, extra: string, action: string) {
@@ -44,11 +49,12 @@ function article(image: string | undefined, kind: string, title: string, address
 function listingArticle(i: ListingItem, context: PopupContext) {
   const property = context.properties?.find(property => property.id === i.listingId || property.listingCode === i.listingId);
   const price = itemPrice(i.price);
-  const id = openableListingId(i.listingId);
+  const id = openableListingId(property?.id ?? i.listingId);
   const action = id
-    ? `<a href="${escapeHtml(propertyHref({ id }))}">View property</a>`
+    ? `<a href="${escapeHtml(propertyHref(property ?? { id }))}">View property</a>`
     : `<span class="rez-map-popup-note">Listing page isn't available for this pin yet.</span>`;
-  return article(property?.images[0], "LISTING", i.title, addressOf(i), price ? formatPrice(price) : "Price on request", `<span class="rez-map-popup-specs">${escapeHtml(listingSpecs(i))}</span>`, action);
+  const specs = listingSpecs(i, property);
+  return article(property?.images[0], "LISTING", i.title, addressOf(i), price ? formatPrice(price) : "Price on request", specs ? `<span class="rez-map-popup-specs">${escapeHtml(specs)}</span>` : "", action);
 }
 
 /** The listings a project pin carries, as listing items. */

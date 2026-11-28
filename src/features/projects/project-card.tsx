@@ -12,6 +12,7 @@ import { LeadDialog } from "@/features/properties/detail/lead-dialog";
 import { PROJECT_INTENTS } from "@/features/properties/detail/lead-form";
 import { Viewer } from "@/features/properties/detail/media-gallery";
 import { PROJECT_STATUS_LABEL } from "@/lib/constants";
+import { projectPath, type ProjectLinkable } from "@/lib/project-url";
 import { formatNumber, formatPrice, initials, possessive } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ProjectMediaButtons } from "./project-media";
@@ -52,7 +53,8 @@ export function ConfigurationTable({ id, rows }: { id: string; rows: ProjectConf
   );
 }
 
-export const projectHref = (p: Pick<Project, "id">) => `/projects/${p.id}`;
+/** The project's page, at its SEO URL (src/lib/project-url.ts). */
+export const projectHref = (p: ProjectLinkable) => projectPath(p);
 
 export const statusTone = (s: Project["status"]) =>
   s === "rtm" ? "bg-rez-timber-tint text-rez-full-white" : s === "nl" ? "bg-rez-mocaccino text-black" : "bg-black text-rez-full-white";

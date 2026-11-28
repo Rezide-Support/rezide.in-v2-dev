@@ -193,14 +193,7 @@ export function DirectoryCard({
             label="Specializing"
             className={!person ? "col-span-2" : undefined}
           >
-            {person ? (
-              person.specializations.join(", ") || "Not provided"
-            ) : (
-              // Firm cards on laptops: long lists stop after 3 lines (hover shows all; the firm page has them in full).
-              <span className="lg:max-[1599.98px]:line-clamp-3" title={firm.specializations.join(", ") || undefined}>
-                {firm.specializations.join(", ") || "Not provided"}
-              </span>
-            )}
+            <ListPreview items={person ? person.specializations : firm.specializations} href={profileHref} name={name} noun="specializations" />
           </DirectoryDetail>
           {person ? (
             <>
@@ -215,9 +208,7 @@ export function DirectoryCard({
           ) : (
             <>
               <DirectoryDetail label="Location" className="col-span-2">
-                <span className="lg:max-[1599.98px]:line-clamp-4" title={[...new Set([...firm.subRegions, ...firm.localities])].join(", ") || undefined}>
-                  {[...new Set([...firm.subRegions, ...firm.localities])].join(", ") || "Not provided"}
-                </span>
+                <ListPreview items={[...new Set([...firm.subRegions, ...firm.localities])]} href={profileHref} name={name} noun="locations" />
               </DirectoryDetail>
               <DirectoryDetail label="Since">
                 {firm.since || "Not provided"}
@@ -295,6 +286,34 @@ export function DirectoryCard({
         </DialogContent>
       </Dialog>
     </article>
+  );
+}
+
+/** How many items a card's list (specializations, locations) shows before the "+N" button. */
+const LIST_PREVIEW = 2;
+
+/**
+ * A card's list (a realtor's or firm's specializations, a firm's locations): the first two, then
+ * a "+N" button that opens the realtor's or firm's page, where the full list is shown (hovering it
+ * lists the rest).
+ */
+function ListPreview({ items, href, name, noun }: { items: string[]; href: string; name: string; noun: string }) {
+  if (items.length === 0) return <>Not provided</>;
+  const rest = items.slice(LIST_PREVIEW);
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+      <span>{items.slice(0, LIST_PREVIEW).join(", ")}</span>
+      {rest.length > 0 && (
+        <Link
+          href={href}
+          title={rest.join(", ")}
+          aria-label={`${rest.length} more ${noun}. View ${name}'s profile`}
+          className="inline-flex h-5 min-w-7 items-center justify-center rounded-full border border-rez-smoke bg-rez-cloud px-2 text-[11px] leading-none font-bold text-black transition-colors hover:border-black hover:bg-black hover:text-white focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-1 focus-visible:outline-none sm:h-6 sm:text-xs"
+        >
+          +{rest.length}
+        </Link>
+      )}
+    </span>
   );
 }
 

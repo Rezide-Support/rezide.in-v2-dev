@@ -196,7 +196,7 @@ export default function LeafletMap({
       });
       // GeoEstate shows the price (or "N listings · tap to zoom") above the pin on hover.
       if (p.kind) marker.bindTooltip(escapeHtml(p.label), { direction: "top", offset: [0, -40] });
-      if (p.popupHtml) marker.bindPopup(p.popupHtml, { className: "rez-map-popup", minWidth: 240, maxWidth: 290, offset: [0, -40] });
+      if (p.popupHtml) marker.bindPopup(p.popupHtml, { className: "rez-map-popup", closeButton: false, minWidth: 240, maxWidth: 290, offset: [0, -40] });
       marker.on("click", () => {
         if (onPointClickRef.current) onPointClickRef.current(p);
         else if (p.kind === "cluster" || p.kind === "project") m.setView(p.position, Math.min(m.getZoom() + GROUP_ZOOM_STEP, MAX_ZOOM));
@@ -245,5 +245,5 @@ export default function LeafletMap({
     });
   }, [highlightedId, points]);
 
-  return <div ref={el} className={className} role="region" aria-label="Map of results" />;
+  return <div ref={el} className={`[&_.rez-map-popup-list:has(article+article)]:pr-2 [&_.rez-map-popup-item_a]:bg-white! [&_.rez-map-popup-item_a]:border [&_.rez-map-popup-item_a]:border-rez-smoke [&_.rez-map-popup-item_a]:text-[#111]! ${className ?? ""}`} role="region" aria-label="Map of results" />;
 }

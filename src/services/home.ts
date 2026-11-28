@@ -124,10 +124,11 @@ type Localities = { localities: HomeLocality[]; localityCity: string };
 /**
  * A city's top localities. A 404 means the per-city endpoint isn't deployed, so this falls back.
  */
-async function fetchLocalities(city: string): Promise<Localities> {
+async function fetchLocalities(city: string, status?: string): Promise<Localities> {
   try {
     const { data } = await api.get(`${PROJECT_HOME}/locality/city`, {
-      params: { city: toBackendCity(city) },
+      // The Projects home sends its tab, so each tab counts only its own projects (count-mismatch report F2).
+      params: { city: toBackendCity(city), ...(status ? { status } : {}) },
     });
     return { localities: toLocalities(data), localityCity: city };
   } catch (error) {
@@ -237,7 +238,7 @@ export type ProjectHome = {
  * per status: possession year (Under Construction), years since completion
  * (Ready to Move) or months since launch (New Launches).
  */
-/** The backend's wording for each status on the possession endpoint. */
+/** The backend's wording for each tab (the `status` the possession, budget and locality endpoints take). */
 const POSSESSION_STATUS: Record<ProjectStatus, string> = {
   uc: "Under Construction",
   rtm: "Ready to Move",
@@ -248,17 +249,20 @@ export async function fetchProjectHome(
   city: string,
   status: ProjectStatus,
 ): Promise<ProjectHome> {
-  const params = { city: toBackendCity(city) };
+  // Every rail asks for the open tab ("Under Construction", "Ready to Move", "New Launches"), so the
+  // Budget and Location cards count only that tab's projects, as the projects page does
+  // (count-mismatch report F1/F2). The query key holds the tab, so switching tabs refetches.
+  const params = { city: toBackendCity(city), status: POSSESSION_STATUS[status] };
   const [{ localities, localityCity }, budgets, possession] = await Promise.all(
     [
-      fetchLocalities(city),
+      fetchLocalities(city, POSSESSION_STATUS[status]),
       api
         .get<BackendBudget[]>(`${PROJECT_HOME}/budget`, { params })
         .then((r) => responseArray<BackendBudget>(r.data)),
       api
         .get<
           BackendPossession[]
-        >(`${PROJECT_HOME}/possession`, { params: { ...params, status: POSSESSION_STATUS[status] } })
+        >(`${PROJECT_HOME}/possession`, { params })
         .then((r) => responseArray<BackendPossession>(r.data)),
     ],
   );

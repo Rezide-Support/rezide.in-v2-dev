@@ -92,13 +92,13 @@ export function MediaGallery({
       <ScrollIndicator>
       <TabsList
         aria-label="Media"
-        className={cn("flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-rez-smoke bg-white p-0 scrollbar-none group-data-horizontal/tabs:h-auto lg:gap-0 lg:rounded-[6px] lg:border lg:p-0", onlyEmptyPhotos && "justify-center border-0 lg:border-0")}
+        className={cn("flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-rez-smoke bg-white p-0 scrollbar-none group-data-horizontal/tabs:h-auto lg:gap-0 lg:rounded-[6px] lg:border lg:p-0 max-lg:border-b-0 ", onlyEmptyPhotos && "justify-center border-0 max-lg:shadow-none lg:border-0")}
       >
         {availableTabs.map((t) => (
           <TabsTrigger
             key={t.value}
             value={t.value}
-            className={cn("h-14 flex-1 flex-col gap-1 rounded-none border-0 px-3 text-xs font-medium text-rez-graphite after:hidden hover:text-black data-active:font-semibold data-active:text-black data-active:shadow-[inset_0_-2px_0_#000] lg:h-9 lg:min-w-[88px] lg:flex-row lg:gap-1.5 lg:rounded-[6px] lg:text-sm lg:data-active:bg-black lg:data-active:text-rez-full-white lg:data-active:shadow-none lg:data-active:hover:text-rez-full-white", onlyEmptyPhotos && "max-w-[200px] rounded-[6px] border border-rez-smoke data-active:shadow-none")}
+            className={cn("h-14 flex-1 flex-col gap-1 rounded-none border-0 px-3 text-xs font-medium text-rez-graphite after:hidden hover:text-black data-active:font-semibold data-active:text-black max-lg:border-b-[3px]! max-lg:border-b-[#dedede] max-lg:aria-selected:border-b-[#444]! max-lg:shadow-none! max-lg:border-x-0! max-lg:border-t-0! max-lg:focus-visible:ring-0 max-lg:focus-visible:outline-none lg:h-9 lg:min-w-[88px] lg:flex-row lg:gap-1.5 lg:rounded-[6px] lg:text-sm lg:data-active:bg-black lg:data-active:text-rez-full-white lg:data-active:shadow-none lg:data-active:hover:text-rez-full-white", onlyEmptyPhotos && "max-w-[200px] rounded-[6px] border border-rez-smoke max-lg:border-b! max-lg:aria-selected:border-b-rez-smoke! data-active:shadow-none")}
           >
             <t.icon className="size-4" aria-hidden />
             {t.phoneLabel ? (
@@ -117,7 +117,7 @@ export function MediaGallery({
       </TabsList>
       </ScrollIndicator>
       {availableTabs.map((t) => (
-        <TabsContent key={t.value} value={t.value} className="min-w-0">
+        <TabsContent key={t.value} value={t.value} className={cn("min-w-0", !onlyEmptyPhotos && "max-lg:mt-[2px]")}>
           {t.content ? t.content : t.videoUrl ? (
             <video src={t.videoUrl} controls preload="metadata" aria-label={`${title}: video`} className="aspect-video w-full rounded-lg bg-black" />
           ) : t.tourUrl ? (
@@ -224,14 +224,17 @@ export function Viewer({ images, slides: photoSlides, label, cardHref, priority,
       <div ref={mainRef} className="h-full overflow-hidden">
         <div className="flex h-full touch-pan-y">
           {slides.map((slide, i) => <div key={slide.url + ":" + i} role="group" aria-roledescription="slide" aria-label={(i + 1) + " of " + n} aria-hidden={i !== selected} className="relative h-full min-w-0 flex-[0_0_100%]">
-            {cardHref ? <Link href={cardHref} tabIndex={i === selected ? 0 : -1} className="relative block h-full w-full" aria-label={"View " + label}><Image src={source(slide.url)} onError={() => fail(slide.url)} alt={label + ", photo " + (i + 1) + " of " + n} fill sizes="(min-width: 1280px) 420px, 50vw" priority={priority && i === 0} className="object-cover" /></Link> : <Image src={source(slide.url)} onError={() => fail(slide.url)} alt={label + ", photo " + (i + 1) + " of " + n} fill sizes="(min-width: 1024px) 66vw, 100vw" quality={70} loading={i === 0 ? "eager" : "lazy"} className="object-cover" />}
+            {cardHref ? <Link href={cardHref} tabIndex={i === selected ? 0 : -1} className="relative block h-full w-full" aria-label={"View " + label}><Image src={source(slide.url)} onError={() => fail(slide.url)} alt={label + (slide.label?.trim() ? " – " + slide.label.trim() : "") + ", photo " + (i + 1) + " of " + n} fill sizes="(min-width: 1280px) 420px, 50vw" priority={priority && i === 0} className="object-cover" /></Link> : <Image src={source(slide.url)} onError={() => fail(slide.url)} alt={label + (slide.label?.trim() ? " – " + slide.label.trim() : "") + ", photo " + (i + 1) + " of " + n} fill sizes="(min-width: 1024px) 66vw, 100vw" quality={70} loading={i === 0 ? "eager" : "lazy"} className="object-cover" />}
             {!cardHref && (slide.label?.trim() || caption) && <p className="absolute inset-x-0 bottom-0 bg-[rgba(84,84,84,0.7)] p-2 text-sm text-white">{slide.label?.trim() ? slide.label : caption}</p>}
           </div>)}
         </div>
       </div>
-      {!cardHref && <span className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white tabular-nums" aria-live="polite">{n ? selected + 1 : 0}/{n}</span>}
+      {!cardHref && <div className="absolute top-3 right-3 z-10 flex items-center gap-3">
+        {overlay && <div className="lg:hidden">{overlay}</div>}
+        <span className="rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white tabular-nums max-lg:bg-black/40 max-lg:px-2 max-lg:text-[11px] max-lg:font-normal" aria-live="polite">{n ? selected + 1 : 0}/{n}</span>
+      </div>}
       {sample && <SampleBadge className="absolute top-3 left-3">Sample photo</SampleBadge>}
-      {overlay && <div className="absolute top-3 right-[3.75rem] z-10 lg:hidden">{overlay}</div>}
+      {cardHref && overlay && <div className="absolute top-3 right-[3.75rem] z-10 lg:hidden">{overlay}</div>}
       {n > 1 && <GalleryArrows api={mainApi} previous={main.previous} next={main.next} className={arrowClassName} onEnd={linear && cardHref ? () => router.push(cardHref) : undefined} endLabel={"View " + label} />}
     </div>
     {!cardHref && n > 0 && <div role="region" aria-roledescription="carousel" aria-label={label + " thumbnails"} tabIndex={0} onKeyDown={event => keyboardScroll(event, thumbApi)} className="group/carousel relative min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-rez-mocaccino max-lg:hidden">

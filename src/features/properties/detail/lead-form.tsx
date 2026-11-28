@@ -213,17 +213,9 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
 
   return (
     <form noValidate onSubmit={handleSubmit((v) => mutation.mutate(v))} className={cn("flex flex-col gap-3.5", agentCard && "gap-4 [--spacing:0.25rem] [--text-sm:0.875rem]", className)}>
-      {agentCard ? <Controller control={control} name="name" render={({ field }) => {
-        const [first = "", ...rest] = field.value.split(" ");
-        const last = rest.join(" ");
-        const inputClass = "h-10 rounded-[6px] border-rez-smoke bg-white px-3 text-sm placeholder:text-rez-graphite";
-        return <>
-          <Field label="First Name" required error={errors.name?.message} labelClassName="sr-only"><Input ref={field.ref} name={field.name} autoComplete="given-name" placeholder="First Name" className={inputClass} value={first} onBlur={field.onBlur} onChange={event => field.onChange(`${event.target.value} ${last}`)} /></Field>
-          <Field label="Last Name" labelClassName="sr-only"><Input autoComplete="family-name" placeholder="Last Name" className={inputClass} value={last} onBlur={field.onBlur} onChange={event => field.onChange(`${first} ${event.target.value}`)} /></Field>
-        </>;
-      }} /> : <Field label="Name" required error={errors.name?.message} labelClassName={labelClass}>
-        <Input autoComplete="name" placeholder={ph("Name")} className={fieldInput} {...register("name")} />
-      </Field>}
+      <Field label="Name" required error={errors.name?.message} labelClassName={labelClass}>
+        <Input autoComplete="name" placeholder={ph("Name")} className={cn(fieldInput, agentCard && "h-10 rounded-[6px] border-rez-smoke bg-white px-3 text-sm placeholder:text-rez-graphite")} {...register("name")} />
+      </Field>
       <Field label="Mobile number" required error={errors.phone?.message} labelClassName={labelClass}>
         <Controller
           control={control}
@@ -244,7 +236,7 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
                 <SelectTrigger
                   ref={field.ref}
                   onBlur={field.onBlur}
-                  className={cn("h-12 w-full rounded-lg border-[#e4e4e4] bg-white px-4 text-left text-sm text-rez-graphite focus-visible:border-rez-mocaccino focus-visible:ring-rez-mocaccino/30", agentCard && "h-10 rounded-[6px] bg-transparent px-3 font-normal text-black data-[size=default]:h-10")}
+                  className={cn("h-12 data-[size=default]:h-12 w-full rounded-lg border-[#e4e4e4] bg-white px-4 text-left text-sm text-rez-graphite focus-visible:border-rez-mocaccino focus-visible:ring-rez-mocaccino/30", agentCard && "h-10 rounded-[6px] bg-transparent px-3 font-normal text-black data-[size=default]:h-10")}
                 >
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -254,9 +246,9 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
                 align="start"
                 sideOffset={4}
                 collisionPadding={12}
-                className={cn("z-[70] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-rez-smoke bg-white p-1.5 text-rez-graphite shadow-rez-lg ring-0", agentCard && "max-h-none overflow-visible rounded-[6px] p-1 text-black [&_[data-slot=select-scroll-up-button]]:hidden [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-position=popper]]:h-auto! [&_[data-position=popper]]:overflow-visible! [--spacing:0.25rem] [--text-sm:0.875rem] [&_[data-position=popper]]:min-w-0! [&_[data-position=popper]]:w-full")}
+                className={cn("z-[70] max-h-[min(320px,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-rez-smoke bg-white p-2 text-rez-graphite shadow-rez-lg ring-0 [--spacing:0.25rem] [&_[data-position=popper]]:min-w-0! [&_[data-position=popper]]:w-full", agentCard && "max-h-none overflow-visible rounded-[6px] p-1 text-black [&_[data-slot=select-scroll-up-button]]:hidden [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-position=popper]]:h-auto! [&_[data-position=popper]]:overflow-visible! [--spacing:0.25rem] [--text-sm:0.875rem] [&_[data-position=popper]]:min-w-0! [&_[data-position=popper]]:w-full")}
               >
-                <SelectGroup className={cn(agentCard && "space-y-1")}>
+                <SelectGroup className="space-y-1.5">
                   <SelectLabel className="px-2.5 py-2 text-sm font-semibold text-black">Select option</SelectLabel>
                   {intents.map((intent) => (
                     <SelectItem
@@ -327,10 +319,10 @@ export function LeadForm({ mode, target, recipient, intents = PROPERTY_INTENTS, 
           (submitLabel ?? "Submit")
         )}
       </Button>
-      <p className="text-center text-[11px] leading-snug text-rez-graphite">
+      {/* <p className="text-center text-[11px] leading-snug text-rez-graphite">
         By submitting you agree to be contacted about this request.
         {demo && " Demo mode: nothing is delivered to the realtor or developer."}
-      </p>
+      </p> */}
     </form>
   );
 }

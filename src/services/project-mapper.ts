@@ -1,5 +1,7 @@
 import { CDN_ORIGIN, uploadUrl } from "@/lib/api/origins";
 import { BUDGET_TIERS } from "@/lib/constants";
+import { developerRecordSlug } from "@/lib/developer-url";
+import { projectRowSlug } from "@/lib/project-url";
 import type { DeveloperProfile, Project, ProjectConfiguration, ProjectRera, ProjectSearchCriteria, ProjectSortKey, ProjectStatus } from "@/types/models";
 import { cityLabel, toBackendCity } from "./locations";
 import { cdnImage, PLACEHOLDER_IMAGE } from "./property-mapper";
@@ -127,14 +129,24 @@ function possessionOf(status: ProjectStatus, iso: string | undefined): { year?: 
   return status === "rtm" ? { label: `Completed ${when}` } : { year: date.getUTCFullYear(), label: `Possession ${when}` };
 }
 
-/** Prefer the project's own city; older responses fall back to the search city. */
-export function toProject(row: BackendProjectRow, city: string, statusOverride?: ProjectStatus): Project {
+/** Which city a project is filed under, by id (src/services/project-city-index.ts), for its SEO URL. */
+export type ProjectCityOf = (id: string) => string | undefined;
+
+/**
+ * Prefer the project's own city; older responses fall back to the search city. `cityOf` gives the
+ * city for the project's SEO URL (src/lib/project-url.ts); every server caller passes it, so a
+ * project's URL is the same wherever it's linked from.
+ */
+export function toProject(row: BackendProjectRow, city: string, statusOverride?: ProjectStatus, cityOf?: ProjectCityOf): Project {
   const status = statusOverride ?? STATUSES[(row.status ?? "").trim().toLowerCase()] ?? "uc";
   const possession = possessionOf(status, row.possession);
   const [areaMin, areaMax] = toAreaRange(row.area);
   const images = urls(row.images);
+  const id = String(row._id ?? "");
   return {
-    id: String(row._id ?? ""),
+    id,
+    // Made here, from the row, and kept by withProjectDetail: every source builds the same URL.
+    slug: projectRowSlug(row, cityOf?.(id)),
     name: (row.project_name ?? "").trim(),
     logo: projectLogoUrl(row.logo),
     developer: (row.developer_name ?? "").trim(),
@@ -269,6 +281,8 @@ function toDeveloperProfile(project: NonNullable<BackendProjectDetail["project"]
   const established = String(info.estd_year ?? "").trim();
   return {
     id: dev._id,
+    // Its page's SEO URL words, from the same record fields the developer page uses.
+    slug: developerRecordSlug(dev),
     name: info.developer_name?.trim() || base.developer,
     headquarters: headquarters || city,
     description: info.description?.trim() ?? "",
@@ -347,6 +361,9 @@ export function toProjectFilters(c: ProjectSearchCriteria) {
     city: [toBackendCity(c.city)],
     project_names_localities_subRegions: c.q.trim() ? [c.q.trim()] : [],
     subRegions: c.localities,
+    // A home Location card's locality matches the backend's locality field, not sub_region
+    // (count-mismatch report F3): sending it as subRegions found "No projects".
+    ...(c.localityNames.length ? { localities: c.localityNames } : {}),
     project_age: c.status.map((s) => STATUS_FILTERS[s]),
     views: c.views,
     ...(min > 0 ? { budget_min: [min] } : {}),

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { formatNumber } from "@/lib/format";
+import { projectPath } from "@/lib/project-url";
 import type { Project, Property, RoomDimension } from "@/types/models";
 import { BackendAmenityTile as AmenityTile } from "./amenity-list";
 import { DashList, UnderlinedField } from "./detail-ui";
@@ -199,7 +200,6 @@ export function PropertyInfoTabs({ property: p, project, configurations = [], va
             ))}
           </ul>
         </section>
-        {(p.furnishingItems?.length ?? 0) > 0 && (
           <section aria-labelledby="amen-furn" className="flex flex-col gap-4">
             <h3 id="amen-furn" className="text-lg font-semibold">
               Furnishing amenities
@@ -212,11 +212,8 @@ export function PropertyInfoTabs({ property: p, project, configurations = [], va
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-sm text-rez-graphite">This unit is listed unfurnished.</p>
-            )}
+            ) : null}
           </section>
-        )}
       </InfoPanel>}
 
       {(!p.projectHidden && !!project) && <InfoPanel stacked={stacked} value="project" title="Project information" className={panel}>
@@ -238,7 +235,7 @@ export function PropertyInfoTabs({ property: p, project, configurations = [], va
               <UnderlinedField label="Total units" value={formatNumber(project.units)} upper />
               <UnderlinedField label="Total area" value={`${project.acres} acres`} upper />
             </dl>
-            <Link href={`/projects/${project.id}`} className="self-start text-sm font-semibold underline underline-offset-4 hover:text-rez-mocaccino-ink">
+            <Link href={projectPath(project)} className="self-start text-sm font-semibold underline underline-offset-4 hover:text-rez-mocaccino-ink">
               View {project.name}
             </Link>
           </div>

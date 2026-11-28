@@ -290,6 +290,7 @@ export function defaultProjectCriteria(
     q: "",
     status: [],
     localities: [],
+    localityNames: [],
     budget: [],
     years: [],
     views: [],
@@ -311,6 +312,7 @@ export function parseProjectCriteria(params: ParamsLike): ProjectSearchCriteria 
     q: params.get("q")?.trim() ?? "",
     status: clean(params.getAll("status")).filter(isStatus),
     localities: clean(params.getAll("loc")),
+    localityNames: clean(params.getAll("locality")),
     budget: clean(params.getAll("budget")),
     years: clean(params.getAll("year")).map(Number).filter((y) => Number.isInteger(y) && y > 2000),
     views: clean(params.getAll("view")),
@@ -332,6 +334,7 @@ export function serializeProjectCriteria(c: ProjectSearchCriteria): URLSearchPar
   if (c.q) p.set("q", c.q);
   c.status.forEach((v) => p.append("status", v));
   c.localities.forEach((v) => p.append("loc", v));
+  c.localityNames.forEach((v) => p.append("locality", v));
   c.budget.forEach((v) => p.append("budget", v));
   c.years.forEach((v) => p.append("year", String(v)));
   c.views.forEach((v) => p.append("view", v));

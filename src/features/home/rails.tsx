@@ -155,8 +155,8 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
   const verb = intent === "buy" ? "Sale" : "Rent";
 
   return (
-    <section aria-labelledby={headingId} className="property-discovery-rail px-4 pt-12 pb-16 md:px-8 md:pt-[88px] md:pb-[88px]">
-      <div className="mx-auto flex max-w-[min(100%,calc(1280px*var(--property-space-scale,1)))] flex-col gap-8 md:px-8">
+    <section aria-labelledby={headingId} className="property-discovery-rail px-4 pt-12 pb-16 md:px-8 md:pt-[clamp(56px,5.2vw,88px)] md:pb-[clamp(56px,5.2vw,88px)] [--property-space-scale:1] [--spacing:0.25rem]">
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-8 md:max-w-[clamp(1040px,74vw,1280px)] md:gap-[clamp(26px,1.9vw,32px)] md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-6 max-lg:flex-col max-lg:items-center max-lg:gap-4">
           <h2 id={headingId} className="text-[max(12px,calc(28px*var(--property-type-scale,1)))] leading-[1.1] font-semibold tracking-[-0.02em] text-pretty max-lg:text-center max-sm:text-[max(12px,calc(22px*var(--property-type-scale,1)))] md:text-[max(12px,calc(36px*var(--property-type-scale,1)))]">
             <span className="text-rez-mocaccino-ink">{city}</span> {category === "offices" ? "Office" : cat.noun} for{" "}
@@ -179,7 +179,7 @@ export function PropertyRails({ category, intent }: { category: PropertyCategory
             </button>
           </p>
         ) : null}
-        <RailGrid cards={cards} pool={PHOTO_IDS[category]} loading={stats.isPending} />
+        <RailGrid cards={cards} pool={PHOTO_IDS[category]} loading={stats.isPending} fluid />
         <ViewAll href={propertySearchHref(base)} label={`View all ${cat.noun.toLowerCase()} for ${verb.toLowerCase()} in ${city}`} />
       </div>
     </section>
@@ -223,7 +223,8 @@ export function ProjectRails({ status }: { status: ProjectStatus }) {
             label: l.name,
             image: l.image,
             count: l.projects,
-            href: projectSearchHref({ city: s.localityCity, status: [status], localities: [l.name] }),
+            // A locality, not a sub-region: sent to the backend as `localities` (count-mismatch report F3).
+            href: projectSearchHref({ city: s.localityCity, status: [status], localityNames: [l.name] }),
           }));
 
   return (

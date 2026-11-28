@@ -9,6 +9,7 @@ import { ShareButton } from "@/features/properties/share-button";
 import { formatAreaRange, formatPriceRange, formatRupees } from "@/features/properties/detail/format";
 import { SaveIconButton } from "@/features/properties/detail/save-actions";
 import { formatNumber } from "@/lib/format";
+import { projectPath } from "@/lib/project-url";
 import type { Project } from "@/types/models";
 
 function Row({ icon: IconCmp, label, children }: { icon: typeof Building2; label: React.ReactNode; children: React.ReactNode }) {
@@ -38,14 +39,14 @@ export function ProjectWideCard({ project: p }: { project: Project }) {
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-xl border border-rez-smoke bg-white">
       <div className="grid grid-cols-1 flex-1 gap-5 p-4 md:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_200px]">
-        <Link href={`/project/${p.id}`} target="_blank" rel="noopener noreferrer" aria-label={`View ${p.name}`} className="relative block aspect-[4/3] overflow-hidden rounded-lg bg-rez-cloud md:aspect-auto md:min-h-[240px]">
+        <Link href={projectPath(p)} target="_blank" rel="noopener noreferrer" aria-label={`View ${p.name}`} className="relative block aspect-[4/3] overflow-hidden rounded-lg bg-rez-cloud md:aspect-auto md:min-h-[240px]">
           <Image src={p.images[0]} alt={p.name} fill sizes="(min-width: 768px) 300px, 100vw" quality={70} className="object-cover" />
         </Link>
         <div className="flex min-w-0 flex-col">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h3 className="text-xl leading-tight font-semibold">
-                <Link href={`/project/${p.id}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                <Link href={projectPath(p)} target="_blank" rel="noopener noreferrer" className="hover:underline">
                   {p.name}
                 </Link>
               </h3>
@@ -56,7 +57,7 @@ export function ProjectWideCard({ project: p }: { project: Project }) {
             <div className="flex shrink-0 gap-1 [&_button]:size-9">
               <SaveIconButton list="shortlist" kind="project" id={p.id} title={p.name} />
               <SaveIconButton list="compare" kind="project" id={p.id} title={p.name} />
-              <ShareButton iconOnly title={p.name} path={`/projects/${p.id}`} className="size-9 border-transparent" />
+              <ShareButton iconOnly title={p.name} path={projectPath(p)} className="size-9 border-transparent" />
             </div>
           </div>
           <div className="mt-2">
@@ -102,6 +103,7 @@ export function ProjectWideCard({ project: p }: { project: Project }) {
             <dd className="text-base font-semibold">{formatPriceRange(p.priceFrom, p.priceTo)}</dd>
             <dd className="text-[11px] text-rez-graphite">({formatRupees(p.ratePerSqft)} psf)</dd>
           </dl>
+          {/* As on development: no Details without configuration ranges (the title and photo open the project). */}
           {hasRanges && (
             <button
               type="button"

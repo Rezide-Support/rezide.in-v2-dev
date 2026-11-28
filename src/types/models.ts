@@ -180,6 +180,8 @@ export type ProjectRera = { id: string; link?: string; qr?: string };
 export type DeveloperProfile = {
   /** The developer's backend id (contact details are looked up by it). */
   id?: string;
+  /** The words of its page's SEO URL ("lodha-group-mumbai"), see src/lib/developer-url.ts. */
+  slug?: string;
   name: string;
   /** e.g. "Mumbai, Maharashtra" */
   headquarters: string;
@@ -193,6 +195,8 @@ export type DeveloperProfile = {
 
 export interface Project {
   id: string;
+  /** The words of the project's SEO URL ("suraj-nova-1-2-bhk-…-mumbai"), see src/lib/project-url.ts. Sample data has none. */
+  slug?: string;
   name: string;
   /** The project's own logo, when provided by the backend. */
   logo?: string;
@@ -263,6 +267,8 @@ export interface Project {
   localityPhoto?: string;
   /** The locality's backend id: its page (/locality/{id}), as rezide.in's "Explore" photo links. */
   localityId?: string;
+  /** The words of that page's SEO URL (src/lib/locality-url.ts). */
+  localitySlug?: string;
 }
 
 export type RealtorCredential = "RERA" | "GST" | "NAR-India";
@@ -601,7 +607,10 @@ export interface ProjectSearchCriteria {
   city: string;
   q: string;
   status: ProjectStatus[];
+  /** The Location dialog's choices: sub-regions (sent to the backend as `subRegions`). */
   localities: string[];
+  /** A Projects home Location card's locality (sent as `localities`; URL `locality`). */
+  localityNames: string[];
   budget: string[];
   years: number[];
   views: string[];

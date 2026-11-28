@@ -70,6 +70,17 @@ describe("home rails", () => {
     expect(home.bhks).toEqual([{ label: "2.5 BHK", count: 47, plus: true }]);
   });
 
+  it("sends the open tab to the Budget and Location calls too (count-mismatch report F1/F2)", async () => {
+    backend.onGet("/inventory/project/home-page/budget").reply(200, []);
+    backend.onGet("/inventory/project/home-page/possession").reply(200, []);
+    for (const [tab, status] of [["uc", "Under Construction"], ["rtm", "Ready to Move"], ["nl", "New Launches"]] as const) {
+      backend.resetHistory();
+      await fetchProjectHome("Mumbai", tab);
+      const sent = Object.fromEntries(backend.history.get.map((r) => [r.url?.replace("/inventory/project/home-page/", ""), r.params.status]));
+      expect(sent).toEqual({ budget: status, "locality/city": status, possession: status });
+    }
+  });
+
   it("asks for each rail by the backend's city name", async () => {
     backend.onGet("/inventory/project/home-page/budget").reply(200, []);
     backend.onGet("/inventory/project/home-page/possession").reply(200, []);
@@ -81,7 +92,7 @@ describe("home rails", () => {
     backend.reset();
     backend.onGet("/inventory/project/home-page/budget").reply(200, []);
     backend.onGet("/inventory/project/home-page/possession").reply(200, []);
-    backend.onGet("/inventory/project/home-page/locality/city", { params: { city: "Nowhere" } }).reply(200, []);
+    backend.onGet("/inventory/project/home-page/locality/city", { params: { city: "Nowhere", status: "New Launches" } }).reply(200, []);
     await expect(fetchProjectHome("Nowhere", "nl")).resolves.toMatchObject({ localities: [], localityCity: "Nowhere" });
   });
 
@@ -131,7 +142,7 @@ describe("home rails", () => {
   });
 
   it("loads the Projects rails for a status with the backend's wording", async () => {
-    backend.onGet("/inventory/project/home-page/budget", { params: { city: "Mumbai" } }).reply(200, [{ budgetCategory: "Luxury", min: 100000000, max: 250000000, totalProjects: "278+ projects" }]);
+    backend.onGet("/inventory/project/home-page/budget", { params: { city: "Mumbai", status: "Under Construction" } }).reply(200, [{ budgetCategory: "Luxury", min: 100000000, max: 250000000, totalProjects: "278+ projects" }]);
     backend
       .onGet("/inventory/project/home-page/possession", { params: { city: "Mumbai", status: "Under Construction" } })
       .reply(200, [

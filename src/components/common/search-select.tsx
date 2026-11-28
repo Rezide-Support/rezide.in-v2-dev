@@ -30,7 +30,7 @@ export function SearchSelect({ value, onValueChange, size = "md", className, chi
         align="start"
         sideOffset={6}
         collisionPadding={16}
-        className="min-w-[max(10rem,var(--radix-select-trigger-width))] rounded-2xl border border-rez-smoke bg-white p-1.5 font-sans text-black shadow-rez-md ring-0"
+        className="min-w-[max(10rem,var(--radix-select-trigger-width))] rounded-2xl border border-rez-smoke bg-white p-2 font-sans text-black shadow-rez-md ring-0 [--spacing:0.25rem] [&_[data-position=popper]]:min-w-0! [&_[data-position=popper]]:w-full [&_[data-slot=select-item]+[data-slot=select-item]]:mt-1.5"
       >
         {Children.map(children, (child) => {
           if (!isValidElement<ComponentProps<"option">>(child)) return null;

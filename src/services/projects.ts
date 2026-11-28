@@ -6,6 +6,7 @@ import { paginate } from "@/features/search/match";
 import type { Intent, Paginated, Project, ProjectSearchCriteria, Property } from "@/types/models";
 import type { DeveloperStats, ProjectDetail } from "./catalog";
 import { fetchLandmarks, findLocality } from "./localities";
+import { projectCityLookup } from "./project-city-index";
 import { inChosenBudgets, projectMediaOf, toConfigurationPlans, toListingProject, toProject, toProjectFilters, withProjectDetail, type BackendProjectDetail, type BackendProjectRow } from "./project-mapper";
 import { toProperty, type BackendListingPage } from "./property-mapper";
 
@@ -44,14 +45,14 @@ function allMatching(c: ProjectSearchCriteria, now = Date.now()): Promise<Projec
   const hit = cache.get(key);
   if (hit && now - hit.at < TTL_MS) return hit.projects;
   const load = async () => {
-    const first = await postFilters(body, PAGE_TIMEOUT_MS);
+    const [first, cityOf] = await Promise.all([postFilters(body, PAGE_TIMEOUT_MS), projectCityLookup()]);
     const pageCount = Math.ceil(Math.min(first.result_count ?? 0, MAX_PROJECTS) / PAGE_SIZE);
     const pages = [first];
     for (let next = 2; next <= pageCount; next += PAGE_CONCURRENCY) {
       const batch = Array.from({ length: Math.min(PAGE_CONCURRENCY, pageCount - next + 1) }, (_, i) => postFilters({ ...body, page: next + i }, PAGE_TIMEOUT_MS));
       pages.push(...(await Promise.all(batch)));
     }
-    return pages.flatMap((p) => (p.data ?? []).map((row) => toProject(row, c.city, statusFor(c))));
+    return pages.flatMap((p) => (p.data ?? []).map((row) => toProject(row, c.city, statusFor(c), cityOf)));
   };
   const projects = load();
   setBounded(cache, key, { at: now, projects }, 25, TTL_MS, now);
@@ -65,10 +66,10 @@ function allMatching(c: ProjectSearchCriteria, now = Date.now()): Promise<Projec
  */
 export async function searchProjects(c: ProjectSearchCriteria): Promise<Paginated<Project>> {
   if (c.years.length === 0 && c.budget.length <= 1) {
-    const page = await postFilters(toProjectFilters(c));
+    const [page, cityOf] = await Promise.all([postFilters(toProjectFilters(c)), projectCityLookup()]);
     const total = page.result_count ?? 0;
     return {
-      items: await withConfigurations((page.data ?? []).map((row) => toProject(row, c.city, statusFor(c)))),
+      items: await withConfigurations((page.data ?? []).map((row) => toProject(row, c.city, statusFor(c), cityOf))),
       total,
       page: c.page,
       perPage: c.perPage,
@@ -122,8 +123,8 @@ export async function findProjectsByNames(names: string[]): Promise<{ id: string
 /** Specific projects, in the given city. */
 export async function getProjectsByIds(ids: string[], city: string): Promise<Paginated<Project>> {
   if (ids.length === 0) return { items: [], total: 0, page: 1, perPage: 1, pageCount: 1 };
-  const page = await api.post<ProjectPage>(FILTER_URL, { page: 1, pageSize: ids.length, ids }).then((r) => r.data);
-  const items = (page.data ?? []).map((row) => toProject(row, city));
+  const [page, cityOf] = await Promise.all([api.post<ProjectPage>(FILTER_URL, { page: 1, pageSize: ids.length, ids }).then((r) => r.data), projectCityLookup()]);
+  const items = (page.data ?? []).map((row) => toProject(row, city, undefined, cityOf));
   return { items, total: items.length, page: 1, perPage: ids.length, pageCount: 1 };
 }
 
@@ -175,7 +176,10 @@ export const getProjectDetail = cacheDetail(async (id: string): Promise<ProjectD
     // Near by: rezide.in searches the project's sub-region.
     place
       ? postFilters({ page: 1, pageSize: RELATED_COUNT + 1, city: [], project_names_localities_subRegions: [place], subRegions: [], project_age: [], views: [], sortBy: "Latest", ids: [] })
-          .then((p) => (p.data ?? []).map((r) => toProject(r, project.city)).filter((p2) => p2.id !== id).slice(0, RELATED_COUNT))
+          .then(async (p) => {
+            const cityOf = await projectCityLookup();
+            return (p.data ?? []).map((r) => toProject(r, project.city, undefined, cityOf)).filter((p2) => p2.id !== id).slice(0, RELATED_COUNT);
+          })
           .catch(orEmpty<Project[]>([]))
       : Promise.resolve<Project[]>([]),
     developerStats(project).catch(orEmpty(undefined)),
@@ -184,7 +188,7 @@ export const getProjectDetail = cacheDetail(async (id: string): Promise<ProjectD
   // The cards' Details tables: one batched request for both rails.
   const withRanges = await withConfigurations([...similarOnly, ...nearby]);
   return {
-    project: { ...project, landmarks, localityPhoto: locality?.photo ?? undefined, localityId: locality?.id },
+    project: { ...project, landmarks, localityPhoto: locality?.photo ?? undefined, localityId: locality?.id, localitySlug: locality?.slug },
     listings,
     similar: withRanges.slice(0, similarOnly.length),
     nearby: withRanges.slice(similarOnly.length),
@@ -249,7 +253,8 @@ export async function getDeveloperProjects(name: string, city = ""): Promise<Dev
     ids: [],
   });
   const rows = page.data ?? [];
-  const all = await withConfigurations(rows.map((r) => toProject(r, r.city?.trim() || city)));
+  const cityOf = await projectCityLookup();
+  const all = await withConfigurations(rows.map((r) => toProject(r, r.city?.trim() || city, undefined, cityOf)));
   const withStatus = (s: string) => all.filter((_, i) => rows[i].status?.trim().toLowerCase() === s);
   return { total: page.result_count ?? 0, all, rtm: withStatus("ready to move"), uc: withStatus("under construction"), nl: withStatus("new launch") };
 }

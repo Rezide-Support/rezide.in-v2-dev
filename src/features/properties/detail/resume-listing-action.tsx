@@ -41,7 +41,7 @@ export function ResumeListingAction({ property }: { property: Property }) {
     void resume().catch(() => toast.error("Your saved action couldn't be completed. Please try again.")).finally(() => {
       const query = new URLSearchParams(window.location.search);
       query.delete("save");
-      router.replace(`/properties/${id}${query.size ? `?${query}` : ""}`, { scroll: false });
+      router.replace(`${window.location.pathname}${query.size ? `?${query}` : ""}`, { scroll: false });
     });
   }, [action, userId, id, title, intent, client, router]);
   return null;

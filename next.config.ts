@@ -18,11 +18,12 @@ const csp = [
   `object-src 'none'`,
   `frame-ancestors 'none'`,
   `form-action 'self'`,
-  `img-src 'self' data: blob: https://images.unsplash.com https://cdn.rezide.in https://api.rezide.in https://tile.openstreetmap.org https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://cdnjs.cloudflare.com`,
+  `img-src 'self' data: blob: https://images.unsplash.com https://cdn.rezide.in https://api.rezide.in https://tile.openstreetmap.org https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com https://cdnjs.cloudflare.com${isDev ? " https://*.devtunnels.ms" : ""}`,
   `font-src 'self' data: https://fonts.gstatic.com`,
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   `script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com${isDev ? " 'unsafe-eval'" : ""}`,
-  `connect-src 'self' https://api.rezide.in https://si.rezide.in https://*.googleapis.com https://*.gstatic.com https://*.google.com${isDev ? " ws: wss:" : ""}`,
+  // TEMPORARY (dev only): `https://*.devtunnels.ms` lets local testing use a backend dev tunnel. Remove after testing.
+  `connect-src 'self' https://api.rezide.in https://si.rezide.in https://*.googleapis.com https://*.gstatic.com https://*.google.com${isDev ? " ws: wss: https://*.devtunnels.ms" : ""}`,
   `worker-src 'self' blob:`,
   `media-src 'self' https://cdn.rezide.in https://api.rezide.in`,
   // Preserve developer-hosted HTTPS tours as well as Google Maps and video embeds.
@@ -102,6 +103,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "api.rezide.in", pathname: "/v1/admin/file/upload/**" },
       // Listing and project photos from the Rezide backend.
       { protocol: "https", hostname: "cdn.rezide.in", pathname: "/images/**" },
+      // TEMPORARY (dev only): uploads served through a backend dev tunnel. Remove after testing.
+      ...(isDev ? [{ protocol: "https" as const, hostname: "*.devtunnels.ms", pathname: "/v1/admin/file/upload/**" }] : []),
     ],
     qualities: [70, 75],
     // Some networks (NAT64) resolve cdn.rezide.in to an address Next treats as private, and every photo answers 400.

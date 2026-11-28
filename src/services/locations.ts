@@ -1,6 +1,7 @@
 import { getQueryClient } from "@/lib/query-client";
 import { responseArray } from "@/lib/arrays";
 import { api } from "@/lib/api/client";
+import { CITY_DISPLAY_NAMES, cityLabel } from "@/lib/city-names";
 
 /*
  * Cities and search suggestions from the Rezide backend, the same endpoints the
@@ -8,15 +9,11 @@ import { api } from "@/lib/api/client";
  * reads and are never mocked. Contract: docs/API.md → Locations and search.
  */
 
-/**
- * Cities the backend's city master spells differently from how we show them,
- * keyed by the master's name (as rezide.in shows "Bangalore" as Bengaluru).
- */
-const DISPLAY_NAMES: Record<string, string> = { Bangalore: "Bengaluru" };
-const BACKEND_NAMES = Object.fromEntries(Object.entries(DISPLAY_NAMES).map(([backend, shown]) => [shown, backend]));
+/** Cities spelled differently from the city master (src/lib/city-names.ts), and back. */
+const BACKEND_NAMES = Object.fromEntries(Object.entries(CITY_DISPLAY_NAMES).map(([backend, shown]) => [shown, backend]));
 
 /** How a city master name is shown: Bangalore → Bengaluru. */
-export const cityLabel = (name: string) => DISPLAY_NAMES[name] ?? name;
+export { cityLabel };
 
 /** The city master's name for a shown city, for requests that filter by city: Bengaluru → Bangalore. */
 export const toBackendCity = (name: string) => BACKEND_NAMES[name] ?? name;

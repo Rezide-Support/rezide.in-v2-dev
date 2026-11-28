@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Viewer } from "@/features/properties/detail/media-gallery";
 import { propertySearchHref } from "@/features/search/criteria";
+import { localityPath } from "@/lib/locality-url";
 import { localityQueries, locationQueries } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { LocalityListItem } from "@/services/localities";
@@ -27,7 +28,7 @@ const PAGE_SIZE = 12;
  * listings are for rent and for sale there (each opens that search).
  */
 function LocalityCard({ locality: l, city, priority = false }: { locality: LocalityListItem; city: string; priority?: boolean }) {
-  const href = `/locality/${l.id}`;
+  const href = localityPath(l);
   const count = (label: string, n: number, intent: "rent" | "buy") => {
     const inner = (
       <>

@@ -108,13 +108,14 @@ describe("locality endpoints", () => {
     backend.onPost("/Repository/Locality/filter").replyOnce(200, {
       data: [
         { _id: first, general_information: { locality_name: "Lower Parel East" } },
-        { _id: exact, general_information: { locality_name: "Lower Parel" }, media: { images: [{ url: "p" }] } },
+        { _id: exact, general_information: { locality_name: "Lower Parel", sub_region: { name: "Parel" }, city: { name: "Mumbai" } }, media: { images: [{ url: "p" }] } },
       ],
     });
-    await expect(findLocality("Lower Parel")).resolves.toEqual({ id: exact, photo: "https://cdn.rezide.in/images/p.jpeg" });
+    // The slug is the linked locality's SEO URL words, from the same row as its id.
+    await expect(findLocality("Lower Parel")).resolves.toEqual({ id: exact, slug: "lower-parel-mumbai", photo: "https://cdn.rezide.in/images/p.jpeg" });
 
     backend.onPost("/Repository/Locality/filter").replyOnce(200, { data: [{ _id: first, general_information: { locality_name: "Lower Parel East" } }] });
-    await expect(findLocality("Lower Parel")).resolves.toEqual({ id: first, photo: null });
+    await expect(findLocality("Lower Parel")).resolves.toEqual({ id: first, slug: "lower-parel-east", photo: null });
   });
 
   it("reads one locality for its page, with its city's name", async () => {
@@ -132,10 +133,17 @@ describe("locality endpoints", () => {
       },
       media: { images: [{ url: "a" }] },
     });
+    // Its list row names its sub-region, region and city (the detail record only has their ids).
+    backend.onPost("/Repository/Locality/filter").reply(200, {
+      data: [{ _id: id, general_information: { locality_name: "Jackeria Bunder", sub_region: { name: "Sewri" }, region: { name: "South Mumbai" }, city: { name: "Mumbai" } } }],
+    });
     await expect(fetchLocality(id, async (c) => (c === "c1" ? "Mumbai" : undefined))).resolves.toEqual({
       id,
+      slug: "jackeria-bunder-sewri-mumbai",
       name: "Jackeria Bunder",
       city: "Mumbai",
+      subRegion: "Sewri",
+      region: "South Mumbai",
       description: "A dock.",
       whatToExpect: "Docks\n\nTrucks",
       lifestyle: "Practical",

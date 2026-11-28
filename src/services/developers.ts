@@ -1,5 +1,6 @@
 import { uploadUrl } from "@/lib/api/origins";
 import { BACKEND_ID_PATTERN } from "@/lib/ids";
+import { developerRecordSlug } from "@/lib/developer-url";
 import { ApiError, api } from "@/lib/api/client";
 
 /*
@@ -86,6 +87,8 @@ export type DeveloperAddress = { type: string; line1: string; line2?: string; ci
 
 export type DeveloperPage = {
   id: string;
+  /** The words of its SEO URL ("lodha-group-mumbai"), see src/lib/developer-url.ts. */
+  slug: string;
   name: string;
   logo?: string;
   /** "Mumbai, Maharashtra": the first office's city and state. */
@@ -117,6 +120,7 @@ export function toDeveloperPage(d: BackendDeveloper): DeveloperPage | null {
   const established = String(d.general_information?.estd_year ?? "").trim();
   return {
     id: d._id,
+    slug: developerRecordSlug(d),
     name,
     logo: logoKey ? uploadUrl(logoKey) : undefined,
     place: label(first?.city) && label(first?.state) ? `${label(first?.city)}, ${label(first?.state)}` : undefined,

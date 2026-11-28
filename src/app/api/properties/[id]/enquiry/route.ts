@@ -67,7 +67,7 @@ export async function POST(
         { status: 503 },
       );
     await api.post(`${apiOrigin()}/v1/contact/form`, {
-      name: input.data.name,
+      fname: input.data.name,
       phone: `+91${input.data.phone}`,
       firm_id: broker.firm_id,
       brokerId: personId,

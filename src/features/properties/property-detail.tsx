@@ -1,10 +1,13 @@
 "use client";
+import { propertyHref } from "@/lib/property-url";
+
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Images, LayoutGrid, Video, View } from "lucide-react";
 import { ErrorState } from "@/components/common/feedback";
 import { formatDate, formatPrice } from "@/lib/format";
+import { projectPath } from "@/lib/project-url";
 import { propertyQueries } from "@/lib/queries";
 import { useSession } from "@/stores/session";
 import { AgentCard } from "./detail/agent-card";
@@ -38,7 +41,7 @@ export function PropertyDetailView({ id }: { id: string }) {
   const rent = p.intent === "rent";
   const headerLocation = [...new Set([p.localityName, p.locality].filter(Boolean))].join(", ") || p.city;
   const headerPrice = !rent && !p.priceHidden && p.price >= 10_000_000 ? `\u20B9 ${(p.price / 10_000_000).toFixed(2)} Cr.` : priceLabel(p);
-  const path = `/properties/${p.id}`;
+  const path = propertyHref(p);
   const leadListing = { id: p.id, firmId: p.realtorFirmId ?? "", brokerId: p.realtorId, name: p.title, path };
 
   return (
@@ -54,7 +57,7 @@ export function PropertyDetailView({ id }: { id: string }) {
               <p className="text-[max(12px,calc(15px*var(--property-type-scale,1)))] text-rez-graphite sm:text-base">
                 {!p.projectHidden && p.projectName && p.projectId ? (
                   <Link
-                    href={`/projects/${p.projectId}`}
+                    href={project?.id === p.projectId ? projectPath(project) : projectPath({ id: p.projectId })}
                     className="hover:text-black hover:underline"
                   >
                     {headerLocation}
@@ -99,14 +102,14 @@ export function PropertyDetailView({ id }: { id: string }) {
           </div>
         </header>
 
-        {/* Both desktop rows share the same wide gallery/content and narrow sidebar columns. */}
+        {/* Desktop columns stack independently; mobile sections retain their existing order. */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(264px,1fr)] lg:items-start">
-          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <div className="max-lg:contents lg:flex lg:min-w-0 lg:flex-col lg:gap-5">
           <div className="max-lg:order-0">
           <MediaGallery
             keepEmptyPhotos
             title={p.title}
-            overlay={<SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-8 rounded-full bg-white/90 p-0 text-rez-graphite" />}
+            overlay={<SaveIconButton list="shortlist" kind="property" id={p.id} title={p.title} intent={p.intent} className="size-6 rounded-none border-0 bg-transparent! p-0 text-white shadow-none hover:bg-transparent! aria-[pressed=false]:text-white! aria-[pressed=false]:hover:text-white! [&_svg]:size-[18px]" />}
             tabs={[
               {
                 value: "photos",
@@ -131,10 +134,23 @@ export function PropertyDetailView({ id }: { id: string }) {
           />
           <MobileListingOverview property={p} withoutPhotoDivider={!p.galleryPhotos?.length && (p.photoSource === "placeholder" || !p.images.length)} />
           </div>
+          <div className="min-w-0 max-lg:order-5"><PropertyInfoTabs property={p} project={project} configurations={configurations} /></div>
           </div>
 
-          {/* First row sidebar: key features and visit details. */}
-          <aside className="max-lg:contents lg:col-start-2 lg:row-start-1 lg:flex lg:min-w-0 lg:flex-col lg:gap-4" aria-label="Key features and visit details">
+          {/* Independent sidebar stack. */}
+          <aside className="max-lg:contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4" aria-label="Enquiry, key features, visit details and project">
+            <div id="brokers" className="scroll-mt-32 max-lg:order-3">
+            <AgentCard
+              realtor={realtor}
+              propertyId={p.id}
+              listing={leadListing}
+              defaultIntent={
+                p.priceHidden
+                  ? "Request the price for this property"
+                  : undefined
+              }
+            />
+            </div>
             <section id="key" className="scroll-mt-32 max-lg:order-1">
             <h2 className="mb-4 px-2 text-sm font-semibold uppercase lg:hidden">Key features</h2>
             <DetailCard className="flex flex-col gap-4 lg:rounded-[12px] lg:border-[#c4c4c4] lg:bg-[#fafafa] lg:p-4 lg:shadow-sm">
@@ -149,6 +165,8 @@ export function PropertyDetailView({ id }: { id: string }) {
               </div>
             </DetailCard>
             </section>
+
+
 
             <section id="visit" className="scroll-mt-32 max-lg:order-2">
             <h2 className="mb-4 px-2 text-sm font-semibold uppercase lg:hidden">Visit details</h2>
@@ -170,27 +188,8 @@ export function PropertyDetailView({ id }: { id: string }) {
               </div>
             </DetailCard>
             </section>
-
-          </aside>
-
-          {/* Second row: selected information tab beside the project and broker. */}
-          <div className="min-w-0 max-lg:order-5 lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:self-stretch">
-            <PropertyInfoTabs property={p} project={project} configurations={configurations} />
-          </div>
-          <aside className="max-lg:contents lg:col-start-2 lg:row-start-2 lg:flex lg:min-w-0 lg:flex-col lg:gap-4" aria-label="Project and listing broker">
             {!p.projectHidden && project && <div className="max-lg:hidden"><ProjectMiniCard project={project} stock={projectStock} /></div>}
-            <div id="brokers" className="scroll-mt-32 max-lg:order-3">
-            <AgentCard
-              realtor={realtor}
-              propertyId={p.id}
-              listing={leadListing}
-              defaultIntent={
-                p.priceHidden
-                  ? "Request the price for this property"
-                  : undefined
-              }
-            />
-            </div>
+
           </aside>
         </div>
 

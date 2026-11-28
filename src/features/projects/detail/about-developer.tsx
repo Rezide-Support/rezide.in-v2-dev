@@ -6,6 +6,7 @@ import { useState } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { projectSearchHref } from "@/features/search/criteria";
+import { developerPath } from "@/lib/developer-url";
 import { cn } from "@/lib/utils";
 import type { DeveloperStats } from "@/services/catalog";
 import type { Project } from "@/types/models";
@@ -88,7 +89,7 @@ export function AboutDeveloper({ project: p, stats }: { project: Project; stats?
           <div className="mt-8 grid grid-cols-2 gap-2">
             {/* As rezide.in: the developer's page, in a new tab (their projects' search when the id isn't known). */}
             <Button asChild className="h-auto w-full rounded-md border border-black px-2 py-3.5 text-base font-medium text-white">
-              <Link href={profile?.id ? `/developers/${profile.id}` : projectSearchHref({ city: p.city, q: name })} target="_blank" rel="noopener">
+              <Link href={profile?.id ? developerPath({ id: profile.id, slug: profile.slug }) : projectSearchHref({ city: p.city, q: name })} target="_blank" rel="noopener">
                 Builder Details
               </Link>
             </Button>

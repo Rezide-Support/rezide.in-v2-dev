@@ -56,27 +56,6 @@
   font-size: 1rem;
 }
 
-/* Match the discovery grid's broad canvas without scaling up its typography. */
-@media (min-width: 768px) {
-  .property-page .property-discovery-rail {
-    padding-inline: clamp(24px, 5.5vw, 104px);
-    padding-block: 56px;
-  }
-  .property-page .property-discovery-rail > div {
-    max-width: 1600px;
-    padding-inline: 0;
-  }
-  .property-page .property-discovery-rail ul {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(16px, 2.5vw, 32px);
-  }
-}
-@media (min-width: 1024px) {
-  .property-page .property-discovery-rail ul {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 /* Property heroes share the slow zoom; the search overlay stays still. */
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
   .property-page [data-hero-category="homes"] .hero-photo-frame img,

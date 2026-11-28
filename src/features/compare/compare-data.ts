@@ -64,7 +64,7 @@ export function useCompareEntries(items: SavedItem[], enabled = true): CompareEn
   });
 }
 
-export const entryHref = (e: CompareEntry) => (e.item.kind === "project" ? projectHref({ id: e.item.id }) : propertyHref({ id: e.item.id }));
+export const entryHref = (e: CompareEntry) => (e.item.kind === "project" ? projectHref(e.project ?? { id: e.item.id }) : propertyHref({ id: e.item.id }));
 export const entryImage = (e: CompareEntry) => e.property?.images[0] ?? e.project?.images[0];
 
 /** The short line under a name in the header menu: price for properties, place for projects. */

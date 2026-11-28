@@ -22,12 +22,13 @@ import { ProjectCard } from "./project-card";
 import { ProjectSearchInput } from "./project-search-input";
 import { ProjectFilterDrawer, RESET_DRAWER, countDrawerFilters, drawerChips, drawerValues } from "./project-filter-drawer";
 
-type FilterKey = "status" | "budget" | "localities" | "views" | "years";
+type FilterKey = "status" | "budget" | "localities" | "localityNames" | "views" | "years";
 
 const LABELS: Record<FilterKey, string> = {
   status: "Status",
   budget: "Budget",
   localities: "Location",
+  localityNames: "Location",
   views: "Views",
   years: "Possession",
 };
@@ -104,15 +105,16 @@ export function ProjectSearch() {
   // The Apply button spins while the count for the ticked options loads.
   const countLoading = openKey !== null && preview.isFetching;
 
-  const keys: FilterKey[] = ["status", "budget", "localities", "views", "years"];
-  // The filter buttons. Possession has none; a possession year from an old link still shows as a removable chip.
-  const buttonKeys = keys.filter((k) => k !== "years");
+  const keys: FilterKey[] = ["status", "budget", "localities", "localityNames", "views", "years"];
+  // The filter buttons. Possession has none, and a home Location card's locality has none (the Location
+  // button picks sub-regions): both still show as removable chips.
+  const buttonKeys = keys.filter((k) => k !== "years" && k !== "localityNames");
   const data = query.data;
   const chips = keys.flatMap((k) => valuesOf(criteria, k).map((v) => ({ k, v })));
   // The Filters drawer's choices (project type, unit type, BHK, area, video / VR).
   const moreChips = drawerChips(criteria);
   const drawerCount = countDrawerFilters(criteria);
-  const clearAll = () => update({ q: "", status: [], budget: [], localities: [], views: [], years: [], ...RESET_DRAWER });
+  const clearAll = () => update({ q: "", status: [], budget: [], localities: [], localityNames: [], views: [], years: [], ...RESET_DRAWER });
 
   const submit = (e: FormEvent) => {
     e.preventDefault();

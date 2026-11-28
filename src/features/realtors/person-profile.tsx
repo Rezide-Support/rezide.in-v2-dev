@@ -4,7 +4,7 @@ import { BACKEND_ID_PATTERN } from "@/lib/ids";
 import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, MapPin, Phone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
 import { LeadDialog } from "@/features/properties/detail/lead-dialog";
 import { EmptyState, ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
@@ -17,24 +17,79 @@ import type { DirectoryPersonDetail } from "./directory-model";
 import { directoryFirmHref, directoryPersonHref } from "./directory-model";
 import { DirectoryPhoto } from "./directory-cards";
 import { DirectoryLeadForm } from "./directory-forms";
-import { AddressDialog, Breadcrumbs } from "./profile-parts";
+import { Breadcrumbs } from "./profile-parts";
 import { FirmListings } from "./firm-listings";
 import { cn } from "@/lib/utils";
+
+/** What rezide.in's realtor page shows for a field the realtor hasn't filled in. */
+const NA = "N/A";
+
+/**
+ * rezide.in's Address "View" button. It's always shown: it opens the realtor's own addresses
+ * or, when they have none (most realtors), their firm's office addresses, read only once opened.
+ */
+function PersonAddressButton({ person }: { person: DirectoryPersonDetail }) {
+  const [open, setOpen] = useState(false);
+  const ownAddresses = person.addresses;
+  const firm = useQuery({ ...directoryQueries.profile(person.firmName), enabled: open && ownAddresses.length === 0 && !!person.firmName });
+  const firmCards = firm.data?.addressCards ?? [];
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger className="font-semibold text-[#0066ff] underline-offset-4 hover:underline">
+        View<span className="sr-only"> address of {person.name}</span>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[750px]">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold">Address</DialogTitle>
+          <DialogDescription className="text-xs text-rez-graphite">
+            {ownAddresses.length ? `${person.name}'s address, as provided.` : person.firmName ? `${person.firmName}'s office address, as provided by the firm.` : "As provided by the realtor."}
+          </DialogDescription>
+        </DialogHeader>
+        {ownAddresses.length ? (
+          <div className="flex flex-wrap items-stretch gap-3">
+            {ownAddresses.map((address, i) => (
+              <address key={`${address}-${i}`} className="min-w-[220px] flex-1 rounded-xl border border-rez-smoke p-6 text-[15px] leading-relaxed whitespace-pre-line text-rez-graphite not-italic shadow-sm">
+                {address}
+              </address>
+            ))}
+          </div>
+        ) : firm.isFetching && !firm.data ? (
+          <div aria-busy="true" aria-label="Loading address" className="h-28 animate-pulse rounded-xl bg-rez-cloud" />
+        ) : firmCards.length ? (
+          <div className="flex flex-wrap items-stretch gap-3">
+            {firmCards.map((a, i) => (
+              <div key={i} className="min-w-[220px] flex-1 rounded-xl border border-rez-smoke p-6 shadow-sm">
+                {/* As on the firm page: the first card is the registered address. */}
+                <h3 className="mb-4 text-lg font-medium">{a.type || i === 0 ? "Registered Address" : "Office Address"}</h3>
+                <address className="text-[15px] leading-relaxed text-rez-graphite not-italic">
+                  {a.line1 && <>{a.line1},<br /></>}
+                  {a.line2 && <>{a.line2},<br /></>}
+                  {[a.city, a.pincode].filter(Boolean).join(" - ")}
+                </address>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-xl border border-rez-smoke p-6 text-[15px] text-rez-graphite">{firm.isError ? "The address couldn't be loaded. Please try again." : NA}</p>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function PersonDetails({ person, popup = false }: { person: DirectoryPersonDetail; popup?: boolean }) {
   const Heading = popup ? "h2" : "h1";
   return <div className={cn("grid min-w-0 gap-6", popup ? "lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8" : "lg:grid-cols-[minmax(0,1fr)_336px] lg:gap-4")}>
     <div className={cn("flex min-w-0 flex-col gap-6", !popup && "max-sm:contents")}>
       <header className="border-b border-rez-smoke pb-1 max-sm:order-1"><Heading className="text-base font-semibold [overflow-wrap:anywhere]">{person.name}</Heading><p className="mt-1 text-sm text-rez-graphite">{person.firmName || "Firm not provided"}</p></header>
-      <section className="max-sm:order-3"><h2 className="mb-2 text-base font-semibold">About me</h2><p className="text-sm leading-normal whitespace-pre-line text-rez-graphite [overflow-wrap:anywhere]">{person.about || "Not provided"}</p></section>
+      <section className="max-sm:order-3"><h2 className="mb-2 text-base font-semibold">About me</h2><p className="text-sm leading-normal whitespace-pre-line text-rez-graphite [overflow-wrap:anywhere]">{person.about || NA}</p></section>
       <dl className={cn("grid gap-x-6 gap-y-7 text-sm max-sm:order-4 max-sm:gap-y-5 sm:grid-cols-3 [&_dt]:font-semibold [&_dd]:mt-2 [&_dd]:text-sm [&_dd]:leading-normal [&_dd]:text-rez-graphite", !popup && "lg:text-base")}>
-        <div><dt>Working since</dt><dd>{person.since || "Not provided"}</dd></div>
-        <div><dt>Spoken Language</dt><dd>{person.languages.join(", ") || "Not provided"}</dd></div>
-        <div className={cn("[&_button]:text-[#0066ff]", !popup && "max-sm:hidden")}><dt>Address</dt><dd><AddressDialog title="Realtor addresses" address={person.addresses.length ? { lines: person.addresses, city: "" } : null} /></dd></div>
-        {[["Area of Specialization", person.specializations], ["Sub Regions", person.subRegions], ["Localities", person.localities], ["Projects", person.projects]].map(([label, values]) => <div key={String(label)} className="sm:col-span-3"><dt>{String(label)}</dt><dd>{(values as string[]).join(", ") || "Not provided"}</dd></div>)}
-        {!popup && <div className="space-y-4 sm:hidden">
-          {person.addresses.length ? person.addresses.map((address, index) => <div key={`${address}-${index}`}><dt className="flex items-center gap-1"><MapPin aria-hidden="true" className="size-4 shrink-0 text-rez-graphite" />Registered Address</dt><dd className="pl-5 whitespace-pre-line">{address}</dd></div>) : <div><dt className="flex items-center gap-1"><MapPin aria-hidden="true" className="size-4 text-rez-graphite" />Registered Address</dt><dd className="pl-5">Not provided</dd></div>}
-        </div>}
+        <div><dt>Working since</dt><dd>{person.since || NA}</dd></div>
+        <div><dt>Spoken Language</dt><dd>{person.languages.join(", ") || NA}</dd></div>
+        {/* As rezide.in: Address is always a "View" button (the realtor's or, failing that, the firm's address). */}
+        <div><dt>Address</dt><dd><PersonAddressButton person={person} /></dd></div>
+        {/* Sub Regions and Localities always read "N/A", as on rezide.in's realtor page (the backend's values aren't shown there). */}
+        {[["Area of Specialization", person.specializations], ["Sub Regions", []], ["Localities", []], ["Projects", person.projects]].map(([label, values]) => <div key={String(label)} className="sm:col-span-3"><dt>{String(label)}</dt><dd>{(values as string[]).join(", ") || NA}</dd></div>)}
       </dl>
     </div>
     <aside className={cn("mx-auto flex w-full min-w-0 max-w-[400px] flex-col gap-3 lg:max-w-none", !popup && "max-sm:order-2 max-sm:mb-5")}>

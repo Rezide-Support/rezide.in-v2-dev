@@ -295,7 +295,7 @@ export function ProjectCompare({ pinned, listed }: { pinned?: ProjectRef; listed
               <td key={e?.item.id ?? i} className={cn(td, "text-center")}>
                 {e ? (
                   <Button asChild variant="outline" className="rounded-full">
-                    <Link href={projectHref({ id: e.item.id })} target="_blank">
+                    <Link href={projectHref(e.project ?? { id: e.item.id })} target="_blank">
                       <span>View Details</span>
                       <ArrowRight className="ml-2 size-4" aria-hidden />
                       <span className="sr-only">: {e.item.title || e.project?.name}</span>

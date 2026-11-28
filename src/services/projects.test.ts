@@ -1,6 +1,9 @@
 import MockAdapter from "axios-mock-adapter";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { defaultProjectCriteria } from "@/features/search/criteria";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// The SEO URLs' city index (its own backend reads) is covered in src/lib/project-url.test.ts; these tests count search requests.
+vi.mock("@/services/project-city-index", () => ({ projectCityLookup: async () => () => undefined }));
+import { defaultProjectCriteria, parseProjectCriteria, projectSearchHref } from "@/features/search/criteria";
 import { api } from "@/lib/api/client";
 import { sendProjectEnquiry } from "@/services/mutations";
 import type { ProjectSortKey } from "@/types/models";
@@ -205,6 +208,8 @@ describe("mapping", () => {
     ]);
     expect(project.developerProfile).toEqual({
       id: "65116bbd32a52c26604a9511",
+      // Its page's SEO URL words: name and first office city (src/lib/developer-url.ts).
+      slug: "oberoi-realty-mumbai",
       name: "Oberoi Realty",
       headquarters: "Mumbai, Maharashtra",
       description: "Founded 1998.",
@@ -213,6 +218,21 @@ describe("mapping", () => {
       cities: ["Mumbai", "Thane"],
     });
     expect(JSON.stringify(project)).not.toMatch(/BANKSECRET/);
+  });
+});
+
+describe("a home Location card's locality (count-mismatch report F3)", () => {
+  it("is sent as localities; the Location dialog's sub-regions stay subRegions", () => {
+    const body = toProjectFilters(defaultProjectCriteria({ city: "Mumbai", status: ["rtm"], localityNames: ["Lower Parel"] }));
+    expect(body).toMatchObject({ localities: ["Lower Parel"], subRegions: [], project_age: ["Ready to Move"] });
+    expect(toProjectFilters(defaultProjectCriteria({ localities: ["Worli"] }))).toMatchObject({ subRegions: ["Worli"] });
+    expect(toProjectFilters(defaultProjectCriteria({ localities: ["Worli"] }))).not.toHaveProperty("localities");
+  });
+
+  it("round-trips through the projects page URL as `locality`", () => {
+    const href = projectSearchHref({ city: "Mumbai", status: ["rtm"], localityNames: ["Lower Parel"] });
+    expect(href).toBe("/projects/search?city=Mumbai&status=rtm&locality=Lower+Parel");
+    expect(parseProjectCriteria(new URLSearchParams(href.split("?")[1]))).toMatchObject({ localityNames: ["Lower Parel"], localities: [] });
   });
 });
 

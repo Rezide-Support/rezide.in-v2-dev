@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rezide · End-to-End QA Report · 26 Nov 2026</title>
+<style>
+  :root { --ink:#1d1d1f; --muted:#5f6368; --line:#e4e4e7; --bg:#fafaf9; --card:#fff; --brand:#8a6a4f;
+    --crit:#7a1010; --crit-bg:#fde8e8; --red:#b42318; --red-bg:#fef3f2; --amber:#b54708; --amber-bg:#fffaeb;
+    --green:#067647; --green-bg:#ecfdf3; --blue:#175cd3; --blue-bg:#eff8ff; --grey:#475467; --grey-bg:#f2f4f7; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg); }
+  main { max-width:1180px; margin:0 auto; padding:40px 28px 80px; }
+  h1 { font-size:30px; line-height:1.2; margin:0 0 6px; letter-spacing:-.01em; }
+  h2 { font-size:20px; margin:44px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  h3 { font-size:16px; margin:22px 0 8px; }
+  p { margin:0 0 10px; }
+  .sub { color:var(--muted); margin:0; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 20px; color:var(--muted); font-size:13px; margin:14px 0 0; }
+  .meta b { color:var(--ink); font-weight:600; }
+  .verdict { margin:24px 0 0; padding:18px 20px; border-radius:12px; background:var(--red-bg); border:1px solid #fecdca; }
+  .verdict h3 { margin:0 0 6px; color:var(--red); }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:20px 0 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card .n { font-size:28px; font-weight:700; line-height:1.1; }
+  .card .l { color:var(--muted); font-size:13px; }
+  .card.crit .n { color:var(--crit); } .card.high .n { color:var(--red); } .card.med .n { color:var(--amber); } .card.low .n { color:var(--blue); } .card.ok .n { color:var(--green); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; font-size:14px; }
+  th, td { text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--line); }
+  th { background:#f4f4f5; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  tr:last-child td { border-bottom:0; }
+  td.id { white-space:nowrap; font-weight:600; color:var(--muted); width:52px; }
+  td .what { font-weight:600; display:block; margin-bottom:3px; }
+  td .where { display:block; color:var(--muted); font-size:12.5px; margin-top:4px; }
+  code { font:12.5px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace; background:#f4f4f5; padding:1px 5px; border-radius:4px; word-break:break-word; }
+  .pill { display:inline-block; font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+  .p-crit { background:var(--crit-bg); color:var(--crit); } .p-high { background:var(--red-bg); color:var(--red); }
+  .p-med { background:var(--amber-bg); color:var(--amber); } .p-low { background:var(--blue-bg); color:var(--blue); }
+  .src { display:inline-block; font-size:11px; color:var(--grey); background:var(--grey-bg); border-radius:4px; padding:1px 6px; margin-top:6px; }
+  .src.v { color:var(--green); background:var(--green-bg); }
+  ul.tight { margin:6px 0 0; padding-left:20px; } ul.tight li { margin:3px 0; }
+  .ok-list li::marker { content:"✓  "; color:var(--green); }
+  .note { background:var(--blue-bg); border:1px solid #b2ddff; border-radius:10px; padding:12px 16px; margin:14px 0; font-size:14px; }
+  .filters { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 14px; position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:1; }
+  .filters button { font:inherit; font-size:13px; border:1px solid var(--line); background:var(--card); border-radius:999px; padding:5px 12px; cursor:pointer; }
+  .filters button[aria-pressed="true"] { background:var(--ink); color:#fff; border-color:var(--ink); }
+  footer { margin-top:48px; color:var(--muted); font-size:13px; }
+  @media (max-width:760px) { main { padding:24px 14px 60px; } table, thead, tbody, tr, th, td { display:block; } thead { display:none; } td { border:0; padding:4px 12px; } tr { border-bottom:1px solid var(--line); padding:8px 0; } td.id { padding-top:10px; } }
+  @media print { .filters { display:none; } body { background:#fff; } tr { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Rezide frontend · End-to-End QA Report</h1>
+<p class="sub">Full test of the Next.js site: every public page in a real browser at three screen sizes, signed-in areas, the live backend, and a line-by-line code review.</p>
+<div class="meta">
+  <span><b>Date</b> 26 Nov 2026</span>
+  <span><b>Branch</b> module/projects (HEAD fb50e89 + uncommitted SEO work)</span>
+  <span><b>Build</b> production (<code>next build</code> + <code>next start</code>)</span>
+  <span><b>Backend</b> live api.rezide.in (mocking off)</span>
+  <span><b>Browser</b> Chrome (headless) at 1440 px, 768 px, 375 px</span>
+</div>
+
+<div class="verdict">
+  <h3>Verdict: not ready for release</h3>
+  <p>The site loads cleanly: no page crashed and none scrolls sideways on any screen size. But two <b>critical security problems</b> must be fixed first: the live backend gives realtors' PAN numbers, phone numbers and emails to anyone, and the sign-in page can send users to an outside website. Several important features also don't work in production: the whole realtor dashboard, Realtor Corner's callback and trial forms, map pins, and some property searches, which fail completely.</p>
+</div>
+
+<div class="cards">
+  <div class="card crit"><div class="n">2</div><div class="l">Critical</div></div>
+  <div class="card high"><div class="n">11</div><div class="l">High</div></div>
+  <div class="card med"><div class="n">35</div><div class="l">Medium</div></div>
+  <div class="card low"><div class="n">40</div><div class="l">Low</div></div>
+  <div class="card ok"><div class="n">108</div><div class="l">Page loads tested (36 pages × 3 sizes) + 24 signed-in</div></div>
+</div>
+
+<h2>How it was tested</h2>
+<ul class="tight">
+  <li><b>Automated checks:</b> TypeScript typecheck, ESLint on the whole project, all 419 unit/component tests, and a production build.</li>
+  <li><b>Browser test:</b> each page was opened in headless Chrome at desktop (1440 px), tablet (768 px) and phone (375 px) widths. For each load it recorded:
+    <ul class="tight">
+      <li>HTTP status, page title and headings</li>
+      <li>console errors and failed network requests</li>
+      <li>broken images and horizontal overflow</li>
+      <li>unlabelled buttons, links and inputs, and duplicate ids</li>
+      <li>text such as "undefined", "NaN", "₹ 0" or "0 Towers"</li>
+    </ul>
+  </li>
+  <li><b>Signed-in areas:</b> the account (seeker and owner) and every realtor dashboard page were opened with a test session placed in the browser. The site keeps its session in localStorage, which makes this possible.</li>
+  <li><b>Server checks:</b> security headers, status codes for unknown pages, API error handling, robots.txt and sitemaps.</li>
+  <li><b>Code review:</b> three separate reviews covered search/properties/listing, projects/compare/locality/developer, and realtors/dashboard/account/auth. Each finding was traced end to end, and data questions were checked with read-only calls to the live backend.</li>
+</ul>
+<div class="note"><b>Limits, stated honestly:</b>
+  <ul class="tight">
+    <li>No real SMS sign-in was done, and no real form was submitted, to avoid sending real leads.</li>
+    <li>The signed-in tests used a test user id that doesn't exist on the backend.</li>
+    <li>Payment was not tested; checkout is disabled in the app.</li>
+    <li>Findings marked <span class="src">Code review</span> were traced through the code but not clicked through in a browser.</li>
+    <li>Findings marked <span class="src v">Verified</span> were reproduced in the browser, by curl, or against live data.</li>
+  </ul>
+</div>
+
+<h2>What works well</h2>
+<ul class="tight ok-list">
+  <li>No page scrolls sideways at 1440, 768 or 375 px on any of the 36 public pages.</li>
+  <li>No page crashed. There were no JavaScript runtime errors and no broken images.</li>
+  <li>Security headers are in place: Content-Security-Policy, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy and HSTS. <code>.env</code> is not committed.</li>
+  <li>The frontend never sends developer bank/PAN details or realtor identity documents to the browser; its allowlists work. The PII problem below is in the backend.</li>
+  <li>The new SEO works as intended:
+    <ul class="tight">
+      <li>Old project, locality and developer URLs redirect with HTTP 308.</li>
+      <li>Canonical URLs, metadata and JSON-LD are present.</li>
+      <li>Sitemaps list 9,534 projects, 1,786 localities and 3,295 developers.</li>
+      <li>Empty pages are marked noindex.</li>
+    </ul>
+  </li>
+  <li>TypeScript typecheck passes, the production build succeeds, and 417 of 419 tests pass.</li>
+</ul>
+
+<h2>All findings</h2>
+<div class="filters" role="group" aria-label="Filter findings by severity">
+  <button type="button" data-f="all" aria-pressed="true">All</button>
+  <button type="button" data-f="crit" aria-pressed="false">Critical</button>
+  <button type="button" data-f="high" aria-pressed="false">High</button>
+  <button type="button" data-f="med" aria-pressed="false">Medium</button>
+  <button type="button" data-f="low" aria-pressed="false">Low</button>
+</div>
+
+<h3>Critical: fix before any release</h3>
+<table><thead><tr><th>#</th><th>Severity</th><th>Area</th><th>Problem</th><th>Impact</th><th>Fix</th></tr></thead><tbody>
+<tr data-s="crit"><td class="id">C1</td><td><span class="pill p-crit">Critical</span></td><td>Security · Backend</td>
+  <td><span class="what">The live backend gives realtors' private data to anyone, without login</span>One unauthenticated request, <code>POST /v1/admin/brokers/filter/web</code>, returns each agent's <code>pan_no</code>, <code>mobile_no</code>, <code>full_mobile_no</code>, <code>alt_mobile_no</code> and <code>email</code>, with values filled in. It also has fields for <code>aadhaar_no</code>, <code>aadhaar_file</code> and <code>pan_file</code>.<span class="where">Backend; the frontend's own allowlist is <code>src/features/realtors/public-mapper.ts</code></span><span class="src v">Verified live (only field names were read)</span></td>
+  <td>PAN numbers and phone numbers of every listed realtor are public. This is a privacy and legal (DPDP Act) risk.</td>
+  <td>Backend team: require the service secret or auth on <code>/v1/admin/brokers/*</code> and strip private fields from public responses.</td></tr>
+<tr data-s="crit"><td class="id">C2</td><td><span class="pill p-crit">Critical</span></td><td>Security · Auth</td>
+  <td><span class="what">After sign-in, users can be sent to an outside website (open redirect)</span><code>safeNext()</code> only blocks values starting with <code>//</code> or <code>/\</code>. A tab between the slashes passes, and the browser drops it: <code>/login?next=/%09/evil.example</code> resolves to <code>https://evil.example/</code>.<span class="where">src/features/auth/auth-card.tsx:75-78 (used at :232)</span><span class="src v">Verified</span></td>
+  <td>Phishing: a link to the real Rezide sign-in page sends the user to an attacker's page right after a real OTP sign-in.</td>
+  <td>Resolve with <code>new URL(next, location.origin)</code>, require the same origin, and use only its path, query and hash.</td></tr>
+</tbody></table>
+
+<h3>High</h3>
+<table><thead><tr><th>#</th><th>Severity</th><th>Area</th><th>Problem</th><th>Impact</th><th>Fix</th></tr></thead><tbody>
+<tr data-s="high"><td class="id">H1</td><td><span class="pill p-high">High</span></td><td>Properties · API</td>
+  <td><span class="what">One listing with no unit number makes a whole property search fail (HTTP 502)</span><code>typeof d.unit_no === "object"</code> is also true for <code>null</code>, so the code reads <code>null.config_id</code> and throws. Reproduced every time with <code>/api/properties?city=Mumbai&amp;intent=buy&amp;type=offices&amp;areaMin=2000&amp;areaMax=5000</code>. Server log: <code>TypeError: Cannot read properties of null (reading 'config_id')</code>.<span class="where">src/services/property-mapper.ts:239</span><span class="src v">Verified (browser + curl + server log)</span></td>
+  <td>Any search or home-page rail whose results include such a listing shows nothing. The Offices home page already has a failing card.</td>
+  <td>Check <code>d.unit_no &amp;&amp; typeof d.unit_no === "object"</code>, and map each listing in a try/catch so one bad row can't fail the page.</td></tr>
+<tr data-s="high"><td class="id">H2</td><td><span class="pill p-high">High</span></td><td>Realtor dashboard</td>
+  <td><span class="what">The whole realtor dashboard is broken in production</span>Every dashboard endpoint returns 404 on the live backend: <code>/dashboard/contacts</code>, <code>/groups</code>, <code>/uploads</code>, <code>/credits</code>, <code>/team</code>, <code>/firm</code> and <code>/me</code>. Production always turns mocking off (<code>src/lib/api/client.ts:27</code>).<span class="where">src/services/dashboard.ts; src/features/dashboard/*</span><span class="src v">Verified (signed-in browser test)</span></td>
+  <td>Realtors who sign in see errors on Contacts, Groups, Database, Credits, Teams and Profiles.</td>
+  <td>Hide or gate the dashboard until the backend exists, or keep the <code>dashboard</code> domain mocked and say so clearly.</td></tr>
+<tr data-s="high"><td class="id">H3</td><td><span class="pill p-high">High</span></td><td>Realtor Corner</td>
+  <td><span class="what">"Get a callback" and "14-day trial" forms post to endpoints that don't exist</span><code>/v1/admin/callbacks</code> and <code>/trial-requests</code> return 404 live. docs/API.md lists them as not built.<span class="where">src/services/mutations.ts:166-186; src/features/corner/realtor-corner.tsx:719; trial-dialog.tsx:72</span><span class="src">Code review + live GET (no POST sent)</span></td>
+  <td>Every callback or trial request fails. The trial flow first spends a real SMS OTP. The page also says these are "simulated".</td>
+  <td>Send them to the existing lead endpoint (<code>/lead/developer-contact</code>) or hide the forms.</td></tr>
+<tr data-s="high"><td class="id">H4</td><td><span class="pill p-high">High</span></td><td>Search · Map</td>
+  <td><span class="what">Map pins never open a listing, and pin/card highlighting never links up</span>The map service sends the short <code>listing_id</code> (e.g. <code>5CPBZLNT</code>), but the code only accepts 24-character backend ids, so popups always say "Listing page isn't available for this pin yet".<span class="where">src/services/map-search.ts:277; src/features/search/map-popup.ts:49-52; use-map-markers.ts:127-134</span><span class="src">Code review + live data</span></td>
+  <td>In the map view, no pin can be clicked through to a property.</td>
+  <td>Keep <code>listing_id</code> on <code>Property</code> and resolve pins through it, or have the map service return <code>_id</code>.</td></tr>
+<tr data-s="high"><td class="id">H5</td><td><span class="pill p-high">High</span></td><td>Search · Filters</td>
+  <td><span class="what">The "Listing with Photo / Video / VR Tour" filter does nothing</span><code>toListingFilters</code> never sends the media filter. The drawer still shows counts like "Video (12)" and an active chip.<span class="where">src/services/property-mapper.ts:414-438; src/features/search/filter-drawer.tsx:70</span><span class="src">Code review</span></td>
+  <td>Users believe they see only listings with video or VR, but they see everything.</td>
+  <td>Filter media in the list path, or hide the group until the backend supports it.</td></tr>
+<tr data-s="high"><td class="id">H6</td><td><span class="pill p-high">High</span></td><td>Developer page</td>
+  <td><span class="what">A developer's page lists other builders' projects</span>Projects are found with a free-text name search and never filtered by <code>developer_id</code>. Live, "ARC" returns 73 projects from about 25 developers, and "Raheja" mixes several companies.<span class="where">src/services/projects.ts:241-259 and :207-230</span><span class="src">Code review + live data</span></td>
+  <td>Wrong project lists and counts, on the developer page, in the project page's "About developer", and in the developer SEO title ("61 Projects").</td>
+  <td>Keep only rows whose <code>developer_id</code> matches, and count from those.</td></tr>
+<tr data-s="high"><td class="id">H7</td><td><span class="pill p-high">High</span></td><td>Projects · Cards</td>
+  <td><span class="what">Cards on the developer page and the Similar/Nearby rails show the wrong city</span><code>city: row.city?.trim() || city</code>, but search rows never have a city, so the fallback always wins. Lodha's Pune and Thane projects show "…, Mumbai".<span class="where">src/services/projects.ts:175, :181, :257; project-mapper.ts</span><span class="src">Code review + live data</span></td>
+  <td>Wrong locations on cards and in the lead form's location field.</td>
+  <td>In <code>toProject</code>, use the city index (<code>cityOf(id)</code>) before the caller's fallback.</td></tr>
+<tr data-s="high"><td class="id">H8</td><td><span class="pill p-high">High</span></td><td>Project page · Locality</td>
+  <td><span class="what">The "Explore {locality}" photo and link can point to another city's locality</span><code>findLocality</code> takes the first name match across all cities, and 117 locality names exist in more than one city. Dosti Primus (Thane) links to Azad Nagar, Mumbai.<span class="where">src/services/localities.ts (findLocality); projects.ts:174; project-detail.tsx:226-229</span><span class="src">Code review + live data</span></td>
+  <td>Users see the wrong neighbourhood photo and open the wrong locality page.</td>
+  <td>Match on city and sub-region too, and show nothing when no row matches.</td></tr>
+<tr data-s="high"><td class="id">H9</td><td><span class="pill p-high">High</span></td><td>Find Realtor · Firm page</td>
+  <td><span class="what">A firm page can show the wrong firm or a hidden firm</span>Firm pages use a fuzzy name search and take the first result, with no status filter. <code>/realtors/Max</code> shows "Max Realtors". Two firms are both called "Max Realtors", so one can never be opened. Inactive "Remax Temple City" still renders.<span class="where">src/lib/api/realtor-proxy.ts:68-71</span><span class="src">Code review + live data</span></td>
+  <td>Wrong firm shown, one real firm unreachable, inactive firms are public.</td>
+  <td>Require an exact name match (trimmed, ignoring case), apply the directory's status filters, and use the firm id to tell duplicates apart.</td></tr>
+<tr data-s="high"><td class="id">H10</td><td><span class="pill p-high">High</span></td><td>Leads · Rate limit</td>
+  <td><span class="what">The whole site shares one lead limit of 5 per 10 minutes</span>With the default <code>LEAD_TRUST_PROXY=false</code>, every visitor's IP becomes <code>"shared"</code>, limited to 5 leads in 10 minutes.<span class="where">src/lib/api/lead-guard.ts:14-19</span><span class="src">Code review</span></td>
+  <td>After 5 realtor "Connect" or invitation leads site-wide, everyone gets "Too many enquiries", so leads are lost.</td>
+  <td>Read the client IP from the host platform (or enable trusted forwarding), and raise the shared fallback limit.</td></tr>
+<tr data-s="high"><td class="id">H11</td><td><span class="pill p-high">High</span></td><td>SEO</td>
+  <td><span class="what">Unknown pages return HTTP 200 ("soft 404")</span>These all return 200 with a "not found" message: <code>/projects/&lt;bad id&gt;</code>, <code>/projects/not-a-project</code>, <code>/locality/&lt;bad id&gt;</code>, <code>/developers/&lt;bad id&gt;</code>, <code>/realtors/NoSuchFirm</code> and <code>/properties/does-not-exist</code>. Only the site-wide 404 returns 404.<span class="where">pages that stream inside &lt;Suspense&gt;; noted in README "Known limitations"</span><span class="src v">Verified</span></td>
+  <td>Google indexes and wastes crawl budget on error pages, and Search Console reports soft 404s.</td>
+  <td>Check existence before streaming (e.g. in <code>src/proxy.ts</code>, returning a 404 rewrite) or at least keep <code>noindex</code> on these pages.</td></tr>
+</tbody></table>
+
+<h3>Medium</h3>
+<table><thead><tr><th>#</th><th>Severity</th><th>Area</th><th>Problem</th><th>Impact</th><th>Fix</th></tr></thead><tbody>
+<tr data-s="med"><td class="id">M1</td><td><span class="pill p-med">Medium</span></td><td>Security · Auth</td><td><span class="what">The account type comes from the tab the user clicked, not from the backend</span><code>toSession</code> sets <code>role: input.role</code>; the backend's role is never read.<span class="where">src/services/auth.ts:187-197; auth-card.tsx:225; checkout-dialog.tsx:29</span><span class="src">Code review</span></td><td>A customer who picks "Realtor" gets into realtor-only screens (dashboard, checkout).</td><td>Take the role from the backend user record, and enforce it on the server.</td></tr>
+<tr data-s="med"><td class="id">M2</td><td><span class="pill p-med">Medium</span></td><td>Auth</td><td><span class="what">The header sign-in popup always signs people in as a customer</span><code>verifyOtp({ …, role: "seeker" })</code><span class="where">src/features/auth/sign-in-modal.tsx:115</span><span class="src">Code review</span></td><td>Realtors who sign in through the popup are told "The dashboard is for realtor accounts".</td><td>Use the role from the backend response (see M1).</td></tr>
+<tr data-s="med"><td class="id">M3</td><td><span class="pill p-med">Medium</span></td><td>Auth · Sign up</td><td><span class="what">The realtor sign-up form is a dead end</span>The full form (firm, RERA, city, email) is shown, but submitting throws "Realtor sign-up isn't available yet".<span class="where">src/services/auth.ts:234-236; auth-card.tsx:123-158</span><span class="src">Code review</span></td><td>Realtors fill in everything, then can't continue.</td><td>Replace it with a "request access" message, or send it to the trial form.</td></tr>
+<tr data-s="med"><td class="id">M4</td><td><span class="pill p-med">Medium</span></td><td>Find Realtor</td><td><span class="what">Searching a realtor by name returns "No realtors match"</span>Name search sends the text as a firm search. Live, "Jyoti" finds 0, although the suggestions list "Jyoti Chhatre".<span class="where">src/features/realtors/live-search.tsx:204; directory-model.ts:147</span><span class="src">Code review + live data</span></td><td>Existing realtors can't be found by name.</td><td>In name mode, filter people by name, or open the matching agent suggestion.</td></tr>
+<tr data-s="med"><td class="id">M5</td><td><span class="pill p-med">Medium</span></td><td>Leads</td><td><span class="what">"Connect with &lt;agent&gt;" leads carry only the firm id</span>The lead schema has no agent or broker field.<span class="where">src/features/realtors/contact-input.ts:5-14; directory-cards.tsx:283; person-profile.tsx:49</span><span class="src">Code review</span></td><td>Leads meant for a specific agent arrive as firm leads, so that agent may never see them.</td><td>Add the agent id to the schema and to the <code>/lead/receive</code> body.</td></tr>
+<tr data-s="med"><td class="id">M6</td><td><span class="pill p-med">Medium</span></td><td>Leads · Validation</td><td><span class="what">Weak phone validation on lead forms</span>The firm "Connect" form only requires 6 digits. Contact Builder only checks that fields aren't empty ("x", "1" and "a" pass).<span class="where">src/features/realtors/firm-connect-form.tsx:24; projects/detail/contact-builder.tsx:45-54</span><span class="src">Code review</span></td><td>Junk leads with unusable numbers.</td><td>Require <code>^[6-9]\d{9}$</code> for +91, and a valid email format.</td></tr>
+<tr data-s="med"><td class="id">M7</td><td><span class="pill p-med">Medium</span></td><td>Security · Privacy</td><td><span class="what">Builder contact details can be read without filling in the form</span><code>GET /api/developers/{id}/contact</code> has no check. The "fill the form first" gate exists only in the browser.<span class="where">src/app/api/developers/[id]/contact/route.ts</span><span class="src">Code review</span></td><td>Builders' phone numbers and emails can be scraped.</td><td>On the server, require a recorded lead or a session before returning contacts.</td></tr>
+<tr data-s="med"><td class="id">M8</td><td><span class="pill p-med">Medium</span></td><td>Realtor dashboard</td><td><span class="what">Every realtor sees a made-up firm name and role, and "sample data" banners</span>The sidebar falls back to "Buildstone Realty LLP" and a fixed "Owner · Admin access". The banner says "Demo dashboard · sample firm data". Menu items read "(not in this prototype)".<span class="where">src/features/dashboard/dashboard-shell.tsx:161,169,233-239</span><span class="src v">Verified (screenshot)</span></td><td>Wrong firm and permissions shown to real realtors, and the product looks unfinished.</td><td>Read the firm and role from the backend; remove prototype copy in production.</td></tr>
+<tr data-s="med"><td class="id">M9</td><td><span class="pill p-med">Medium</span></td><td>Properties · Data</td><td><span class="what">Rate per sq ft differs between card and detail page; rental cards drop "/ mo"</span>The card uses the backend average, the page computes price ÷ area. Listing <code>698b14e18134139a2b072cb4</code> shows ₹71,797 on its card and ₹61,912 on its page.<span class="where">property-card.tsx:70; property-detail.tsx:98-100</span><span class="src">Code review + live data</span></td><td>Two different rates for one property, and rental rates that read like sale rates.</td><td>Use one shared rate helper, and always add "/ mo" for rentals.</td></tr>
+<tr data-s="med"><td class="id">M10</td><td><span class="pill p-med">Medium</span></td><td>Properties · Gallery</td><td><span class="what">Real listing photos are labelled "Sample photo"</span>The gallery defaults to <code>sampleBadge = true</code>, and the detail page never passes the photo's source.<span class="where">property-detail.tsx:109-123; detail/media-gallery.tsx:44</span><span class="src">Code review</span></td><td>Genuine photos look like stock images on a site that promises "Genuine Listings Only".</td><td>Pass <code>sampleBadge={p.photoSource !== "listing"}</code>.</td></tr>
+<tr data-s="med"><td class="id">M11</td><td><span class="pill p-med">Medium</span></td><td>Home · Rails</td><td><span class="what">"Unit type" and "BHK" cards show nationwide counts under a city heading</span>"Apartment · 1172+ listings" appears under Mumbai, which has 774 sale listings in total.<span class="where">src/services/home.ts:204-222; features/home/rails.tsx:145</span><span class="src">Code review + live data</span></td><td>Inflated counts; clicking through shows far fewer results.</td><td>Count from the city's facets, or drop the numbers.</td></tr>
+<tr data-s="med"><td class="id">M12</td><td><span class="pill p-med">Medium</span></td><td>Search · Localities tab</td><td><span class="what">Localities from every city are shown, but they link to the current city's search</span>On Pune, "Lower Parel · Available Sale 69" opens <code>/properties?city=Pune&amp;loc=Lower+Parel</code>.<span class="where">src/features/search/localities-view.tsx:40,110; localities.ts</span><span class="src">Code review + live data</span></td><td>Outside Mumbai, cards show other cities' localities and lead to empty results.</td><td>Pass <code>cityId</code> to the list, or link with each row's own city.</td></tr>
+<tr data-s="med"><td class="id">M13</td><td><span class="pill p-med">Medium</span></td><td>Properties · Data</td><td><span class="what">Semi-furnished units are described as "listed unfurnished"</span>The text shows whenever no furnishing items are listed. "Builder Condition" and "Bare Shell" show as "Furnishing: N/A".<span class="where">detail/property-info-tabs.tsx:123-133; property-mapper.ts:183,269</span><span class="src">Code review + live data</span></td><td>Wrong furnishing information on many listings.</td><td>Say "No items listed" unless the unit is actually unfurnished, and map the extra values.</td></tr>
+<tr data-s="med"><td class="id">M14</td><td><span class="pill p-med">Medium</span></td><td>List property</td><td><span class="what">Price analysis compares monthly rent with sale prices</span>A ₹50,000/mo rent gets "−99.9% vs median" against ₹3.9–6.5 Cr sale ranges.<span class="where">src/features/listing/steps.tsx:402; price-analysis.tsx:390-424</span><span class="src">Code review</span></td><td>Owners renting out are told their rent is far too low.</td><td>Hide the analysis for rent, or use rent ranges.</td></tr>
+<tr data-s="med"><td class="id">M15</td><td><span class="pill p-med">Medium</span></td><td>Search · Filters</td><td><span class="what">Budget dropdowns show blank when the budget came from a home rail</span>Rail values such as ₹2 Cr or ₹2 L aren't among the dropdown options. The chip says "Min ₹ 2 Cr" while the select shows "Min budget".<span class="where">src/features/search/filter-drawer.tsx:222-248</span><span class="src">Code review</span></td><td>The filter drawer contradicts the active filter.</td><td>Add the current value as an option, or align the option values.</td></tr>
+<tr data-s="med"><td class="id">M16</td><td><span class="pill p-med">Medium</span></td><td>Home · Mobile UI</td><td><span class="what">An empty dark box sits under the hero search on phones</span>All trust badges are commented out, but their dark container still renders.<span class="where">src/features/home/home-hero.tsx:352</span><span class="src">Code review</span></td><td>A stray grey pill under the search on every phone home page.</td><td>Render nothing when the list is empty.</td></tr>
+<tr data-s="med"><td class="id">M17</td><td><span class="pill p-med">Medium</span></td><td>Project page · Summary</td><td><span class="what">Missing numbers show as zero: "0 Towers", "0 Units", "Rate: ₹ 0 psf", "0 sq ft"</span>Seen live on Suraj Nova. About 28% of projects lack towers, units or rate. The developer page shows "0 Units" too, and the Similar/Nearby cards show "0 Acres · 0 Towers".<span class="where">detail/project-sections.tsx; detail/project-wide-card.tsx:66,104</span><span class="src v">Verified (browser)</span></td><td>Pages state wrong facts.</td><td>Hide a stat, or show "—", when the value is 0 or missing.</td></tr>
+<tr data-s="med"><td class="id">M18</td><td><span class="pill p-med">Medium</span></td><td>Project page · Plans</td><td><span class="what">Sale/rent range boxes show a dangling "Rs 1.84 Cr. - "</span>Only the minimum is checked. Seen live on project <code>6afd2eecf13b6e01c7e8f909</code> (3 BHK). Compare has the same problem.<span class="where">detail/configuration-plans.tsx:244-253; compare/project-compare.tsx:395</span><span class="src v">Verified (live data)</span></td><td>A broken-looking price range.</td><td>Show "From ₹X" when the maximum is missing.</td></tr>
+<tr data-s="med"><td class="id">M19</td><td><span class="pill p-med">Medium</span></td><td>Project page · Map</td><td><span class="what">Projects without coordinates point maps to 0,0 (the ocean)</span>15% of sampled projects have no coordinates. "View on Map" and "On Google Maps" open <code>maps?q=0,0</code>, and the landmarks map centres there.<span class="where">project-mapper.ts (coords [0,0]); project-detail.tsx:65,189</span><span class="src v">Verified (live data)</span></td><td>Broken map links.</td><td>Hide map links, and fall back to the locality, when coordinates are missing.</td></tr>
+<tr data-s="med"><td class="id">M20</td><td><span class="pill p-med">Medium</span></td><td>Project page · Summary</td><td><span class="what">The status badge reads "not stated", or "Ready to Move" twice</span>The badge strips "Possession " from "Possession not stated".<span class="where">detail/project-sections.tsx (summaryBadges, possessionShort)</span><span class="src">Code review</span></td><td>Odd or duplicated badges.</td><td>Hide the date badge when there's no date.</td></tr>
+<tr data-s="med"><td class="id">M21</td><td><span class="pill p-med">Medium</span></td><td>Projects · Data</td><td><span class="what">Room sizes in feet are shown with inch marks</span><code>12.00" x 8.33"</code> for a 12 × 8 ft room, on both project plans and property rooms.<span class="where">detail/configuration-plans.tsx:221; properties/detail/property-info-tabs.tsx:56</span><span class="src">Code review + live data</span></td><td>Room sizes read as inches.</td><td>Render <code>12′ 0″ × 8′ 4″</code> from the backend's <code>_ft</code>/<code>_inch</code> fields.</td></tr>
+<tr data-s="med"><td class="id">M22</td><td><span class="pill p-med">Medium</span></td><td>Developer page</td><td><span class="what">"All Projects 61" but only 50 cards; status counts don't add up</span>The total comes from the search count, while the lists and status counts come from the first 50 rows only.<span class="where">src/features/developers/developer-view.tsx:58-61,96-99; projects.ts:259</span><span class="src">Code review + live data</span></td><td>Numbers that contradict each other.</td><td>Load all pages, or show "50 of 61".</td></tr>
+<tr data-s="med"><td class="id">M23</td><td><span class="pill p-med">Medium</span></td><td>Compare</td><td><span class="what">"Age of Project" breaks for backend dates and treats future dates as an age</span>Gives "NaN year" on Safari, a positive age for 2029 completion dates, and "0 year".<span class="where">src/features/compare/project-compare.tsx:173-179; listing-compare.tsx:229</span><span class="src">Code review</span></td><td>Garbage values in the compare table.</td><td>Normalise the date, show "Completes in …" for future dates, and pluralise correctly.</td></tr>
+<tr data-s="med"><td class="id">M24</td><td><span class="pill p-med">Medium</span></td><td>Share</td><td><span class="what">WhatsApp share opens WhatsApp Web, even on phones, with an unencoded URL</span><code>https://web.whatsapp.com/send?text=${url}</code><span class="where">src/features/projects/share-project.tsx:165-168</span><span class="src">Code review</span></td><td>On phones it lands on a WhatsApp Web or download page instead of the app.</td><td>Use <code>https://wa.me/?text=${encodeURIComponent(url)}</code>.</td></tr>
+<tr data-s="med"><td class="id">M25</td><td><span class="pill p-med">Medium</span></td><td>Locality page · Accessibility</td><td><span class="what">The banner auto-advances every 2 s with no pause, and is mounted twice</span>It pauses only on mouse hover and ignores reduced-motion. The desktop and phone copies both load, each with its own <code>&lt;h1&gt;</code>.<span class="where">src/features/localities/locality-view.tsx:215-219,303-319</span><span class="src">Code review</span></td><td>Fails WCAG 2.2.2, banner images download twice, and the page has two h1s.</td><td>Add a pause control, respect reduced motion, and render one responsive banner.</td></tr>
+<tr data-s="med"><td class="id">M26</td><td><span class="pill p-med">Medium</span></td><td>Project page · Transactions</td><td><span class="what">Registered transaction amounts are rounded to 3 significant digits</span>₹1,23,45,678 shows as "Rs 1,23,00,000/-".<span class="where">detail/v1-ui.tsx (rsInr); project-transactions.tsx:54-63</span><span class="src">Code review</span></td><td>The IGR figures shown aren't the registered amounts.</td><td>Format exact amounts with Indian grouping.</td></tr>
+<tr data-s="med"><td class="id">M27</td><td><span class="pill p-med">Medium</span></td><td>Project page · Transactions</td><td><span class="what">The disclaimer always says "IGR Maharashtra"</span>It appears on Bengaluru, Chennai and other projects too.<span class="where">detail/project-transactions.tsx (disclaimer)</span><span class="src">Code review</span></td><td>Incorrect legal source for non-Maharashtra projects.</td><td>Use the project's state (the detail has <code>stateRera</code>).</td></tr>
+<tr data-s="med"><td class="id">M28</td><td><span class="pill p-med">Medium</span></td><td>SEO · Realtor pages</td><td><span class="what">Realtor firm and agent pages are rendered in the browser, with no 404 and no canonical</span>The title is whatever text is in the URL, and <code>/brokers/[firmName]</code> duplicates <code>/realtors/</code>.<span class="where">src/app/(site)/realtors/[id]/page.tsx; brokers/[firmName]/page.tsx; live-profile.tsx</span><span class="src">Code review</span></td><td>Search engines see skeleton pages, garbage titles and duplicates.</td><td>Fetch on the server, call <code>notFound()</code>, set a canonical, and redirect <code>/brokers/*</code>.</td></tr>
+<tr data-s="med"><td class="id">M29</td><td><span class="pill p-med">Medium</span></td><td>SEO · Localities (new)</td><td><span class="what">57 localities in the sitemap have a different canonical URL</span>Their stored names have trailing spaces, so the page's exact-name lookup fails and the page falls back to the bare-id canonical.<span class="where">src/services/localities.ts (findLocalityRow); locality/[slug]/page.tsx; proxy.ts</span><span class="src">Code review + live data (from the new SEO work)</span></td><td>Sitemap URL ≠ canonical URL for those pages, which Search Console flags.</td><td>Search with the untrimmed name too, or find the row by id.</td></tr>
+<tr data-s="med"><td class="id">M30</td><td><span class="pill p-med">Medium</span></td><td>Performance (new)</td><td><span class="what">Project pages wait while the hourly city index rebuilds</span>When the index expires, requests wait for the rebuild (about 2 s, more on a slow backend) instead of using the old index.<span class="where">src/services/project-city-index.ts:78-92</span><span class="src">Code review + measured 1.9 s first request (from the new SEO work)</span></td><td>Once an hour, project pages and old-URL redirects are slow; the redirect can time out.</td><td>Serve the previous index while the new one builds.</td></tr>
+<tr data-s="med"><td class="id">M31</td><td><span class="pill p-med">Medium</span></td><td>Copy</td><td><span class="what">Prototype wording still appears on live pages</span>"Sample inventory covers a limited set of cities…", "Sample projects cover…", the account footer's "sample data", and Realtor Corner's "simulated".<span class="where">search/property-search.tsx:334,423; account; corner</span><span class="src v">Verified (account) + code review</span></td><td>Suggests the listings are fake.</td><td>Remove the prototype copy now that the data is live.</td></tr>
+<tr data-s="med"><td class="id">M32</td><td><span class="pill p-med">Medium</span></td><td>Map view</td><td><span class="what">The map service blocks this site's origin (CORS)</span>From <code>localhost</code>, <code>si.rezide.in/v1/locations/search</code> has no <code>Access-Control-Allow-Origin</code>, so no pins load. Not checked from the real domain.<span class="where">src/services/map-search.ts</span><span class="src v">Verified on localhost</span></td><td>If rezide.in isn't allowed either, the map view is empty in production.</td><td>Confirm the production origin is allowed, and add staging origins.</td></tr>
+<tr data-s="med"><td class="id">M33</td><td><span class="pill p-med">Medium</span></td><td>Code quality</td><td><span class="what">2 ESLint errors (React Compiler rules)</span><code>auth-card.tsx:100</code> writes a ref during render. <code>firm-connect-form.tsx:46</code> calls setState in an effect, and after sign-out the previous user's details stay in the form.<span class="where">src/features/auth/auth-card.tsx:100; src/features/realtors/firm-connect-form.tsx:46</span><span class="src v">Verified (eslint)</span></td><td>Lint fails in CI. Stale personal data in a form on shared devices.</td><td>Derive values during render or key the form on the user; update the ref in an effect.</td></tr>
+<tr data-s="med"><td class="id">M34</td><td><span class="pill p-med">Medium</span></td><td>Tests</td><td><span class="what">2 unit tests fail</span><code>misc.test.ts</code> "validates enquiries server-side" and <code>services.test.ts</code> "reads the stats category from type". Both expect mocked catalogue endpoints that are now always live, and get a generic error.<span class="where">src/features/misc.test.ts:12; src/services/services.test.ts:11</span><span class="src v">Verified</span></td><td>The test suite is red, which hides new failures.</td><td>Update or remove these tests for the live-catalogue setup.</td></tr>
+<tr data-s="med"><td class="id">M35</td><td><span class="pill p-med">Medium</span></td><td>Tests · Windows</td><td><span class="what">All tests fail when run from a lower-case <code>c:\</code> path</span>Vitest loads itself twice when the drive letter's case differs: "failed to find the current suite". The VS Code terminal opens at <code>c:\rezide-frontend</code>.<span class="where">vitest.config.mts / environment</span><span class="src v">Verified</span></td><td>Developers see 52 failing test files and may ignore real failures.</td><td>Open the folder as <code>C:\rezide-frontend</code>, or note it in the README.</td></tr>
+</tbody></table>
+
+<h3>Low</h3>
+<table><thead><tr><th>#</th><th>Severity</th><th>Area</th><th>Problem</th><th>Impact</th><th>Fix</th></tr></thead><tbody>
+<tr data-s="low"><td class="id">L1</td><td><span class="pill p-low">Low</span></td><td>Home · Land</td><td><span class="what">Land's "Area" cards use carpet-area bands, not plot sizes</span><span class="where">src/services/home.ts:172; rails.tsx:149</span><span class="src">Code review</span></td><td>Meaningless size buckets for plots.</td><td>Use <code>areaBandsFor(category)</code>.</td></tr>
+<tr data-s="low"><td class="id">L2</td><td><span class="pill p-low">Low</span></td><td>Map</td><td><span class="what">Map popups show rents as sale prices and say "1 listings"</span><span class="where">src/features/search/map-popup.ts:53,68,70</span><span class="src">Code review</span></td><td>Misleading prices, bad plurals.</td><td>Mark rentals with "/ mo", and pluralise.</td></tr>
+<tr data-s="low"><td class="id">L3</td><td><span class="pill p-low">Low</span></td><td>Search</td><td><span class="what">An out-of-range page shows "Showing 91 – 50 of 50"</span><span class="where">src/features/search/property-search.tsx:263</span><span class="src">Code review</span></td><td>Confusing output on old shared links.</td><td>Clamp the page, or show the empty state.</td></tr>
+<tr data-s="low"><td class="id">L4</td><td><span class="pill p-low">Low</span></td><td>Search · Projects view</td><td><span class="what">Projects view stops at 36 and says "of 36"</span><span class="where">property-search.tsx:178,269</span><span class="src">Code review</span></td><td>Other projects can't be reached.</td><td>Page the results, or say "top 36 of N".</td></tr>
+<tr data-s="low"><td class="id">L5</td><td><span class="pill p-low">Low</span></td><td>Property page</td><td><span class="what">"Login to view" transactions on listings that have no project</span>After signing in, users only see "not connected".<span class="where">property-detail.tsx:196; detail/transactions.tsx</span><span class="src">Code review</span></td><td>Users are pushed to sign in for nothing.</td><td>Hide the section without a project.</td></tr>
+<tr data-s="low"><td class="id">L6</td><td><span class="pill p-low">Low</span></td><td>Property page</td><td><span class="what">Says "Available" when availability is unknown (the card says "not provided")</span><span class="where">property-detail.tsx:84</span><span class="src">Code review</span></td><td>An unsupported claim.</td><td>Use <code>availabilityLabel(p)</code>.</td></tr>
+<tr data-s="low"><td class="id">L7</td><td><span class="pill p-low">Low</span></td><td>Shortlist</td><td><span class="what">Tapping the heart before the shortlist loads re-adds instead of removing</span><span class="where">detail/save-actions.tsx:96,121</span><span class="src">Code review</span></td><td>Duplicate shortlist entries.</td><td>Disable the button until the list has loaded.</td></tr>
+<tr data-s="low"><td class="id">L8</td><td><span class="pill p-low">Low</span></td><td>Copy</td><td><span class="what">"3 Bath", "4+ Bath" chips</span><span class="where">search/filter-drawer.tsx:64</span><span class="src">Code review</span></td><td>Grammar.</td><td>Use "Baths" for values other than 1.</td></tr>
+<tr data-s="low"><td class="id">L9</td><td><span class="pill p-low">Low</span></td><td>Mobile UI</td><td><span class="what">The search heading uses <code>whitespace-nowrap</code>, so long city names can overflow on phones</span>No overflow was seen for Mumbai at 375 px. "Thiruvananthapuram Properties." would overflow.<span class="where">property-search.tsx:595</span><span class="src">Code review</span></td><td>Horizontal scroll for long city names.</td><td>Allow wrapping.</td></tr>
+<tr data-s="low"><td class="id">L10</td><td><span class="pill p-low">Low</span></td><td>Property data</td><td><span class="what">Missing parking data shows as "Parking: None"</span><span class="where">property-mapper.ts:282</span><span class="src">Code review</span></td><td>Offices and shops wrongly say "no parking".</td><td>Show "—" when unknown.</td></tr>
+<tr data-s="low"><td class="id">L11</td><td><span class="pill p-low">Low</span></td><td>About</td><td><span class="what">"Schedule Demo" Calendly links are pinned to December 2024</span><span class="where">src/features/about/about-content.ts:35,48</span><span class="src">Code review</span></td><td>Calendly opens in the past with no slots.</td><td>Drop the <code>month</code> parameter.</td></tr>
+<tr data-s="low"><td class="id">L12</td><td><span class="pill p-low">Low</span></td><td>Compare</td><td><span class="what">The amenities toggle reads "Less More"</span><span class="where">compare/project-compare.tsx:424</span><span class="src">Code review</span></td><td>Copy error.</td><td>Use "View Less".</td></tr>
+<tr data-s="low"><td class="id">L13</td><td><span class="pill p-low">Low</span></td><td>Project cards</td><td><span class="what">"₹4 Cr – ₹0" when only the minimum price exists; the wide card shows "N/A"</span><span class="where">project-card.tsx:132,241; detail/project-wide-card.tsx:103</span><span class="src">Code review + live data</span></td><td>Wrong price display.</td><td>Show "From ₹4 Cr".</td></tr>
+<tr data-s="low"><td class="id">L14</td><td><span class="pill p-low">Low</span></td><td>Project page</td><td><span class="what">With no highlights, a bullet reads "Possession not stated" (or is empty)</span><span class="where">project-detail.tsx:198</span><span class="src">Code review</span></td><td>Filler bullets.</td><td>Filter out empty and "not stated" values.</td></tr>
+<tr data-s="low"><td class="id">L15</td><td><span class="pill p-low">Low</span></td><td>Project page · Plans</td><td><span class="what">A failed floor-plan request shows "No Floor Plans Available" with no Retry</span><span class="where">detail/configuration-plans.tsx:342</span><span class="src">Code review</span></td><td>Errors look like missing data.</td><td>Show an error with Retry (as the unit plans do).</td></tr>
+<tr data-s="low"><td class="id">L16</td><td><span class="pill p-low">Low</span></td><td>Accessibility</td><td><span class="what">The project filter drawer tells screen readers "Results update as you select options", but they only apply on "Show N projects"</span><span class="where">projects/project-filter-drawer.tsx:133</span><span class="src">Code review</span></td><td>Misleading for screen-reader users.</td><td>Describe the apply step.</td></tr>
+<tr data-s="low"><td class="id">L17</td><td><span class="pill p-low">Low</span></td><td>SEO</td><td><span class="what">Team page titles are double-branded: "Viraj Bhatia - Our Team | Rezide Solutions · Rezide"</span><span class="where">src/app/(site)/team/[slug]/page.tsx:16</span><span class="src">Code review</span></td><td>Untidy titles in search results.</td><td>Use <code>title: { absolute }</code>.</td></tr>
+<tr data-s="low"><td class="id">L18</td><td><span class="pill p-low">Low</span></td><td>Find Realtor</td><td><span class="what">Changing the city on /realtors doesn't change the results</span>The directory ignores the city, by design.<span class="where">site-header.tsx:29-40; realtor-proxy.ts:34-36</span><span class="src">Code review</span></td><td>Pune shows the same Mumbai firms under a "Pune" heading.</td><td>Hide the city control there, or say "all cities".</td></tr>
+<tr data-s="low"><td class="id">L19</td><td><span class="pill p-low">Low</span></td><td>Dashboard</td><td><span class="what">WhatsApp may be blocked for real contacts, because "sample numbers" are detected from the env variable, not the real mocking state</span><span class="where">src/features/dashboard/ui.tsx:160</span><span class="src">Code review</span></td><td>"WhatsApp isn't opened for sample contacts" shown for real contacts.</td><td>Use <code>isMocked("dashboard")</code>.</td></tr>
+<tr data-s="low"><td class="id">L20</td><td><span class="pill p-low">Low</span></td><td>Privacy</td><td><span class="what">Part of each realtor's mobile number is sent to the browser but never shown</span><code>maskedPhone</code> (last 5 digits) is in <code>/api/brokers/person</code>.<span class="where">src/lib/api/realtor-proxy.ts:104,111</span><span class="src">Code review</span></td><td>Unneeded personal data exposure.</td><td>Remove the field.</td></tr>
+<tr data-s="low"><td class="id">L21</td><td><span class="pill p-low">Low</span></td><td>Auth</td><td><span class="what">Several sign-in links drop <code>?next=</code></span>The Sign up ↔ Sign in switch, the header link and "Create account" all lose it.<span class="where">auth-card.tsx:376-381; site-header.tsx:78-91; account-view.tsx:398</span><span class="src">Code review</span></td><td>Users lose their place after signing in.</td><td>Carry <code>next</code> through these links.</td></tr>
+<tr data-s="low"><td class="id">L22</td><td><span class="pill p-low">Low</span></td><td>Auth · Cost</td><td><span class="what">"Resend OTP" in the sign-in popup has no cooldown</span><span class="where">src/features/auth/sign-in-modal.tsx:144-146</span><span class="src">Code review</span></td><td>Repeated SMS sends cost money.</td><td>Reuse the 30-second timer from the sign-in page.</td></tr>
+<tr data-s="low"><td class="id">L23</td><td><span class="pill p-low">Low</span></td><td>Find Realtor</td><td><span class="what">The invitation form rejects one-letter or missing surnames</span><span class="where">src/features/realtors/directory-forms.tsx:127</span><span class="src">Code review</span></td><td>"Ramesh K" can't submit.</td><td>Make the surname optional.</td></tr>
+<tr data-s="low"><td class="id">L24</td><td><span class="pill p-low">Low</span></td><td>Dashboard</td><td><span class="what">The Add Member wizard collects Aadhaar, RERA number and cities, then drops them</span><span class="where">src/features/dashboard/add-member.tsx:61-70</span><span class="src">Code review</span></td><td>Sensitive data is entered and never saved.</td><td>Send those fields, or remove them from the wizard.</td></tr>
+<tr data-s="low"><td class="id">L25</td><td><span class="pill p-low">Low</span></td><td>Dashboard · Credits</td><td><span class="what">"This Month" means two different periods, and the CSV doesn't escape quotes</span><span class="where">src/features/dashboard/credits.tsx:41-53</span><span class="src">Code review</span></td><td>Numbers disagree, and the CSV can break.</td><td>Use calendar months; escape cells.</td></tr>
+<tr data-s="low"><td class="id">L26</td><td><span class="pill p-low">Low</span></td><td>Navigation</td><td><span class="what">Old <code>/realtors/&lt;firm&gt;-&lt;agent&gt;</code> redirects lead to "Realtor not found"</span>They point to old mock slugs.<span class="where">next.config.ts:45-54,84-87</span><span class="src">Code review</span></td><td>Dead redirects.</td><td>Remove them, or map them to real ids.</td></tr>
+<tr data-s="low"><td class="id">L27</td><td><span class="pill p-low">Low</span></td><td>Accessibility</td><td><span class="what">The List Property page has two <code>&lt;h1&gt;</code>s ("Sell or rent faster…" and "ComingSoon.")</span><span class="where">src/features/listing/list-property.tsx</span><span class="src v">Verified (browser)</span></td><td>Unclear page outline for screen readers and SEO.</td><td>Make the second one an h2.</td></tr>
+<tr data-s="low"><td class="id">L28</td><td><span class="pill p-low">Low</span></td><td>Accessibility</td><td><span class="what">No <code>&lt;h1&gt;</code> on Compare (tablet/phone), or on signed-out Account and Dashboard</span><span class="where">compare-view.tsx; account-view.tsx; dashboard-shell.tsx</span><span class="src v">Verified (browser)</span></td><td>Pages without a main heading.</td><td>Add a visible or screen-reader-only h1.</td></tr>
+<tr data-s="low"><td class="id">L29</td><td><span class="pill p-low">Low</span></td><td>404 page</td><td><span class="what">The site-wide 404 page has the default title ("Rezide · Genuine listings only") and a duplicate <code>id="main"</code></span><span class="where">src/app/not-found.tsx</span><span class="src v">Verified (browser)</span></td><td>Tab title doesn't say "Page not found"; invalid HTML.</td><td>Set a not-found title, and avoid a second <code>main#main</code>.</td></tr>
+<tr data-s="low"><td class="id">L30</td><td><span class="pill p-low">Low</span></td><td>Performance</td><td><span class="what">First load of an old project URL took 8.2 s on desktop</span>The 308 redirect plus the project page with all its data (listings, landmarks, developer stats).<span class="where">/projects/680888726110e9330566ffb4</span><span class="src v">Measured</span></td><td>Slow first impression from old links.</td><td>Cache project details; stream the slower sections.</td></tr>
+<tr data-s="low"><td class="id">L31</td><td><span class="pill p-low">Low</span></td><td>SEO (new)</td><td><span class="what">A long developer name can push the RERA number out of the 160-character project description</span>Example: "Suraj Estate Developers Pvt Ltd". The RERA number is still in the structured data.<span class="where">src/features/projects/seo.ts</span><span class="src v">Verified</span></td><td>RERA is missing from the search snippet for some projects.</td><td>Shorten company suffixes, or put RERA earlier.</td></tr>
+<tr data-s="low"><td class="id">L32</td><td><span class="pill p-low">Low</span></td><td>SEO (new)</td><td><span class="what">66 projects have no city in their URL</span>The backend doesn't file them under any city in the locality list.<span class="where">src/services/project-city-index.ts</span><span class="src v">Verified</span></td><td>Slightly weaker URLs for those projects.</td><td>Add the remaining cities to the city index source.</td></tr>
+<tr data-s="low"><td class="id">L33</td><td><span class="pill p-low">Low</span></td><td>Security</td><td><span class="what">A Google Maps API key is hard-coded as a fallback in source</span><span class="where">src/lib/google-maps.ts:6</span><span class="src v">Verified</span></td><td>The key is public in the browser anyway, but it lives in git and is used if the env var is missing.</td><td>Remove the fallback, and restrict the key by HTTP referrer in Google Cloud.</td></tr>
+<tr data-s="low"><td class="id">L34</td><td><span class="pill p-low">Low</span></td><td>Docs</td><td><span class="what">README.md is corrupted at the end</span>A UTF-16 line (<code>r e z i d e . i n - v 2</code>) was appended to the UTF-8 file, so tools treat it as binary.<span class="where">README.md (last line)</span><span class="src v">Verified</span></td><td>The README doesn't render or diff properly.</td><td>Remove the last line, or re-save it as UTF-8.</td></tr>
+<tr data-s="low"><td class="id">L35</td><td><span class="pill p-low">Low</span></td><td>Docs</td><td><span class="what">The README still describes everything as mock data, and lists <code>/projects/[id]</code></span>Catalogue, auth and realtor data are live now.<span class="where">README.md</span><span class="src v">Verified</span></td><td>Misleads new developers.</td><td>Update the README for live APIs and the SEO URLs.</td></tr>
+<tr data-s="low"><td class="id">L36</td><td><span class="pill p-low">Low</span></td><td>Project page · Plans</td><td><span class="what">Duplicate "Previous plan"/"Next plan" buttons on desktop, and unit-plan downloads can be saved as ".jpg"</span>Both the bar arrows and the carousel arrows have the same labels. A plan with an empty label gets no filename.<span class="where">detail/configuration-plans.tsx:137-143, 60-77, 178</span><span class="src">Code review</span></td><td>Screen readers hear each control twice; files are saved with no name.</td><td>Keep one set of arrows; use <code>||</code> for the filename.</td></tr>
+<tr data-s="low"><td class="id">L37</td><td><span class="pill p-low">Low</span></td><td>Project page · Developer</td><td><span class="what">"About developer" counts show 0 when the stats request fails; a developer founded this year shows "0+ years"</span><span class="where">detail/about-developer.tsx:15-19,111-114</span><span class="src">Code review</span></td><td>Misleading zeros.</td><td>Hide the counts on failure; say "Founded this year".</td></tr>
+<tr data-s="low"><td class="id">L38</td><td><span class="pill p-low">Low</span></td><td>Project page</td><td><span class="what">The amenity icon URL is hard-coded to api.rezide.in</span><span class="where">detail/project-sections.tsx (amenityIcon)</span><span class="src">Code review</span></td><td>Staging or other backends still load production icons.</td><td>Use the configured origin helper.</td></tr>
+<tr data-s="low"><td class="id">L39</td><td><span class="pill p-low">Low</span></td><td>Downloads</td><td><span class="what">Plan downloads depend on the <code>/v1/admin</code> rewrite that <code>next.config.ts</code> describes as legacy-only</span><span class="where">detail/v1-ui.tsx (downloadUrl); next.config.ts rewrites()</span><span class="src">Code review</span></td><td>Removing the "legacy" rewrite would silently break plan downloads.</td><td>Document the dependency, or proxy downloads through an API route.</td></tr>
+<tr data-s="low"><td class="id">L40</td><td><span class="pill p-low">Low</span></td><td>Account</td><td><span class="what">The account page shows "We couldn't load this" when the activity API returns 404 (e.g. no history yet)</span><span class="where">src/app/api/account/activity/route.ts; account-view.tsx</span><span class="src">Signed-in browser test (test user)</span></td><td>New users may see an error instead of an empty list. Not confirmed with a real account.</td><td>Treat 404 as "no activity yet".</td></tr>
+</tbody></table>
+
+<h2>Recommended order of work</h2>
+<ol>
+  <li><b>Now (security):</b> C1 (backend PII, a backend team task) and C2 (open redirect). Then M1, M2 and M7.</li>
+  <li><b>Before release:</b>
+    <ul class="tight">
+      <li>H1 (property search crash): a one-line fix with big impact.</li>
+      <li>H2 and H3: dashboard and Realtor Corner backends, or hide those features.</li>
+      <li>H4 and H5: map pins and the media filter.</li>
+      <li>H6–H9: wrong developer, city, locality and firm data.</li>
+      <li>H10: lead rate limit.</li>
+      <li>H11: soft 404s.</li>
+    </ul>
+  </li>
+  <li><b>Data accuracy pass:</b> M9–M23 and M26–M27, which fix wrong numbers, units and labels users see daily.</li>
+  <li><b>Clean-up:</b> lint errors, failing tests, prototype copy, README, then the Low items.</li>
+</ol>
+
+<footer>
+  <p>Prepared 26 Nov 2026. Browser screenshots (desktop, tablet and phone, for every page tested) and raw results (<code>results.json</code>, <code>signed-in.json</code>) were saved during the test run and can be shared on request. "(new)" marks issues in the SEO work added in this session.</p>
+</footer>
+</main>
+<script>
+  // Severity filter for the findings tables.
+  const buttons = document.querySelectorAll(".filters button");
+  buttons.forEach((b) => b.addEventListener("click", () => {
+    buttons.forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    const f = b.dataset.f;
+    document.querySelectorAll("tr[data-s]").forEach((row) => { row.hidden = f !== "all" && row.dataset.s !== f; });
+    document.querySelectorAll("h3 + table").forEach((t) => {
+      const any = [...t.querySelectorAll("tr[data-s]")].some((r) => !r.hidden);
+      t.hidden = !any; t.previousElementSibling.hidden = !any;
+    });
+  }));
+</script>
+</body>
+</html>

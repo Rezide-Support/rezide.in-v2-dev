@@ -1,4 +1,5 @@
 import { api } from "@/lib/api/client";
+import { localityRowSlug, placeName } from "@/lib/locality-url";
 import type { Landmark, LandmarkCategory, LandmarkGroup } from "@/types/models";
 import { cdnImage } from "./property-mapper";
 
@@ -68,7 +69,11 @@ type BackendLocality = {
   _id?: string;
   general_information?: {
     locality_name?: string;
-    city?: string;
+    /** The city master id (detail record), or the city itself with its name (list rows). */
+    city?: unknown;
+    /** An id (detail record), or { name } (list rows). */
+    sub_region?: unknown;
+    region?: unknown;
     description?: string;
     what_to_expect?: string;
     the_lifestyle?: string;
@@ -83,7 +88,7 @@ type BackendLocality = {
  * match (another locality's photo would be wrong, and the caller has a fallback); the id, as
  * rezide.in's "Explore" link, falls back to the search's first result.
  */
-export async function findLocality(name: string): Promise<{ id?: string; photo: string | null } | null> {
+export async function findLocality(name: string): Promise<{ id?: string; slug?: string; photo: string | null } | null> {
   const wanted = name.trim().toLowerCase();
   if (!wanted) return null;
   const { data } = await api.post<{ data?: BackendLocality[] }>(
@@ -94,8 +99,23 @@ export async function findLocality(name: string): Promise<{ id?: string; photo: 
   const rows = data.data ?? [];
   const match = rows.find((l) => l.general_information?.locality_name?.trim().toLowerCase() === wanted);
   const photo = match?.media?.images?.[0]?.url;
-  const id = (match ?? rows[0])?._id;
-  return { id: id && /^[a-f0-9]{24}$/i.test(id) ? id : undefined, photo: photo ? cdnImage(photo) : null };
+  const found = match ?? rows[0];
+  const id = found?._id && /^[a-f0-9]{24}$/i.test(found._id) ? found._id : undefined;
+  // The linked locality's SEO URL words, from the same row as its id (src/lib/locality-url.ts).
+  return { id, ...(id && found ? { slug: localityRowSlug(found) } : {}), photo: photo ? cdnImage(photo) : null };
+}
+
+/**
+ * A locality's row in the locality list, found by its name and id. Unlike the detail record, the
+ * row names its sub-region, region and city, which its SEO URL and structured data use.
+ */
+export async function findLocalityRow(id: string, name: string): Promise<BackendLocality | undefined> {
+  const { data } = await api.post<{ data?: BackendLocality[] }>(
+    "/Repository/Locality/filter",
+    { sub_regions: null, regions: null, searchQuery: [name.trim()] },
+    { params: { page: 1, pageSize: 50 } },
+  );
+  return (data.data ?? []).find((l) => l._id === id);
 }
 
 /** A locality's photo, found by name (see findLocality). */
@@ -106,9 +126,14 @@ export async function fetchLocalityPhoto(name: string): Promise<string | null> {
 /** rezide.in's locality page: GET /Repository/Locality/{id}. */
 export type LocalityDetail = {
   id: string;
+  /** The words of its SEO URL ("indiraji-nagar-juhu-mumbai"), see src/lib/locality-url.ts. */
+  slug: string;
   name: string;
   /** The city's name, for the "Properties for rent / sale" links and the map. */
   city?: string;
+  /** Its sub-region and region ("Juhu", "Western Suburbs"), for search engines; from the locality list. */
+  subRegion?: string;
+  region?: string;
   description: string;
   whatToExpect: string;
   lifestyle: string;
@@ -125,10 +150,20 @@ export async function fetchLocality(id: string, cityName?: (cityId: string) => P
   const name = g?.locality_name?.trim();
   if (!data?._id || !name) return null;
   const text = (s?: string) => s?.trim() ?? "";
+  const cityId = typeof g?.city === "string" ? g.city : undefined;
+  const [city, row] = await Promise.all([
+    cityId && cityName ? cityName(cityId).catch(() => undefined) : Promise.resolve(undefined),
+    // Its list row names its sub-region, region and city; a failed read only leaves them out.
+    findLocalityRow(data._id, name).catch(() => undefined),
+  ]);
+  const rowInfo = row?.general_information;
   return {
     id: data._id,
+    slug: row ? localityRowSlug(row) : "",
     name,
-    city: g?.city && cityName ? await cityName(g.city).catch(() => undefined) : undefined,
+    city,
+    ...(placeName(rowInfo?.sub_region) ? { subRegion: placeName(rowInfo?.sub_region) } : {}),
+    ...(placeName(rowInfo?.region) ? { region: placeName(rowInfo?.region) } : {}),
     description: text(g?.description),
     whatToExpect: text(g?.what_to_expect),
     lifestyle: text(g?.the_lifestyle),
@@ -139,7 +174,7 @@ export async function fetchLocality(id: string, cityName?: (cityId: string) => P
 }
 
 /** A locality card in the properties page's Localities tab, as rezide.in's NeighborhoodCard. */
-export type LocalityListItem = { id: string; name: string; images: string[]; rent: number; sale: number };
+export type LocalityListItem = { id: string; slug: string; name: string; images: string[]; rent: number; sale: number };
 export type LocalityListPage = { items: LocalityListItem[]; total: number; page: number; pageSize: number };
 export type LocalityListFilters = { cityId?: string; regionId?: string; subRegionId?: string; q?: string; page: number; pageSize?: number };
 
@@ -164,6 +199,7 @@ export async function fetchLocalityList({ cityId, regionId, subRegionId, q, page
     return [
       {
         id: l._id,
+        slug: localityRowSlug(l),
         name,
         images: (l.media?.images ?? []).map((i) => i.url?.trim() ?? "").filter(Boolean).slice(0, 5).map(cdnImage),
         rent: Number(l.total_listing_rental_count) || 0,
